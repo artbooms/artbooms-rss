@@ -2,7 +2,7 @@ from flask import Flask, Response
 import requests
 from bs4 import BeautifulSoup
 import datetime
-import html
+import xml.sax.saxutils as saxutils  # ← più adatto per XML
 
 app = Flask(__name__)
 
@@ -10,8 +10,8 @@ FEED_URL = 'https://www.artbooms.com/archivio-completo'
 SITE_URL = 'https://www.artbooms.com'
 RSS_URL = 'https://artbooms-rss.onrender.com/rss.xml'
 
-def sanitize(text):
-    return html.escape(text.strip()) if text else ''
+def escape_xml(text):
+    return saxutils.escape(text.strip()) if text else ''
 
 def get_articles():
     res = requests.get(FEED_URL)
@@ -33,10 +33,10 @@ def get_articles():
 
         full_link = f"{SITE_URL}{link}"
         items.append({
-            'title': sanitize(title),
-            'link': sanitize(full_link),
-            'pub_date': pub_date,
-            'guid': sanitize(full_link)
+            'title': escape_xml(title),
+            'link': escape_xml(full_link),
+            'guid': escape_xml(full_link),
+            'pub_date': pub_date
         })
 
     return items
