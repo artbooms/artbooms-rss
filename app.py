@@ -7,6 +7,8 @@ import html
 app = Flask(__name__)
 
 FEED_URL = 'https://www.artbooms.com/archivio-completo'
+SITE_URL = 'https://www.artbooms.com'
+RSS_URL = 'https://artbooms-rss.onrender.com/rss.xml'
 
 def sanitize(text):
     return html.escape(text.strip()) if text else ''
@@ -29,7 +31,7 @@ def get_articles():
         except Exception:
             pub_date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
 
-        full_link = f"https://www.artbooms.com{link}"
+        full_link = f"{SITE_URL}{link}"
         items.append({
             'title': sanitize(title),
             'link': sanitize(full_link),
@@ -52,17 +54,18 @@ def rss():
             <pubDate>{item['pub_date']}</pubDate>
         </item>"""
 
-    rss_feed = f"""<?xml version="1.0" encoding="UTF-8" ?>
-<rss version="2.0">
-    <channel>
-        <title>Artbooms RSS Feed</title>
-        <link>https://www.artbooms.com/archivio-completo</link>
-        <description>Feed dinamico degli articoli di Artbooms</description>
-        <language>it-it</language>
-        {rss_items}
-    </channel>
+    rss_feed = f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Artbooms RSS Feed</title>
+    <link>{SITE_URL}/archivio-completo</link>
+    <atom:link href="{RSS_URL}" rel="self" type="application/rss+xml" />
+    <description>Feed dinamico degli articoli di Artbooms</description>
+    <language>it-it</language>
+    {rss_items}
+  </channel>
 </rss>"""
-    
+
     return Response(rss_feed, mimetype='application/rss+xml')
 
 if __name__ == '__main__':
