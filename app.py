@@ -8,7 +8,16 @@ app = Flask(__name__)
 
 FEED_URL = 'https://www.artbooms.com/archivio-completo'
 
-def escape_xml(text):
+def clean_text(text):
+    """Rende il testo sicuro per XML e rimuove caratteri non validi"""
+    if not text:
+        return ''
+    # Sostituisce caratteri Unicode problematici con equivalenti ASCII
+    replacements = {
+        '…': '...', '’': "'", '“': '"', '”': '"', '–': '-', '—': '-', ' ': ' ',  # spazio non-breaking
+    }
+    for bad, good in replacements.items():
+        text = text.replace(bad, good)
     return html.escape(text, quote=True)
 
 def get_articles():
@@ -41,26 +50,26 @@ def rss():
     for item in articles:
         rss_items += f"""
         <item>
-            <title>{escape_xml(item['title'])}</title>
-            <link>{escape_xml(item['link'])}</link>
-            <guid isPermaLink="true">{escape_xml(item['link'])}</guid>
+            <title>{clean_text(item['title'])}</title>
+            <link>{clean_text(item['link'])}</link>
+            <guid isPermaLink="true">{clean_text(item['link'])}</guid>
             <pubDate>{item['pub_date']}</pubDate>
         </item>"""
 
-    rss_feed = f"""<?xml version="1.0" encoding="UTF-8" ?>
-<rss version="2.0">
+    rss_feed = f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Artbooms RSS Feed</title>
     <link>https://www.artbooms.com/archivio-completo</link>
     <description>Feed dinamico degli articoli di Artbooms</description>
     <language>it-it</language>
     <lastBuildDate>{datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')}</lastBuildDate>
-    <atom:link href="https://artbooms-rss.onrender.com/rss.xml" rel="self" type="application/rss+xml" xmlns:atom="http://www.w3.org/2005/Atom" />
+    <atom:link href="https://artbooms-rss.onrender.com/rss.xml" rel="self" type="application/rss+xml" />
     {rss_items}
   </channel>
 </rss>"""
-    
-    return Response(rss_feed, mimetype='application/rss+xml')
+
+    return Response(rss_feed.strip(), mimetype='application/rss+xml')
 
 if __name__ == '__main__':
     app.run(debug=True)
