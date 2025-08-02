@@ -64,4 +64,20 @@ def test_connection():
         return f"Success! Status code: {r.status_code}"
     except Exception as e:
         return f"Errore connessione: {str(e)}"
+        @app.route('/test_connection')
+def test_connection():
+    try:
+        r = requests.get("https://www.artbooms.com/archivio-completo", timeout=10)
+        return f"Connection status code: {r.status_code}"
+    except Exception as e:
+        return f"Connection error: {e}"
+
+@app.route('/test_articles')
+def test_articles():
+    try:
+        articles = get_articles()
+        return "<br>".join([f"{a['title']} → {a['link']}" for a in articles])
+    except Exception as e:
+        return f"Parsing error: {e}"
+
 
