@@ -2,10 +2,14 @@ from flask import Flask, Response
 import requests
 from bs4 import BeautifulSoup
 import datetime
+import html
 
 app = Flask(__name__)
 
 FEED_URL = 'https://www.artbooms.com/archivio-completo'
+
+def sanitize(text):
+    return html.escape(text) if text else ''
 
 def get_articles():
     res = requests.get(FEED_URL)
@@ -19,13 +23,17 @@ def get_articles():
         link = title_tag['href'] if title_tag else ''
         title = title_tag.text.strip() if title_tag else 'No title'
         date_str = date_tag.text.strip() if date_tag else ''
-
         try:
             pub_date = datetime.datetime.strptime(date_str, '%b %d, %Y').strftime('%a, %d %b %Y %H:%M:%S GMT')
         except Exception:
             pub_date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
 
-        items.append({'title': title, 'link': 'https://www.artbooms.com' + link, 'pub_date': pub_date})
+        items.append({
+            'title': sanitize(title),
+            'link': 'https://www.artbooms.com' + link,
+            'pub_date': pub_date,
+            'guid': 'https://www.artbooms.com' + link
+        })
 
     return items
 
@@ -38,6 +46,7 @@ def rss():
         <item>
             <title>{item['title']}</title>
             <link>{item['link']}</link>
+            <guid>{item['guid']}</guid>
             <pubDate>{item['pub_date']}</pubDate>
         </item>"""
 
@@ -47,20 +56,12 @@ def rss():
             <title>Artbooms RSS Feed</title>
             <link>https://www.artbooms.com/archivio-completo</link>
             <description>Feed dinamico degli articoli di Artbooms</description>
+            <language>it-it</language>
             {rss_items}
         </channel>
     </rss>"""
     
     return Response(rss_feed, mimetype='application/rss+xml')
-
-@app.route('/test_connection')
-def test_connection():
-    try:
-        res = requests.get("https://www.artbooms.com/archivio-completo", timeout=10)
-        res.raise_for_status()
-        return "✅ Connessione a Artbooms riuscita!"
-    except Exception as e:
-        return f"❌ Errore di connessione: {e}"
 
 if __name__ == '__main__':
     app.run(debug=True)
