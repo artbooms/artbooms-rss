@@ -5,7 +5,7 @@ import datetime
 
 app = Flask(__name__)
 
-FEED_URL = 'https://www.artbooms.com/archivio-completo'  # Cambia se serve
+FEED_URL = 'https://www.artbooms.com/archivio-completo'
 
 def get_articles():
     res = requests.get(FEED_URL)
@@ -13,14 +13,13 @@ def get_articles():
     soup = BeautifulSoup(res.text, 'html.parser')
 
     items = []
-    # Trova tutti gli articoli (modifica se struttura cambia)
     for li in soup.select('li.archive-item'):
         title_tag = li.select_one('a.archive-item-link')
         date_tag = li.select_one('span.archive-item-date-before')
         link = title_tag['href'] if title_tag else ''
         title = title_tag.text.strip() if title_tag else 'No title'
         date_str = date_tag.text.strip() if date_tag else ''
-        # Format date to RFC822 for RSS
+
         try:
             pub_date = datetime.datetime.strptime(date_str, '%b %d, %Y').strftime('%a, %d %b %Y %H:%M:%S GMT')
         except Exception:
@@ -54,30 +53,14 @@ def rss():
     
     return Response(rss_feed, mimetype='application/rss+xml')
 
+@app.route('/test_connection')
+def test_connection():
+    try:
+        res = requests.get("https://www.artbooms.com/archivio-completo", timeout=10)
+        res.raise_for_status()
+        return "✅ Connessione a Artbooms riuscita!"
+    except Exception as e:
+        return f"❌ Errore di connessione: {e}"
+
 if __name__ == '__main__':
     app.run(debug=True)
-    @app.route('/test_connection')
-def test_connection():
-    import requests
-    try:
-        r = requests.get('https://www.google.com', timeout=5)
-        return f"Success! Status code: {r.status_code}"
-    except Exception as e:
-        return f"Errore connessione: {str(e)}"
-        @app.route('/test_connection')
-def test_connection():
-    try:
-        r = requests.get("https://www.artbooms.com/archivio-completo", timeout=10)
-        return f"Connection status code: {r.status_code}"
-    except Exception as e:
-        return f"Connection error: {e}"
-
-@app.route('/test_articles')
-def test_articles():
-    try:
-        articles = get_articles()
-        return "<br>".join([f"{a['title']} → {a['link']}" for a in articles])
-    except Exception as e:
-        return f"Parsing error: {e}"
-
-
