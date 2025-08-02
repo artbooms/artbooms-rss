@@ -56,3 +56,12 @@ def rss():
 
 if __name__ == '__main__':
     app.run(debug=True)
+    @app.route('/test_connection')
+def test_connection():
+    import requests
+    try:
+        r = requests.get('https://www.google.com', timeout=5)
+        return f"Success! Status code: {r.status_code}"
+    except Exception as e:
+        return f"Errore connessione: {str(e)}"
+
