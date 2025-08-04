@@ -1,15 +1,15 @@
 from flask import Flask, Response
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
 
 app = Flask(__name__)
 
 BASE_URL = "https://www.artbooms.com"
-ARCHIVE_URL = f"{BASE_URL}/blog/archive"
+ARCHIVE_URL = BASE_URL + "/blog/archive"
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
 }
 
 REPLACE_MAP = {
@@ -39,7 +39,12 @@ def get_month_links():
 def get_article_links(month_url):
     res = requests.get(month_url, headers=HEADERS)
     soup = BeautifulSoup(res.text, "html.parser")
-    return [BASE_URL + a.get("href") for a in soup.select("article a") if a.get("href")]
+    links = []
+    for a in soup.select("article a"):
+        href = a.get("href")
+        if href:
+            links.append(BASE_URL + href)
+    return links
 
 def parse_article(url):
     res = requests.get(url, headers=HEADERS)
@@ -75,6 +80,34 @@ def rss():
         for link in article_links:
             try:
                 article = parse_article(link)
-                items.append(f"""
-        <item>
-            <title><![CDATA[{article['title']}]]></title>
+                item = (
+                    "<item>"
+                    "<title><![CDATA[" + article['title'] + "]]></title>"
+                    "<link>" + article['link'] + "</link>"
+                    "<description><![CDATA[" + article['description'] + "]]></description>"
+                    "<pubDate>" + article['pubDate'] + "</pubDate>"
+                    "<category>" + article['category'] + "</category>"
+                    '<enclosure url="' + article['image'] + '" type="image/jpeg" />'
+                    "</item>"
+                )
+                items.append(item)
+            except Exception:
+                continue
+
+    rss_feed = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        "<rss version=\"2.0\">"
+        "<channel>"
+        "<title>Artbooms</title>"
+        "<link>" + BASE_URL + "</link>"
+        "<description>Artbooms RSS Feed</description>"
+        "<language>it-it</language>"
+        + "".join(items) +
+        "</channel>"
+        "</rss>"
+    )
+
+    return Response(rss_feed, mimetype='application/rss+xml')
+
+if __name__ == "__main__":
+    app.run(debug=True)
