@@ -54,4 +54,27 @@ def parse_article(url):
     title = clean_text(title_tag["content"]) if title_tag else ""
     description = clean_text(desc_tag["content"]) if desc_tag else ""
     image = image_tag["content"] if image_tag else ""
-    pub_date = date_tag["datetime"] i
+    pub_date = date_tag["datetime"] if date_tag and date_tag.has_attr("datetime") else ""
+    category = category_tag.get_text(strip=True).split("\n")[0] if category_tag else ""
+
+    return {
+        "title": title,
+        "description": description,
+        "link": url,
+        "image": image,
+        "pubDate": pub_date,
+        "category": category
+    }
+
+@app.route("/rss.xml")
+def rss():
+    items = []
+    month_links = get_month_links()
+    for month_url in month_links:
+        article_links = get_article_links(month_url)
+        for link in article_links:
+            try:
+                article = parse_article(link)
+                items.append(f"""
+        <item>
+            <title><![CDATA[{article['title']}]]></title>
