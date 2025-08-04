@@ -6,27 +6,52 @@ import html
 import logging
 
 app = Flask(__name__)
-
 FEED_URL = 'https://www.artbooms.com/archivio-completo'
 
 def clean_text(text):
     if not text:
         return ''
     replacements = {
-        '\u200b': '',  # zero-width space
-        '\u200c': '',
-        '\u200d': '',
-        '…': '...',
-        '’': "'",
-        '“': '"',
-        '”': '"',
-        '–': '-',
-        '—': '-',
-        '\xa0': ' ',  # no-break space
+        '\u200b': '', '\u200c': '', '\u200d': '',
+        '…': '...', '’': "'", '“': '"', '”': '"',
+        '–': '-', '—': '-', '\xa0': ' ',
     }
     for bad, good in replacements.items():
         text = text.replace(bad, good)
     return html.escape(text.strip(), quote=True)
+
+def extract_article_details(url):
+    try:
+        res = requests.get(url, timeout=10)
+        res.raise_for_status()
+        soup = BeautifulSoup(res.text, 'html.parser')
+
+        description = ''
+        image_url = ''
+
+        # Meta description
+        desc_tag = soup.find('meta', attrs={'name': 'description'})
+        if desc_tag and desc_tag.get('content'):
+            description = clean_text(desc_tag['content'])
+
+        # og:image
+        img_tag = soup.find('meta', property='og:image')
+        if img_tag and img_tag.get('content'):
+            image_url = img_tag['content']
+
+        return description, image_url
+    except Exception as e:
+        logging.warning(f"Errore scraping articolo {url}: {e}")
+        return '', ''
+
+def guess_category(title):
+    title = title.lower()
+    if 'fotografia' in title:
+        return 'fotografia'
+    elif 'design' in title:
+        return 'design'
+    else:
+        return 'arte'
 
 def get_articles():
     try:
@@ -55,7 +80,17 @@ def get_articles():
             pub_date_str = pub_date.strftime('%a, %d %b %Y %H:%M:%S GMT')
             full_link = 'https://www.artbooms.com' + link
 
-            items.append({'title': title, 'link': full_link, 'pub_date': pub_date_str})
+            description, image_url = extract_article_details(full_link)
+            category = guess_category(title)
+
+            items.append({
+                'title': title,
+                'link': full_link,
+                'pub_date': pub_date_str,
+                'description': description,
+                'image_url': image_url,
+                'category': category,
+            })
         except Exception as e:
             logging.warning(f"Errore parsing articolo: {e}")
             continue
@@ -73,15 +108,23 @@ def rss():
       <link>{clean_text(item['link'])}</link>
       <guid isPermaLink="true">{clean_text(item['link'])}</guid>
       <pubDate>{item['pub_date']}</pubDate>
-    </item>"""
+      <description>{item['description']}</description>
+      <category>{item['category']}</category>
+      <source url="https://www.artbooms.com">Artbooms</source>"""
+        if item['image_url']:
+            rss_items += f"""
+      <media:content url="{item['image_url']}" medium="image" />"""
+        rss_items += "\n    </item>"
 
     last_build_date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
     rss_feed = f"""<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0"
+     xmlns:atom="http://www.w3.org/2005/Atom"
+     xmlns:media="http://search.yahoo.com/mrss/">
   <channel>
     <title>Artbooms RSS Feed</title>
     <link>https://www.artbooms.com/archivio-completo</link>
-    <description>Feed dinamico degli articoli di Artbooms</description>
+    <description>Notizie di arte contemporanea da Artbooms</description>
     <language>it-it</language>
     <lastBuildDate>{last_build_date}</lastBuildDate>
     <atom:link href="https://artbooms-rss.onrender.com/rss.xml" rel="self" type="application/rss+xml" />
@@ -90,9 +133,7 @@ def rss():
 </rss>"""
 
     response = Response(rss_feed.strip(), mimetype='application/rss+xml; charset=utf-8')
-    # Disabilita compressione esplicita per evitare problemi con validator
     response.headers['Content-Encoding'] = 'identity'
-    # Aggiungi headers utili
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
