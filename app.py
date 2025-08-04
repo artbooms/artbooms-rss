@@ -1,6 +1,8 @@
 from flask import Flask, Response
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime
+import re
 
 app = Flask(__name__)
 
@@ -12,12 +14,12 @@ HEADERS = {
 }
 
 REPLACE_MAP = {
-    "\u2019": "'",
-    "\u201c": '"',
-    "\u201d": '"',
-    "\u00a0": " ",
-    "\u2014": "-",
-    "\u2013": "-",
+    '\u2019': "'",
+    '\u201c': '"',
+    '\u201d': '"',
+    '\u00a0': ' ',
+    '\u2014': '-',
+    '\u2013': '-',
 }
 
 def clean_text(text):
@@ -27,12 +29,13 @@ def clean_text(text):
 
 def get_month_links():
     res = requests.get(ARCHIVE_URL, headers=HEADERS)
-    soup = BeautifulSoup(res.text, "html.parser")
+    soup = BeautifulSoup(res.text, 'html.parser')
     links = []
-    for a in soup.select(".archive-group a"):
-        href = a.get("href")
-        if href:
-            links.append(BASE_URL + href)
+    # Cerca tutti i <li> con classe "archive-group"
+    for li in soup.find_all("li", class_="archive-group"):
+        a_tag = li.find("a", class_="archive-group-name-link")
+        if a_tag and a_tag.get("href"):
+            links.append(BASE_URL + a_tag["href"])
     return links
 
 def get_article_links(month_url):
@@ -54,53 +57,4 @@ def parse_article(url):
     description = clean_text(desc_tag["content"]) if desc_tag else ""
     image = image_tag["content"] if image_tag else ""
     pub_date = date_tag["datetime"] if date_tag and date_tag.has_attr("datetime") else ""
-    category = category_tag.get_text(strip=True).split("\n")[0] if category_tag else ""
-
-    return {
-        "title": title,
-        "description": description,
-        "link": url,
-        "image": image,
-        "pubDate": pub_date,
-        "category": category,
-    }
-
-@app.route("/rss.xml")
-def rss():
-    items = []
-    month_links = get_month_links()
-    for month_url in month_links:
-        article_links = get_article_links(month_url)
-        for link in article_links:
-            try:
-                article = parse_article(link)
-                item = (
-                    "<item>"
-                    f"<title><![CDATA[{article['title']}]]></title>"
-                    f"<link>{article['link']}</link>"
-                    f"<description><![CDATA[{article['description']}]]></description>"
-                    f"<pubDate>{article['pubDate']}</pubDate>"
-                    f"<category>{article['category']}</category>"
-                    f'<enclosure url="{article["image"]}" type="image/jpeg" />'
-                    "</item>"
-                )
-                items.append(item)
-            except Exception:
-                continue
-
-    rss_feed = (
-        '<?xml version="1.0" encoding="UTF-8"?>\n'
-        "<rss version='2.0'>\n"
-        "<channel>\n"
-        "<title>Artbooms</title>\n"
-        f"<link>{BASE_URL}</link>\n"
-        "<description>Artbooms RSS Feed</description>\n"
-        "<language>it-it</language>\n"
-        + "".join(items)
-        + "\n</channel>\n</rss>"
-    )
-
-    return Response(rss_feed, mimetype="application/rss+xml")
-
-if __name__ == "__main__":
-    app.run(debug=True)
+    categ
