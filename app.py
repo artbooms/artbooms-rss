@@ -1,8 +1,6 @@
 from flask import Flask, Response
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
-import re
 
 app = Flask(__name__)
 
@@ -74,3 +72,32 @@ def rss():
     for month_url in month_links:
         article_links = get_article_links(month_url)
         for link in article_links:
+            try:
+                article = parse_article(link)
+                items.append(f"""
+        <item>
+            <title><![CDATA[{article['title']}]]></title>
+            <link>{article['link']}</link>
+            <description><![CDATA[{article['description']}]]></description>
+            <pubDate>{article['pubDate']}</pubDate>
+            <category>{article['category']}</category>
+            <enclosure url="{article['image']}" type="image/jpeg" />
+        </item>""")
+            except Exception:
+                continue
+
+    rss_feed = f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+    <title>Artbooms</title>
+    <link>{BASE_URL}</link>
+    <description>Artbooms RSS Feed</description>
+    <language>it-it</language>
+    {''.join(items)}
+</channel>
+</rss>"""
+
+    return Response(rss_feed, mimetype='application/rss+xml')
+
+if __name__ == "__main__":
+    app.run(debug=True)
