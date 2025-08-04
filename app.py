@@ -3,8 +3,10 @@ import requests
 from bs4 import BeautifulSoup
 import datetime
 import html
+import logging
 
 app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
 
 FEED_URL = 'https://www.artbooms.com/archivio-completo'
 
@@ -12,7 +14,6 @@ def clean_text(text):
     """Rende il testo sicuro per XML e rimuove caratteri non validi"""
     if not text:
         return ''
-    # Sostituisce caratteri Unicode problematici con equivalenti ASCII
     replacements = {
         '…': '...', '’': "'", '“': '"', '”': '"', '–': '-', '—': '-', ' ': ' ',  # spazio non-breaking
     }
@@ -41,11 +42,21 @@ def get_articles():
         full_link = 'https://www.artbooms.com' + link
         items.append({'title': title, 'link': full_link, 'pub_date': pub_date})
 
+    if not items:
+        logging.warning("⚠️ Nessun articolo trovato nel parsing HTML.")
+        raise RuntimeError("Nessun articolo trovato. Verifica la struttura della pagina.")
+
+    logging.info(f"✅ Trovati {len(items)} articoli da {FEED_URL}")
     return items
 
 @app.route('/rss.xml')
 def rss():
-    articles = get_articles()
+    try:
+        articles = get_articles()
+    except Exception as e:
+        logging.error(f"Errore durante il parsing degli articoli: {e}")
+        return Response("Errore nel generare il feed RSS", status=500)
+
     rss_items = ''
     for item in articles:
         rss_items += f"""
@@ -69,7 +80,7 @@ def rss():
   </channel>
 </rss>"""
 
-    return Response(rss_feed.strip(), mimetype='application/rss+xml')
+    return Response(rss_feed.strip(), content_type='application/rss+xml; charset=utf-8')
 
 if __name__ == '__main__':
     app.run(debug=True)
