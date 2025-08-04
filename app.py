@@ -1,4 +1,4 @@
-from flask import Flask, Response
+from flask import Flask, make_response
 import requests
 from bs4 import BeautifulSoup
 import datetime
@@ -11,19 +11,15 @@ logging.basicConfig(level=logging.INFO)
 FEED_URL = 'https://www.artbooms.com/archivio-completo'
 
 def clean_text(text):
-    """Rende il testo sicuro per XML e rimuove caratteri non validi"""
     if not text:
         return ''
-    replacements = {
-        '…': '...', '’': "'", '“': '"', '”': '"',
-        '–': '-', '—': '-', ' ': ' ',  # spazio non-breaking
-    }
+    replacements = {'…': '...', '’': "'", '“': '"', '”': '"', '–': '-', '—': '-', ' ': ' '}
     for bad, good in replacements.items():
         text = text.replace(bad, good)
-    return html.escape(text, quote=True)
+    return html.escape(text.strip(), quote=True)
 
 def get_articles():
-    res = requests.get(FEED_URL)
+    res = requests.get(FEED_URL, timeout=10)
     res.raise_for_status()
     soup = BeautifulSoup(res.text, 'html.parser')
 
@@ -36,7 +32,8 @@ def get_articles():
         date_str = date_tag.text.strip() if date_tag else ''
 
         try:
-            pub_date = datetime.datetime.strptime(date_str, '%b %d, %Y').strftime('%a, %d %b %Y %H:%M:%S GMT')
+            pub_date = datetime.datetime.strptime(date_str, '%b %d, %Y')\
+                        .strftime('%a, %d %b %Y %H:%M:%S GMT')
         except Exception:
             pub_date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
 
@@ -45,18 +42,18 @@ def get_articles():
         image_url = ''
 
         try:
-            article_res = requests.get(full_link, timeout=10)
-            article_soup = BeautifulSoup(article_res.text, 'html.parser')
-            first_paragraph = article_soup.select_one('div.sqs-block-content p')
-            if first_paragraph:
-                description = clean_text(first_paragraph.get_text())
+            a = requests.get(full_link, timeout=10)
+            a.raise_for_status()
+            article = BeautifulSoup(a.text, 'html.parser')
 
-            img_tag = article_soup.select_one('img')
-            if img_tag and img_tag.has_attr('src'):
-                image_url = img_tag['src']
+            p = article.select_one('div.sqs-block-content p')
+            if p: description = clean_text(p.get_text())
+
+            img = article.select_one('img')
+            if img and img.get('src'): image_url = img['src']
 
         except Exception as e:
-            logging.error(f"Errore durante l'estrazione da {full_link}: {e}")
+            logging.error(f"Errore parsing articolo {full_link}: {e}")
 
         items.append({
             'title': title,
@@ -70,23 +67,23 @@ def get_articles():
 
 @app.route('/rss.xml')
 def rss():
-    articles = get_articles()
+    items = get_articles()
     rss_items = ''
-    for item in articles:
-        enclosure = f'<enclosure url="{item["image_url"]}" type="image/jpeg" />' if item['image_url'] else ''
-        description = f'<description>{item["description"]}</description>' if item['description'] else ''
-
+    for it in items:
         rss_items += f"""
         <item>
-            <title>{clean_text(item['title'])}</title>
-            <link>{clean_text(item['link'])}</link>
-            <guid isPermaLink="true">{clean_text(item['link'])}</guid>
-            <pubDate>{item['pub_date']}</pubDate>
-            {description}
-            {enclosure}
-        </item>"""
+            <title>{clean_text(it['title'])}</title>
+            <link>{clean_text(it['link'])}</link>
+            <guid isPermaLink="true">{clean_text(it['link'])}</guid>
+            <pubDate>{it['pub_date']}</pubDate>"""
+        if it['description']:
+            rss_items += f"\n            <description>{it['description']}</description>"
+        if it['image_url']:
+            rss_items += f"""
+            <enclosure url="{clean_text(it['image_url'])}" type="image/jpeg" length="0" />"""
+        rss_items += "\n        </item>"
 
-    rss_feed = f"""<?xml version="1.0" encoding="UTF-8"?>
+    rss = f"""<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Artbooms RSS Feed</title>
@@ -99,7 +96,10 @@ def rss():
   </channel>
 </rss>"""
 
-    return Response(rss_feed.strip(), mimetype='application/rss+xml')
+    resp = make_response(rss.strip())
+    resp.headers['Content-Type'] = 'application/rss+xml; charset=utf-8'
+    resp.headers['Content-Encoding'] = 'identity'
+    return resp
 
 if __name__ == '__main__':
     app.run(debug=True)
