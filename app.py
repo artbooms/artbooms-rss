@@ -107,39 +107,4 @@ def rss():
       <title>{clean_text(item['title'])}</title>
       <link>{clean_text(item['link'])}</link>
       <guid isPermaLink="true">{clean_text(item['link'])}</guid>
-      <pubDate>{item['pub_date']}</pubDate>
-      <description>{item['description']}</description>
-      <category>{item['category']}</category>
-      <source url="https://www.artbooms.com">Artbooms</source>"""
-        if item['image_url']:
-            rss_items += f"""
-      <media:content url="{item['image_url']}" medium="image" />"""
-        rss_items += "\n    </item>"
-
-    last_build_date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
-    rss_feed = f"""<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0"
-     xmlns:atom="http://www.w3.org/2005/Atom"
-     xmlns:media="http://search.yahoo.com/mrss/">
-  <channel>
-    <title>Artbooms RSS Feed</title>
-    <link>https://www.artbooms.com/archivio-completo</link>
-    <description>Notizie di arte contemporanea da Artbooms</description>
-    <language>it-it</language>
-    <lastBuildDate>{last_build_date}</lastBuildDate>
-    <atom:link href="https://artbooms-rss.onrender.com/rss.xml" rel="self" type="application/rss+xml" />
-    {rss_items}
-  </channel>
-</rss>"""
-
-    response = Response(rss_feed.strip(), mimetype='application/rss+xml; charset=utf-8')
-    response.headers['Content-Encoding'] = 'identity'
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    response.headers['Access-Control-Allow-Origin'] = '*'
-
-    return response
-
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+      <pubDate>{item['pub_date']}</pub_]()
