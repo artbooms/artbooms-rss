@@ -47,34 +47,3 @@ def get_articles():
             article_soup = BeautifulSoup(article_res.text, 'html.parser')
 
             first_paragraph = article_soup.select_one('div.sqs-block-content p')
-            if first_paragraph:
-                description = first_paragraph.text.strip()
-
-            img_tag = article_soup.select_one('img')
-            if img_tag and img_tag.get('src'):
-                image_url = img_tag['src']
-
-        except Exception as e:
-            logging.warning(f"Errore nel parsing dell’articolo {full_link}: {e}")
-
-        items.append({
-            'title': title,
-            'link': full_link,
-            'pub_date': pub_date,
-            'description': description,
-            'image': image_url
-        })
-
-    if not items:
-        logging.warning("⚠️ Nessun articolo trovato nel parsing HTML.")
-        raise RuntimeError("Nessun articolo trovato. Verifica la struttura della pagina.")
-
-    logging.info(f"✅ Trovati {len(items)} articoli da {FEED_URL}")
-    return items
-
-@app.route('/rss.xml')
-def rss():
-    try:
-        articles = get_articles()
-    except Exception as e:
-        logging.error(f"Errore durante
