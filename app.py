@@ -49,14 +49,15 @@ def parse_article(url):
     title_tag = soup.select_one("meta[property='og:title']")
     desc_tag = soup.select_one("meta[property='og:description']")
     image_tag = soup.select_one("meta[property='og:image']")
-    date_tag = soup.select_one("time")
-    category_tag = soup.select_one(".sqs-block-html")
+    date_tag = soup.select_one("meta[itemprop='datePublished']")
+    category_tag = soup.select_one("article")
 
     title = clean_text(title_tag["content"]) if title_tag else ""
     description = clean_text(desc_tag["content"]) if desc_tag else ""
     image = image_tag["content"] if image_tag else ""
-    pub_date = date_tag["datetime"] if date_tag and date_tag.has_attr("datetime") else ""
-    category = category_tag.get_text(strip=True).split("\n")[0] if category_tag else ""
+    pub_date = date_tag["content"] if date_tag and date_tag.has_attr("content") else ""
+    category_match = re.search(r'category-([\w-]+)', category_tag["class"][0]) if category_tag else None
+    category = category_match.group(1) if category_match else "Art"
 
     return {
         "title": title,
@@ -71,35 +72,25 @@ def parse_article(url):
 def rss():
     items = []
     month_links = get_month_links()
-    for month_url in month_links:
+
+    # Facoltativamente limita i mesi recenti per evitare out-of-memory
+    for month_url in month_links[:6]:  # <-- cambia qui il numero se vuoi più/meno mesi
         article_links = get_article_links(month_url)
         for link in article_links:
             try:
                 article = parse_article(link)
                 items.append(f"""
-        <item>
-            <title><![CDATA[{article['title']}]]></title>
-            <link>{article['link']}</link>
-            <description><![CDATA[{article['description']}]]></description>
-            <pubDate>{article['pubDate']}</pubDate>
-            <category>{article['category']}</category>
-            <enclosure url="{article['image']}" type="image/jpeg" />
-        </item>""")
+<item>
+    <title><![CDATA[{article['title']}]]></title>
+    <link>{article['link']}</link>
+    <description><![CDATA[{article['description']}]]></description>
+    <pubDate>{article['pubDate']}</pubDate>
+    <category>{article['category']}</category>
+    <enclosure url="{article['image']}" type="image/jpeg" />
+</item>""")
             except Exception:
                 continue
 
-    rss_feed = f"""<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0">
-<channel>
-    <title>Artbooms</title>
-    <link>{BASE_URL}</link>
-    <description>Artbooms RSS Feed</description>
-    <language>it-it</language>
-    {''.join(items)}
-</channel>
-</rss>"""
-
-    return Response(rss_feed, mimetype='application/rss+xml')
-
-if __name__ == "__main__":
-    app.run(debug=True)
+    rss_feed = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    rss_feed += '<rss version="2.0">\n<channel>\n'
+    rss_fee_
