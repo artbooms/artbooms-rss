@@ -5,19 +5,19 @@ from bs4 import BeautifulSoup
 app = Flask(__name__)
 
 BASE_URL = "https://www.artbooms.com"
-ARCHIVE_URL = f"{BASE_URL}/blog/archive"
+ARCHIVE_URL = BASE_URL + "/blog/archive"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
 }
 
 REPLACE_MAP = {
-    '\u2019': "'",
-    '\u201c': '"',
-    '\u201d': '"',
-    '\u00a0': ' ',
-    '\u2014': '-',
-    '\u2013': '-',
+    "\u2019": "'",
+    "\u201c": '"',
+    "\u201d": '"',
+    "\u00a0": " ",
+    "\u2014": "-",
+    "\u2013": "-",
 }
 
 def clean_text(text):
@@ -27,7 +27,7 @@ def clean_text(text):
 
 def get_month_links():
     res = requests.get(ARCHIVE_URL, headers=HEADERS)
-    soup = BeautifulSoup(res.text, 'html.parser')
+    soup = BeautifulSoup(res.text, "html.parser")
     links = []
     for a in soup.select(".archive-group a"):
         href = a.get("href")
@@ -67,7 +67,7 @@ def parse_article(url):
         "link": url,
         "image": image,
         "pubDate": pub_date,
-        "category": category
+        "category": category,
     }
 
 @app.route("/rss.xml")
@@ -79,20 +79,34 @@ def rss():
         for link in article_links:
             try:
                 article = parse_article(link)
-                item = "<item>" + \
-                       "<title><![CDATA[" + article['title'] + "]]></title>" + \
-                       "<link>" + article['link'] + "</link>" + \
-                       "<description><![CDATA[" + article['description'] + "]]></description>" + \
-                       "<pubDate>" + article['pubDate'] + "</pubDate>" + \
-                       "<category>" + article['category'] + "</category>" + \
-                       '<enclosure url="' + article['image'] + '" type="image/jpeg" />' + \
-                       "</item>"
+                item = (
+                    "<item>"
+                    "<title><![CDATA[" + article["title"] + "]]></title>"
+                    "<link>" + article["link"] + "</link>"
+                    "<description><![CDATA[" + article["description"] + "]]></description>"
+                    "<pubDate>" + article["pubDate"] + "</pubDate>"
+                    "<category>" + article["category"] + "</category>"
+                    '<enclosure url="' + article["image"] + '" type="image/jpeg" />'
+                    "</item>"
+                )
                 items.append(item)
             except Exception:
-                continue
+                pass
 
-    rss_feed = '<?xml version="1.0" encoding="UTF-8"?>' + \
-               '<rss version="2.0">' + \
-               '<channel>' + \
-               '<title>Artbooms</title>' + \
-               '<li
+    rss_feed = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        "<rss version='2.0'>"
+        "<channel>"
+        "<title>Artbooms</title>"
+        "<link>" + BASE_URL + "</link>"
+        "<description>Artbooms RSS Feed</description>"
+        "<language>it-it</language>"
+        + "".join(items)
+        + "</channel>"
+        + "</rss>"
+    )
+
+    return Response(rss_feed, mimetype="application/rss+xml")
+
+if __name__ == "__main__":
+    app.run(debug=True)
