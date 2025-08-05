@@ -1,8 +1,6 @@
 from flask import Flask, Response
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
-import re
 
 app = Flask(__name__)
 
@@ -31,27 +29,21 @@ def get_month_links():
     res = requests.get(ARCHIVE_URL, headers=HEADERS)
     soup = BeautifulSoup(res.text, 'html.parser')
     links = []
-    print("DEBUG: Controllo archive page per mesi...")
     for a in soup.select(".archive-group a"):
         href = a.get("href")
-        print("DEBUG: trovato href mese:", href)
         if href:
             links.append(BASE_URL + href)
-    print("DEBUG: Link mesi trovati:", links)
     return links
 
 def get_article_links(month_url):
     res = requests.get(month_url, headers=HEADERS)
     soup = BeautifulSoup(res.text, "html.parser")
-    article_links = []
-    print(f"DEBUG: Controllo articoli per mese: {month_url}")
+    links = []
     for a in soup.select("article a"):
         href = a.get("href")
-        print("DEBUG: trovato href articolo:", href)
         if href:
-            article_links.append(BASE_URL + href)
-    print("DEBUG: Link articoli trovati:", article_links)
-    return article_links
+            links.append(BASE_URL + href)
+    return links
 
 def parse_article(url):
     res = requests.get(url, headers=HEADERS)
@@ -67,4 +59,40 @@ def parse_article(url):
     description = clean_text(desc_tag["content"]) if desc_tag else ""
     image = image_tag["content"] if image_tag else ""
     pub_date = date_tag["datetime"] if date_tag and date_tag.has_attr("datetime") else ""
-    category = category_tag.get_text(strip=True).split("\n")[0] if ca
+    category = category_tag.get_text(strip=True).split("\n")[0] if category_tag else ""
+
+    return {
+        "title": title,
+        "description": description,
+        "link": url,
+        "image": image,
+        "pubDate": pub_date,
+        "category": category
+    }
+
+@app.route("/rss.xml")
+def rss():
+    items = []
+    month_links = get_month_links()
+    for month_url in month_links:
+        article_links = get_article_links(month_url)
+        for link in article_links:
+            try:
+                article = parse_article(link)
+                item = "<item>" + \
+                       "<title><![CDATA[" + article['title'] + "]]></title>" + \
+                       "<link>" + article['link'] + "</link>" + \
+                       "<description><![CDATA[" + article['description'] + "]]></description>" + \
+                       "<pubDate>" + article['pubDate'] + "</pubDate>" + \
+                       "<category>" + article['category'] + "</category>" + \
+                       '<enclosure url="' + article['image'] + '" type="image/jpeg" />' + \
+                       "</item>"
+                items.append(item)
+            except Exception:
+                continue
+
+    rss_feed = '<?xml version="1.0" encoding="UTF-8"?>' + \
+               '<rss version="2.0">' + \
+               '<channel>' + \
+               '<title>Artbooms</title>' + \
+               '<li
