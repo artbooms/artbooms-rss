@@ -53,3 +53,34 @@ def get_articles():
 def rss():
     try:
         articles = get_articles()
+    except Exception as e:
+        logging.error(f"Errore durante il parsing degli articoli: {e}")
+        return Response("Errore nel generare il feed RSS", status=500)
+
+    rss_items = ''
+    for item in articles:
+        rss_items += f"""
+        <item>
+            <title>{clean_text(item['title'])}</title>
+            <link>{clean_text(item['link'])}</link>
+            <guid isPermaLink="true">{clean_text(item['link'])}</guid>
+            <pubDate>{item['pub_date']}</pubDate>
+        </item>"""
+
+    rss_feed = f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Artbooms RSS Feed</title>
+    <link>https://www.artbooms.com/archivio-completo</link>
+    <description>Feed dinamico degli articoli di Artbooms</description>
+    <language>it-it</language>
+    <lastBuildDate>{datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')}</lastBuildDate>
+    <atom:link href="https://artbooms-rss.onrender.com/rss.xml" rel="self" type="application/rss+xml" />
+    {rss_items}
+  </channel>
+</rss>"""
+
+    return Response(rss_feed.strip(), content_type='application/rss+xml; charset=utf-8')
+
+if __name__ == '__main__':
+    app.run(debug=True)
