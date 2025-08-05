@@ -1,16 +1,22 @@
-from flask import Flask, Response
+from flask import Flask
 import requests
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
-ARCHIVE_URL = "https://www.artbooms.com/archivio-completo"
+BASE_URL = "https://www.artbooms.com"
+ARCHIVE_URL = f"{BASE_URL}/blog/archive"
 
-@app.route("/rss.xml")
-def rss():
-    res = requests.get(ARCHIVE_URL, timeout=10)
-    html = res.text[:5000]  # solo i primi 5000 caratteri per evitare overload
-    print("DEBUG: pagina archivio HTML\n", html)
-    return Response("Debug page in log", status=200)
+@app.route("/")
+def debug_archive():
+    res = requests.get(ARCHIVE_URL)
+    html = res.text
+
+    print("DEBUG: INIZIO HTML ARCHIVIO")
+    print(html[:5000])  # stampiamo i primi 5000 caratteri
+    print("DEBUG: FINE HTML ARCHIVIO")
+
+    return "Controlla i log su Render: HTML stampato nel terminale"
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
