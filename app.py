@@ -4,13 +4,17 @@ from bs4 import BeautifulSoup
 import datetime
 import html
 import logging
+import os
+import json
+import hashlib
 
-from article_parser import parse_article  # il file che hai appena creato
+from article_parser import parse_article
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 FEED_URL = 'https://www.artbooms.com/archivio-completo'
+CACHE_FILE = "articles_cache.json"
 
 XML_ESCAPE_REPLACEMENTS = {
     '…': '...', '’': "'", '“': '"', '”': '"', '–': '-', '—': '-', '\u00A0': ' ',
@@ -23,12 +27,28 @@ def clean_text(text):
         text = text.replace(bad, good)
     return html.escape(text.strip(), quote=True)
 
+def load_cache():
+    if os.path.exists(CACHE_FILE):
+        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+def save_cache(cache):
+    with open(CACHE_FILE, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=2)
+
+def hash_url(url):
+    return hashlib.sha256(url.encode()).hexdigest()
+
 def get_articles():
     res = requests.get(FEED_URL, timeout=8)
     res.raise_for_status()
     soup = BeautifulSoup(res.text, 'html.parser')
 
+    cache = load_cache()
+    updated_cache = False
     items = []
+
     for li in soup.select('li.archive-item'):
         title_tag = li.select_one('a.archive-item-link')
         date_tag = li.select_one('span.archive-item-date-before')
@@ -42,32 +62,38 @@ def get_articles():
             pub_date_archive = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
 
         full_link = 'https://www.artbooms.com' + link_fragment
+        url_hash = hash_url(full_link)
 
-        # Estrai i dettagli dell'articolo vero e proprio
-        try:
-            detailed = parse_article(full_link)
-        except Exception as e:
-            logging.warning(f"Fallita estrazione dettagli per {full_link}: {e}")
-            detailed = {}
+        if url_hash in cache:
+            article = cache[url_hash]
+        else:
+            try:
+                detailed = parse_article(full_link)
+                article = {
+                    'title': title,
+                    'link': full_link,
+                    'guid': full_link,
+                    'pub_date': detailed.get('pubDate') or pub_date_archive,
+                    'author': detailed.get('author'),
+                    'description': detailed.get('description'),
+                    'image': detailed.get('image'),
+                }
+                cache[url_hash] = article
+                updated_cache = True
+            except Exception as e:
+                logging.warning(f"Errore parsing articolo {full_link}: {e}")
+                continue
 
-        # Decide pubDate: preferisce quello estratto dall'articolo se valido
-        pub_date = detailed.get('pubDate') or pub_date_archive
+        items.append(article)
 
-        items.append({
-            'title': title,
-            'link': full_link,
-            'guid': full_link,
-            'pub_date': pub_date,
-            'author': detailed.get('author'),
-            'description': detailed.get('description'),
-            'image': detailed.get('image'),
-        })
+    if updated_cache:
+        save_cache(cache)
 
     if not items:
-        logging.warning("⚠️ Nessun articolo trovato nel parsing HTML.")
+        logging.warning("⚠️ Nessun articolo trovato.")
         raise RuntimeError("Nessun articolo trovato. Verifica la struttura della pagina.")
 
-    logging.info(f"✅ Trovati {len(items)} articoli da {FEED_URL}")
+    logging.info(f"✅ Articoli totali: {len(items)} (nuovi: {'sì' if updated_cache else 'no'})")
     return items
 
 @app.route('/rss.xml')
