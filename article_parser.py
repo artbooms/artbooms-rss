@@ -7,7 +7,7 @@ import html
 def maybe_shrink_squarespace(url, target_width=800):
     # Riduce le immagini Squarespace a un formato più leggero (es. 800w)
     if "squarespace" in url and "format=" in url:
-        return re.sub(r'format=\\d+w', f'format={target_width}w', url)
+        return re.sub(r'format=\d+w', f'format={target_width}w', url)
     if "squarespace" in url:
         if "?" in url:
             base, _ = url.split("?", 1)
@@ -57,7 +57,6 @@ def parse_article(url):
                 dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
                 result["pubDate"] = dt.strftime("%a, %d %b %Y %H:%M:%S GMT")
             except Exception:
-                # fallback: lascia raw o ignora
                 pass
 
         # AUTHOR
@@ -134,12 +133,10 @@ def parse_article(url):
             result["image"] = image_url
 
     except Exception as e:
-        # Non bloccare: ritorna ciò che ha estratto finora
-        logging_msg = f"Errore in parse_article({url}): {e}"
         try:
             import logging
-            logging.warning(logging_msg)
+            logging.warning(f"Errore in parse_article({url}): {e}")
         except ImportError:
-            pass  # nel caso non sia disponibile
+            pass
 
     return result
