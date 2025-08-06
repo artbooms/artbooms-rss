@@ -5,54 +5,41 @@ import html
 
 def parse_article(url):
     """
-    Analizza l'articolo di Artbooms dato un URL.
-    Ritorna un dizionario con dati per il feed RSS.
+    Estrae contenuti base da un articolo Artbooms.
+    Ritorna un dizionario con le chiavi richieste dal feed RSS.
     """
     try:
         res = requests.get(url, timeout=10)
         res.raise_for_status()
         soup = BeautifulSoup(res.text, 'html.parser')
 
-        # Titolo alternativo, se serve
-        title_tag = soup.find('title')
-        title = title_tag.text.strip() if title_tag else "Articolo Artbooms"
-
-        # Descrizione: testo del contenuto principale
-        main_content = soup.select_one('div.sqs-block-content')
-        if not main_content:
+        # Descrizione: prendi il contenuto centrale
+        content = soup.select_one('div.sqs-block-content')
+        if not content:
             description = "<p>Contenuto non disponibile</p>"
         else:
-            for tag in main_content(['script', 'iframe', 'style']):
+            for tag in content(['script', 'style', 'iframe']):
                 tag.decompose()
-            description = str(main_content)
+            description = str(content)
 
-        # Autore non disponibile — metti None o vuoto
-        author = None
-
-        # Data fittizia per ora
-        pub_date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
-
-        # Prova a trovare un'immagine, se c'è
+        # Immagine (opzionale)
         image_tag = soup.find('img')
         image = image_tag['src'] if image_tag and image_tag.has_attr('src') else None
 
+        # Data fittizia (nel formato RSS)
+        pub_date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
+
         return {
-            "title": title,
-            "link": url,
-            "guid": url,
-            "pubDate": pub_date,
-            "author": author,
             "description": description,
-            "image": image
+            "image": image,
+            "author": None,
+            "pubDate": pub_date,
         }
 
     except Exception as e:
         return {
-            "title": "Errore nel parsing",
-            "link": url,
-            "guid": url,
-            "pubDate": datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT'),
+            "description": f"<p>Errore parsing articolo: {html.escape(str(e))}</p>",
+            "image": None,
             "author": None,
-            "description": f"<p>Errore durante il parsing: {html.escape(str(e))}</p>",
-            "image": None
+            "pubDate": datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT'),
         }
