@@ -3,179 +3,158 @@ import requests
 from bs4 import BeautifulSoup
 import datetime
 import html
+import logging
 import json
 import os
-import logging
-
-from article_parser import parse_article
+import time
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 FEED_URL = 'https://www.artbooms.com/archivio-completo'
 CACHE_FILE = 'articles_cache.json'
-
-XML_ESCAPE_REPLACEMENTS = {
-    '…': '...', '’': "'", '“': '"', '”': '"', '–': '-', '—': '-', '\u00A0': ' ',
-}
+PAGE_SIZE = 5  # articoli per batch
+DELAY_BETWEEN_BATCHES = 1  # secondi di pausa tra batch per evitare timeout o sovraccarico
 
 def clean_text(text):
     if not text:
         return ''
-    for bad, good in XML_ESCAPE_REPLACEMENTS.items():
+    replacements = {
+        '…': '...', '’': "'", '“': '"', '”': '"', '–': '-', '—': '-', '\xa0': ' ',
+    }
+    for bad, good in replacements.items():
         text = text.replace(bad, good)
-    return html.escape(text.strip(), quote=True)
+    return html.escape(text, quote=True)
 
-def load_cache():
-    if os.path.exists(CACHE_FILE):
-        with open(CACHE_FILE, 'r', encoding='utf-8') as f:
-            try:
-                return json.load(f)
-            except Exception as e:
-                logging.warning(f"Impossibile leggere cache: {e}")
-                return {}
-    return {}
+def fetch_article_details(url):
+    try:
+        res = requests.get(url, timeout=5)
+        res.raise_for_status()
+        soup = BeautifulSoup(res.text, 'html.parser')
 
-def save_cache(cache):
-    with open(CACHE_FILE, 'w', encoding='utf-8') as f:
-        json.dump(cache, f, indent=2, ensure_ascii=False)
+        description_tag = soup.find('meta', property='og:description') or soup.find('meta', itemprop='description')
+        description = description_tag['content'] if description_tag else ''
 
-def get_articles():
-    cache = load_cache()
-    res = requests.get(FEED_URL, timeout=8)
+        image_tag = soup.find('meta', property='og:image') or soup.find('meta', itemprop='image')
+        image = image_tag['content'] if image_tag else ''
+
+        author_tag = soup.find('meta', itemprop='author')
+        author = author_tag['content'] if author_tag else ''
+
+        date_published_tag = soup.find('meta', itemprop='datePublished')
+        date_published = date_published_tag['content'] if date_published_tag else ''
+
+        date_modified_tag = soup.find('meta', itemprop='dateModified')
+        date_modified = date_modified_tag['content'] if date_modified_tag else ''
+
+        return {
+            'description': description,
+            'image': image,
+            'author': author,
+            'date_published': date_published,
+            'date_modified': date_modified,
+        }
+    except Exception as e:
+        logging.warning(f"Errore fetching details da {url}: {e}")
+        return {}
+
+def parse_date_rss_format(datestr):
+    try:
+        if not datestr:
+            return datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
+        datestr = datestr.replace('+0200', '')
+        dt = datetime.datetime.strptime(datestr, '%Y-%m-%dT%H:%M:%S')
+        return dt.strftime('%a, %d %b %Y %H:%M:%S GMT')
+    except Exception:
+        return datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
+
+def fetch_all_articles_basic():
+    res = requests.get(FEED_URL)
     res.raise_for_status()
     soup = BeautifulSoup(res.text, 'html.parser')
 
-    items = []
+    articles = []
     for li in soup.select('li.archive-item'):
         title_tag = li.select_one('a.archive-item-link')
         date_tag = li.select_one('span.archive-item-date-before')
-        link_fragment = title_tag['href'] if title_tag else ''
+        link = title_tag['href'] if title_tag else ''
         title = title_tag.text.strip() if title_tag else 'No title'
         date_str = date_tag.text.strip() if date_tag else ''
 
         try:
-            pub_date_archive = datetime.datetime.strptime(date_str, '%b %d, %Y').strftime('%a, %d %b %Y %H:%M:%S GMT')
+            pub_date = datetime.datetime.strptime(date_str, '%b %d, %Y').strftime('%a, %d %b %Y %H:%M:%S GMT')
         except Exception:
-            pub_date_archive = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
+            pub_date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
 
-        full_link = 'https://www.artbooms.com' + link_fragment
+        full_link = 'https://www.artbooms.com' + link
+        articles.append({
+            'title': title,
+            'link': full_link,
+            'pub_date': pub_date,
+        })
+    return articles
 
-        # Controlla cache per questo articolo
-        cached = cache.get(full_link)
-        fetch_new = True
+def load_cache():
+    if os.path.exists(CACHE_FILE):
+        with open(CACHE_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return None
 
-        if cached and cached.get('dateModified'):
-            try:
-                # Confronta date modified
-                old_mod = cached['dateModified']
-                # Se nuovo parsing fallisce, teniamo i dati vecchi, altrimenti aggiorniamo
-                parsed = parse_article(full_link)
-                new_mod = parsed.get('dateModified')
-                if new_mod and new_mod == old_mod:
-                    # Nessuna modifica, usa cache
-                    items.append({
-                        'title': cached.get('title', title),
-                        'link': full_link,
-                        'guid': full_link,
-                        'pub_date': cached.get('pubDate', pub_date_archive),
-                        'author': cached.get('author'),
-                        'description': cached.get('description'),
-                        'image': cached.get('image'),
-                    })
-                    fetch_new = False
-                else:
-                    # Articolo modificato o nuova data
-                    fetch_new = True
-                    detailed = parsed
-            except Exception as e:
-                logging.warning(f"Errore parsing articolo cached {full_link}: {e}")
-                detailed = cached
-                fetch_new = False
-        else:
-            # Non in cache o senza dateModified, scarica dati completi
-            try:
-                detailed = parse_article(full_link)
-                fetch_new = True
-            except Exception as e:
-                logging.warning(f"Fallita estrazione dettagli per {full_link}: {e}")
-                detailed = {}
+def save_cache(data):
+    with open(CACHE_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
-        if fetch_new:
-            # Aggiorna cache
-            cache[full_link] = {
-                'title': title,
-                'pubDate': detailed.get('pubDate') or pub_date_archive,
-                'author': detailed.get('author'),
-                'description': detailed.get('description'),
-                'image': detailed.get('image'),
-                'dateModified': detailed.get('dateModified'),
-            }
-            items.append({
-                'title': title,
-                'link': full_link,
-                'guid': full_link,
-                'pub_date': detailed.get('pubDate') or pub_date_archive,
-                'author': detailed.get('author'),
-                'description': detailed.get('description'),
-                'image': detailed.get('image'),
+def build_cache_full():
+    logging.info("🔄 Inizio a costruire la cache completa degli articoli...")
+    articles = fetch_all_articles_basic()
+
+    detailed_articles = []
+    for i in range(0, len(articles), PAGE_SIZE):
+        batch = articles[i:i+PAGE_SIZE]
+        logging.info(f"📝 Elaborazione batch articoli {i+1} - {i+len(batch)}")
+        for art in batch:
+            details = fetch_article_details(art['link'])
+            detailed_articles.append({
+                **art,
+                **details,
             })
+        save_cache({'articles': detailed_articles})
+        logging.info(f"💾 Cache salvata con {len(detailed_articles)} articoli.")
+        time.sleep(DELAY_BETWEEN_BATCHES)
 
-    save_cache(cache)
-
-    if not items:
-        logging.warning("⚠️ Nessun articolo trovato nel parsing HTML.")
-        raise RuntimeError("Nessun articolo trovato. Verifica la struttura della pagina.")
-
-    logging.info(f"✅ Trovati {len(items)} articoli da {FEED_URL}")
-    return items
+    logging.info("✅ Cache completa costruita.")
+    return detailed_articles
 
 @app.route('/rss.xml')
 def rss():
     try:
-        articles = get_articles()
-    except Exception as e:
-        logging.error(f"Errore durante il parsing degli articoli: {e}")
-        return Response("Errore nel generare il feed RSS", status=500)
+        cache = load_cache()
+        if not cache or 'articles' not in cache:
+            # Se cache vuota o assente costruiscila
+            articles = build_cache_full()
+        else:
+            articles = cache['articles']
 
-    rss_items = ''
-    for item in articles:
-        title = clean_text(item['title'])
-        link = clean_text(item['link'])
-        guid = clean_text(item['guid'])
-        pubDate = item['pub_date']
-        author = clean_text(item.get('author') or '')
-        description = clean_text(item.get('description') or '')
-        image_url = item.get('image')
+        rss_items = ''
+        for item in articles:
+            pub_date_final = parse_date_rss_format(item.get('date_modified')) if item.get('date_modified') else item['pub_date']
 
-        rss_items += f"""
-        <item>
-            <title>{title}</title>
-            <link>{link}</link>
-            <guid isPermaLink="true">{guid}</guid>
-            <pubDate>{pubDate}</pubDate>"""
-
-        if author:
-            rss_items += f"\n            <dc:creator>{author}</dc:creator>"
-
-        if description:
-            rss_items += f"\n            <description>{description}</description>"
-
-        if image_url:
-            escaped_img = html.escape(image_url, quote=True)
             rss_items += f"""
-            <media:content url="{escaped_img}" medium="image" />"""
+            <item>
+                <title>{clean_text(item['title'])}</title>
+                <link>{clean_text(item['link'])}</link>
+                <guid isPermaLink="true">{clean_text(item['link'])}</guid>
+                <pubDate>{pub_date_final}</pubDate>
+                <description><![CDATA[{item.get('description', '')}]]></description>
+                <author>{clean_text(item.get('author', ''))}</author>
+                {f'<enclosure url="{item.get("image", "")}" type="image/jpeg" />' if item.get('image') else ''}
+            </item>"""
 
-        rss_items += "\n        </item>"
-
-    rss_feed = f"""<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0"
-     xmlns:atom="http://www.w3.org/2005/Atom"
-     xmlns:dc="http://purl.org/dc/elements/1.1/"
-     xmlns:media="http://search.yahoo.com/mrss/">
+        rss_feed = f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Artbooms RSS Feed</title>
-    <link>{FEED_URL}</link>
+    <link>https://www.artbooms.com/archivio-completo</link>
     <description>Feed dinamico degli articoli di Artbooms</description>
     <language>it-it</language>
     <lastBuildDate>{datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')}</lastBuildDate>
@@ -184,7 +163,11 @@ def rss():
   </channel>
 </rss>"""
 
-    return Response(rss_feed.strip(), content_type='application/rss+xml; charset=utf-8')
+        return Response(rss_feed.strip(), content_type='application/rss+xml; charset=utf-8')
+
+    except Exception as e:
+        logging.error(f"Errore durante il parsing degli articoli: {e}")
+        return Response("Errore nel generare il feed RSS", status=500)
 
 if __name__ == '__main__':
     app.run(debug=True)
