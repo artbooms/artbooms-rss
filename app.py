@@ -1,132 +1,124 @@
 from flask import Flask, Response
 import requests
 from bs4 import BeautifulSoup
-import datetime
-import html
-import logging
+from datetime import datetime
 import time
+import xml.etree.ElementTree as ET
 
 app = Flask(__name__)
-logging.basicConfig(level=logging.INFO)
 
-FEED_URL = 'https://www.artbooms.com/archivio-completo'
-BASE_URL = 'https://www.artbooms.com'
+ARCHIVE_URL = "https://www.artbooms.com/archivio-completo"
 
-def clean_text(text):
-    if not text:
-        return ''
-    replacements = {
-        '…': '...', '’': "'", '“': '"', '”': '"', '–': '-', '—': '-', ' ': ' ',
-    }
-    for bad, good in replacements.items():
-        text = text.replace(bad, good)
-    return html.escape(text, quote=True)
+HEADERS = {
+    "User-Agent": "Mozilla/5.0"
+}
 
-def extract_metadata(article_url):
+
+def extract_article_links():
+    res = requests.get(ARCHIVE_URL, headers=HEADERS)
+    soup = BeautifulSoup(res.content, "html.parser")
+    links = []
+
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
+        if "/blog/" in href and href not in links:
+            full_url = f"https://www.artbooms.com{href}" if href.startswith("/") else href
+            links.append(full_url)
+
+    return links
+
+
+def parse_article(url):
     try:
-        res = requests.get(article_url, timeout=10)
-        soup = BeautifulSoup(res.text, 'html.parser')
+        res = requests.get(url, headers=HEADERS, timeout=10)
+        soup = BeautifulSoup(res.content, "html.parser")
 
-        description = soup.find('meta', {'itemprop': 'description'})
-        image = soup.find('meta', {'itemprop': 'image'})
-        author = soup.find('meta', {'itemprop': 'author'})
-        date_published = soup.find('meta', {'itemprop': 'datePublished'})
-        date_modified = soup.find('meta', {'itemprop': 'dateModified'})
+        # SEO title
+        title_tag = soup.find("meta", property="og:title")
+        title = title_tag["content"] if title_tag else soup.title.string.strip()
+
+        # Description
+        desc_tag = soup.find("meta", property="og:description")
+        description = desc_tag["content"] if desc_tag else ""
+
+        # Author
+        author_tag = soup.find("meta", attrs={"itemprop": "author"})
+        author = author_tag["content"] if author_tag else "Artbooms"
+
+        # Pub date
+        pubdate_tag = soup.find("meta", attrs={"itemprop": "datePublished"})
+        pub_date = pubdate_tag["content"] if pubdate_tag else None
+
+        # Last modified
+        mod_tag = soup.find("meta", attrs={"itemprop": "dateModified"})
+        last_modified = mod_tag["content"] if mod_tag else pub_date
+
+        # Image
+        img_tag = soup.find("meta", property="og:image")
+        image_url = img_tag["content"] if img_tag else None
 
         return {
-            'description': description['content'] if description else '',
-            'image': image['content'] if image else '',
-            'author': author['content'] if author else '',
-            'datePublished': date_published['content'] if date_published else '',
-            'dateModified': date_modified['content'] if date_modified else ''
+            "title": title,
+            "link": url,
+            "description": description,
+            "author": author,
+            "pubDate": pub_date,
+            "lastModified": last_modified,
+            "image": image_url
         }
 
     except Exception as e:
-        logging.warning(f"Errore durante l'estrazione metadati da {article_url}: {e}")
-        return {
-            'description': '',
-            'image': '',
-            'author': '',
-            'datePublished': '',
-            'dateModified': ''
-        }
+        print(f"Errore su {url}: {e}")
+        return None
 
-def get_articles(limit=10):
-    res = requests.get(FEED_URL, timeout=15)
-    res.raise_for_status()
-    soup = BeautifulSoup(res.text, 'html.parser')
 
-    items = []
-    for li in soup.select('li.archive-item')[:limit]:
-        title_tag = li.select_one('a.archive-item-link')
-        date_tag = li.select_one('span.archive-item-date-before')
-
-        link = BASE_URL + title_tag['href']
-        title = title_tag.text.strip()
-        date_str = date_tag.text.strip()
-
-        try:
-            pub_date = datetime.datetime.strptime(date_str, '%b %d, %Y').strftime('%a, %d %b %Y %H:%M:%S GMT')
-        except Exception:
-            pub_date = datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')
-
-        meta = extract_metadata(link)
-
-        items.append({
-            'title': title,
-            'link': link,
-            'pub_date': pub_date,
-            'description': meta['description'],
-            'image': meta['image'],
-            'author': meta['author'],
-            'dateModified': meta['dateModified']
-        })
-
-        time.sleep(1.5)  # rallenta per evitare timeout su Render
-
-    logging.info(f"Trovati {len(items)} articoli")
-    return items
-
-@app.route('/rss.xml')
+@app.route("/rss.xml")
 def rss():
-    try:
-        articles = get_articles(limit=10)  # inizia con 10 articoli
-    except Exception as e:
-        logging.error(f"Errore nel recupero articoli: {e}")
-        return Response("Errore nel generare il feed RSS", status=500)
+    articles = []
+    links = extract_article_links()
 
-    rss_items = ''
+    for link in links:
+        article = parse_article(link)
+        if article:
+            articles.append(article)
+        time.sleep(1.5)  # Attendi 1.5 secondi tra le richieste
+
+    rss = ET.Element("rss", version="2.0", attrib={"xmlns:atom": "http://www.w3.org/2005/Atom"})
+    channel = ET.SubElement(rss, "channel")
+
+    ET.SubElement(channel, "title").text = "Artbooms RSS Feed"
+    ET.SubElement(channel, "link").text = ARCHIVE_URL
+    ET.SubElement(channel, "description").text = "Feed dinamico e arricchito"
+    ET.SubElement(channel, "language").text = "it-it"
+    ET.SubElement(channel, "lastBuildDate").text = datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
+
+    ET.SubElement(channel, "atom:link", {
+        "href": "https://artbooms-rss.onrender.com/rss.xml",
+        "rel": "self",
+        "type": "application/rss+xml"
+    })
+
     for item in articles:
-        rss_items += f"""
-        <item>
-            <title>{clean_text(item['title'])}</title>
-            <link>{clean_text(item['link'])}</link>
-            <guid isPermaLink="true">{clean_text(item['link'])}</guid>
-            <pubDate>{item['pub_date']}</pubDate>
-            <description>{clean_text(item['description'])}</description>
-            <author>{clean_text(item['author'])}</author>
-        </item>"""
+        item_el = ET.SubElement(channel, "item")
+        ET.SubElement(item_el, "title").text = item["title"]
+        ET.SubElement(item_el, "link").text = item["link"]
+        ET.SubElement(item_el, "guid", isPermaLink="true").text = item["link"]
+        ET.SubElement(item_el, "pubDate").text = datetime.strptime(item["pubDate"], "%Y-%m-%d").strftime("%a, %d %b %Y 00:00:00 GMT") if item["pubDate"] else ""
+        ET.SubElement(item_el, "description").text = item["description"]
+        ET.SubElement(item_el, "author").text = item["author"]
 
-    rss_feed = f"""<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>Artbooms RSS Feed</title>
-    <link>{FEED_URL}</link>
-    <description>Feed dinamico e arricchito</description>
-    <language>it-it</language>
-    <lastBuildDate>{datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')}</lastBuildDate>
-    <atom:link href="https://artbooms-rss.onrender.com/rss.xml" rel="self" type="application/rss+xml" />
-    {rss_items}
-  </channel>
-</rss>"""
+        # image as enclosure
+        if item["image"]:
+            ET.SubElement(item_el, "enclosure", url=item["image"], type="image/webp")
 
-    return Response(rss_feed.strip(), content_type='application/rss+xml; charset=utf-8')
+    xml_str = ET.tostring(rss, encoding="utf-8", method="xml")
+    return Response(xml_str, mimetype="application/rss+xml")
 
-@app.route('/test-links')
-def test_links():
-    try:
-        articles = get_articles(limit=3)
-        links = [a['link'] for a in articles]
-        return '<br>'.join(links)
-    except Exception as e:
-        return f"Errore: {e}"
+
+@app.route("/")
+def index():
+    return "RSS feed disponibile su /rss.xml"
+
+
+if __name__ == "__main__":
+    app.run()
