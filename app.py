@@ -1,124 +1,68 @@
-from flask import Flask, Response
+from flask import Flask, Response, request
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import time
-import xml.etree.ElementTree as ET
+import math
 
 app = Flask(__name__)
 
-ARCHIVE_URL = "https://www.artbooms.com/archivio-completo"
-
-HEADERS = {
-    "User-Agent": "Mozilla/5.0"
-}
+BASE_URL = 'https://www.artbooms.com'
+ARCHIVE_URL = f'{BASE_URL}/archivio-completo'
+ARTICLES_PER_PAGE = 5
 
 
-def extract_article_links():
-    res = requests.get(ARCHIVE_URL, headers=HEADERS)
-    soup = BeautifulSoup(res.content, "html.parser")
-    links = []
-
-    for a in soup.find_all("a", href=True):
-        href = a["href"]
-        if "/blog/" in href and href not in links:
-            full_url = f"https://www.artbooms.com{href}" if href.startswith("/") else href
-            links.append(full_url)
-
-    return links
+def get_article_links():
+    response = requests.get(ARCHIVE_URL)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    links = soup.select('a[href*="/blog/"]')
+    urls = []
+    for link in links:
+        href = link['href']
+        if href.startswith('/blog/') and (BASE_URL + href) not in urls:
+            urls.append(BASE_URL + href)
+    return urls
 
 
-def parse_article(url):
+def extract_article_data(url):
     try:
-        res = requests.get(url, headers=HEADERS, timeout=10)
-        soup = BeautifulSoup(res.content, "html.parser")
+        response = requests.get(url, timeout=10)
+        soup = BeautifulSoup(response.text, 'html.parser')
 
-        # SEO title
-        title_tag = soup.find("meta", property="og:title")
-        title = title_tag["content"] if title_tag else soup.title.string.strip()
+        title = soup.find("meta", property="og:title")
+        title = title['content'] if title else soup.title.string.strip()
 
-        # Description
-        desc_tag = soup.find("meta", property="og:description")
-        description = desc_tag["content"] if desc_tag else ""
+        pub_date_tag = soup.find(attrs={"itemprop": "datePublished"})
+        pub_date = pub_date_tag['content'] if pub_date_tag else None
 
-        # Author
-        author_tag = soup.find("meta", attrs={"itemprop": "author"})
-        author = author_tag["content"] if author_tag else "Artbooms"
+        mod_date_tag = soup.find(attrs={"itemprop": "dateModified"})
+        mod_date = mod_date_tag['content'] if mod_date_tag else pub_date
 
-        # Pub date
-        pubdate_tag = soup.find("meta", attrs={"itemprop": "datePublished"})
-        pub_date = pubdate_tag["content"] if pubdate_tag else None
+        description_tag = soup.find("meta", attrs={"name": "description"})
+        description = description_tag['content'] if description_tag else ''
 
-        # Last modified
-        mod_tag = soup.find("meta", attrs={"itemprop": "dateModified"})
-        last_modified = mod_tag["content"] if mod_tag else pub_date
+        author_tag = soup.find(attrs={"itemprop": "author"})
+        author = author_tag.get_text(strip=True) if author_tag else 'Artbooms'
 
-        # Image
-        img_tag = soup.find("meta", property="og:image")
-        image_url = img_tag["content"] if img_tag else None
+        image_tag = soup.find("meta", property="og:image")
+        image_url = image_tag['content'] if image_tag else ''
 
         return {
             "title": title,
             "link": url,
+            "guid": url,
+            "pubDate": pub_date,
+            "modDate": mod_date,
             "description": description,
             "author": author,
-            "pubDate": pub_date,
-            "lastModified": last_modified,
             "image": image_url
         }
-
     except Exception as e:
-        print(f"Errore su {url}: {e}")
+        print(f"Errore nell'articolo {url}: {e}")
         return None
 
 
-@app.route("/rss.xml")
-def rss():
-    articles = []
-    links = extract_article_links()
-
-    for link in links:
-        article = parse_article(link)
-        if article:
-            articles.append(article)
-        time.sleep(1.5)  # Attendi 1.5 secondi tra le richieste
-
-    rss = ET.Element("rss", version="2.0", attrib={"xmlns:atom": "http://www.w3.org/2005/Atom"})
-    channel = ET.SubElement(rss, "channel")
-
-    ET.SubElement(channel, "title").text = "Artbooms RSS Feed"
-    ET.SubElement(channel, "link").text = ARCHIVE_URL
-    ET.SubElement(channel, "description").text = "Feed dinamico e arricchito"
-    ET.SubElement(channel, "language").text = "it-it"
-    ET.SubElement(channel, "lastBuildDate").text = datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S GMT")
-
-    ET.SubElement(channel, "atom:link", {
-        "href": "https://artbooms-rss.onrender.com/rss.xml",
-        "rel": "self",
-        "type": "application/rss+xml"
-    })
-
-    for item in articles:
-        item_el = ET.SubElement(channel, "item")
-        ET.SubElement(item_el, "title").text = item["title"]
-        ET.SubElement(item_el, "link").text = item["link"]
-        ET.SubElement(item_el, "guid", isPermaLink="true").text = item["link"]
-        ET.SubElement(item_el, "pubDate").text = datetime.strptime(item["pubDate"], "%Y-%m-%d").strftime("%a, %d %b %Y 00:00:00 GMT") if item["pubDate"] else ""
-        ET.SubElement(item_el, "description").text = item["description"]
-        ET.SubElement(item_el, "author").text = item["author"]
-
-        # image as enclosure
-        if item["image"]:
-            ET.SubElement(item_el, "enclosure", url=item["image"], type="image/webp")
-
-    xml_str = ET.tostring(rss, encoding="utf-8", method="xml")
-    return Response(xml_str, mimetype="application/rss+xml")
-
-
-@app.route("/")
-def index():
-    return "RSS feed disponibile su /rss.xml"
-
-
-if __name__ == "__main__":
-    app.run()
+def format_rss_item(article):
+    item = f"""
+    <item>
+        <title>{article['title']
