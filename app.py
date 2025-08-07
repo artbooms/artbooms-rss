@@ -3,9 +3,9 @@ import requests
 from bs4 import BeautifulSoup
 import datetime
 import html
-import logging
 import json
 import os
+import logging
 
 from article_parser import parse_article
 
@@ -19,7 +19,6 @@ XML_ESCAPE_REPLACEMENTS = {
     '…': '...', '’': "'", '“': '"', '”': '"', '–': '-', '—': '-', '\u00A0': ' ',
 }
 
-
 def clean_text(text):
     if not text:
         return ''
@@ -27,32 +26,27 @@ def clean_text(text):
         text = text.replace(bad, good)
     return html.escape(text.strip(), quote=True)
 
-
 def load_cache():
     if os.path.exists(CACHE_FILE):
         with open(CACHE_FILE, 'r', encoding='utf-8') as f:
             try:
                 return json.load(f)
-            except json.JSONDecodeError:
+            except Exception as e:
+                logging.warning(f"Impossibile leggere cache: {e}")
                 return {}
     return {}
 
-
 def save_cache(cache):
     with open(CACHE_FILE, 'w', encoding='utf-8') as f:
-        json.dump(cache, f, ensure_ascii=False, indent=2)
-
+        json.dump(cache, f, indent=2, ensure_ascii=False)
 
 def get_articles():
-    logging.info("🔄 Inizio parsing archivio...")
-    res = requests.get(FEED_URL, timeout=10)
+    cache = load_cache()
+    res = requests.get(FEED_URL, timeout=8)
     res.raise_for_status()
     soup = BeautifulSoup(res.text, 'html.parser')
 
-    cache = load_cache()
-    updated_cache = cache.copy()
     items = []
-
     for li in soup.select('li.archive-item'):
         title_tag = li.select_one('a.archive-item-link')
         date_tag = li.select_one('span.archive-item-date-before')
@@ -67,15 +61,57 @@ def get_articles():
 
         full_link = 'https://www.artbooms.com' + link_fragment
 
+        # Controlla cache per questo articolo
         cached = cache.get(full_link)
-        if cached and cached.get('pub_date') == pub_date_archive:
-            logging.info(f"✅ Usato da cache: {full_link}")
-            items.append(cached)
-        else:
-            logging.info(f"🆕 Parsing nuovo o aggiornato: {full_link}")
-            detailed = parse_article(full_link)
+        fetch_new = True
 
-            article_data = {
+        if cached and cached.get('dateModified'):
+            try:
+                # Confronta date modified
+                old_mod = cached['dateModified']
+                # Se nuovo parsing fallisce, teniamo i dati vecchi, altrimenti aggiorniamo
+                parsed = parse_article(full_link)
+                new_mod = parsed.get('dateModified')
+                if new_mod and new_mod == old_mod:
+                    # Nessuna modifica, usa cache
+                    items.append({
+                        'title': cached.get('title', title),
+                        'link': full_link,
+                        'guid': full_link,
+                        'pub_date': cached.get('pubDate', pub_date_archive),
+                        'author': cached.get('author'),
+                        'description': cached.get('description'),
+                        'image': cached.get('image'),
+                    })
+                    fetch_new = False
+                else:
+                    # Articolo modificato o nuova data
+                    fetch_new = True
+                    detailed = parsed
+            except Exception as e:
+                logging.warning(f"Errore parsing articolo cached {full_link}: {e}")
+                detailed = cached
+                fetch_new = False
+        else:
+            # Non in cache o senza dateModified, scarica dati completi
+            try:
+                detailed = parse_article(full_link)
+                fetch_new = True
+            except Exception as e:
+                logging.warning(f"Fallita estrazione dettagli per {full_link}: {e}")
+                detailed = {}
+
+        if fetch_new:
+            # Aggiorna cache
+            cache[full_link] = {
+                'title': title,
+                'pubDate': detailed.get('pubDate') or pub_date_archive,
+                'author': detailed.get('author'),
+                'description': detailed.get('description'),
+                'image': detailed.get('image'),
+                'dateModified': detailed.get('dateModified'),
+            }
+            items.append({
                 'title': title,
                 'link': full_link,
                 'guid': full_link,
@@ -83,6 +119,72 @@ def get_articles():
                 'author': detailed.get('author'),
                 'description': detailed.get('description'),
                 'image': detailed.get('image'),
-            }
+            })
 
-            updated_cache[full_link] = article_data
+    save_cache(cache)
+
+    if not items:
+        logging.warning("⚠️ Nessun articolo trovato nel parsing HTML.")
+        raise RuntimeError("Nessun articolo trovato. Verifica la struttura della pagina.")
+
+    logging.info(f"✅ Trovati {len(items)} articoli da {FEED_URL}")
+    return items
+
+@app.route('/rss.xml')
+def rss():
+    try:
+        articles = get_articles()
+    except Exception as e:
+        logging.error(f"Errore durante il parsing degli articoli: {e}")
+        return Response("Errore nel generare il feed RSS", status=500)
+
+    rss_items = ''
+    for item in articles:
+        title = clean_text(item['title'])
+        link = clean_text(item['link'])
+        guid = clean_text(item['guid'])
+        pubDate = item['pub_date']
+        author = clean_text(item.get('author') or '')
+        description = clean_text(item.get('description') or '')
+        image_url = item.get('image')
+
+        rss_items += f"""
+        <item>
+            <title>{title}</title>
+            <link>{link}</link>
+            <guid isPermaLink="true">{guid}</guid>
+            <pubDate>{pubDate}</pubDate>"""
+
+        if author:
+            rss_items += f"\n            <dc:creator>{author}</dc:creator>"
+
+        if description:
+            rss_items += f"\n            <description>{description}</description>"
+
+        if image_url:
+            escaped_img = html.escape(image_url, quote=True)
+            rss_items += f"""
+            <media:content url="{escaped_img}" medium="image" />"""
+
+        rss_items += "\n        </item>"
+
+    rss_feed = f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+     xmlns:atom="http://www.w3.org/2005/Atom"
+     xmlns:dc="http://purl.org/dc/elements/1.1/"
+     xmlns:media="http://search.yahoo.com/mrss/">
+  <channel>
+    <title>Artbooms RSS Feed</title>
+    <link>{FEED_URL}</link>
+    <description>Feed dinamico degli articoli di Artbooms</description>
+    <language>it-it</language>
+    <lastBuildDate>{datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S GMT')}</lastBuildDate>
+    <atom:link href="https://artbooms-rss.onrender.com/rss.xml" rel="self" type="application/rss+xml" />
+    {rss_items}
+  </channel>
+</rss>"""
+
+    return Response(rss_feed.strip(), content_type='application/rss+xml; charset=utf-8')
+
+if __name__ == '__main__':
+    app.run(debug=True)
