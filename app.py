@@ -12,7 +12,7 @@ app = Flask(__name__)
 ARCHIVE_URL = 'https://www.artbooms.com/archivio-completo'
 BASE_URL = 'https://www.artbooms.com'
 CACHE_FILE = 'articles_cache.json'
-ARTICLES_PER_RUN = 3
+ARTICLES_PER_RUN = 10  # Carica 10 articoli per volta
 
 
 def fetch_archive_links():
@@ -27,33 +27,33 @@ def fetch_article_data(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    title = soup.find('meta', property='og:title')
-    if title:
-        title = title['content']
-    else:
-        title = soup.title.text.strip()
+    def get_meta(property_name):
+        tag = soup.find('meta', property=property_name)
+        return tag['content'] if tag else ''
 
-    description = soup.find('meta', attrs={'name': 'description'})
-    description = description['content'] if description else ''
+    def get_itemprop(name):
+        tag = soup.find(attrs={'itemprop': name})
+        return tag['content'] if tag and 'content' in tag.attrs else tag.text.strip() if tag else ''
 
-    author_tag = soup.find(itemprop='author')
-    author = author_tag.text.strip() if author_tag else ''
+    title = get_meta('og:title') or soup.title.text.strip()
+    description = get_meta('og:description') or ''
+    author = get_meta('article:author') or get_itemprop('author') or 'Artbooms'
+    image = get_meta('og:image') or ''
+    pub_date_raw = get_itemprop('datePublished') or '2025-01-01'
+    mod_date_raw = get_itemprop('dateModified') or pub_date_raw
 
-    date_tag = soup.find(itemprop='datePublished')
-    date = date_tag['content'] if date_tag else '2025-01-01'
-
-    image_tag = soup.find('meta', property='og:image')
-    image = image_tag['content'] if image_tag else ''
+    pub_date = datetime.strptime(pub_date_raw, '%Y-%m-%d')
+    mod_date = datetime.strptime(mod_date_raw, '%Y-%m-%d')
 
     return {
         'title': title,
         'link': url,
         'guid': url,
-        'pubDate': datetime.strptime(date, '%Y-%m-%d').strftime('%a, %d %b %Y 00:00:00 GMT'),
+        'pubDate': pub_date.strftime('%a, %d %b %Y 00:00:00 GMT'),
         'description': description,
         'author': author,
         'image': image,
-        'lastUpdate': datetime.utcnow().isoformat()
+        'lastUpdate': mod_date.strftime('%Y-%m-%dT%H:%M:%SZ')
     }
 
 
@@ -80,13 +80,14 @@ def rss():
         return Response(f"Errore nel recupero dell'archivio: {str(e)}", status=500)
 
     to_parse = [url for url in archive_links if url not in done_urls][:ARTICLES_PER_RUN]
+
     for url in to_parse:
         try:
             article = fetch_article_data(url)
             cache.append(article)
             time.sleep(1.5)
         except Exception as e:
-            continue  # Silenziosamente ignora errori
+            continue
 
     save_cache(cache)
 
