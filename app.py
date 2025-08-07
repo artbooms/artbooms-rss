@@ -6,13 +6,14 @@ import xml.etree.ElementTree as ET
 import json
 import os
 import time
+import hashlib
 
 app = Flask(__name__)
 
 ARCHIVE_URL = 'https://www.artbooms.com/archivio-completo'
 BASE_URL = 'https://www.artbooms.com'
 CACHE_FILE = 'articles_cache.json'
-ARTICLES_PER_RUN = 10  # Carica 10 articoli per volta
+ARTICLES_PER_RUN = 10
 
 
 def fetch_archive_links():
@@ -27,33 +28,38 @@ def fetch_article_data(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    def get_meta(property_name):
-        tag = soup.find('meta', property=property_name)
-        return tag['content'] if tag else ''
+    title = soup.find('meta', property='og:title')
+    title = title['content'].strip() if title else soup.title.text.strip()
 
-    def get_itemprop(name):
-        tag = soup.find(attrs={'itemprop': name})
-        return tag['content'] if tag and 'content' in tag.attrs else tag.text.strip() if tag else ''
+    description = soup.find('meta', attrs={'name': 'description'})
+    description = description['content'].strip() if description else ''
 
-    title = get_meta('og:title') or soup.title.text.strip()
-    description = get_meta('og:description') or ''
-    author = get_meta('article:author') or get_itemprop('author') or 'Artbooms'
-    image = get_meta('og:image') or ''
-    pub_date_raw = get_itemprop('datePublished') or '2025-01-01'
-    mod_date_raw = get_itemprop('dateModified') or pub_date_raw
+    author_tag = soup.find(itemprop='author')
+    author = author_tag.text.strip() if author_tag else ''
 
-    pub_date = datetime.strptime(pub_date_raw, '%Y-%m-%d')
-    mod_date = datetime.strptime(mod_date_raw, '%Y-%m-%d')
+    date_tag = soup.find(itemprop='datePublished')
+    date_published = date_tag['content'] if date_tag else '2025-01-01'
+
+    modified_tag = soup.find(itemprop='dateModified')
+    date_modified = modified_tag['content'] if modified_tag else date_published
+
+    image_tag = soup.find('meta', property='og:image')
+    image = image_tag['content'] if image_tag else ''
+
+    # Genera un checksum per confrontare i contenuti
+    checksum = hashlib.md5((title + description + author + date_modified).encode('utf-8')).hexdigest()
 
     return {
         'title': title,
         'link': url,
         'guid': url,
-        'pubDate': pub_date.strftime('%a, %d %b %Y 00:00:00 GMT'),
+        'pubDate': datetime.strptime(date_published, '%Y-%m-%d').strftime('%a, %d %b %Y 00:00:00 GMT'),
         'description': description,
         'author': author,
         'image': image,
-        'lastUpdate': mod_date.strftime('%Y-%m-%dT%H:%M:%SZ')
+        'lastUpdate': datetime.utcnow().isoformat(),
+        'modified': date_modified,
+        'checksum': checksum
     }
 
 
@@ -72,21 +78,43 @@ def save_cache(cache):
 @app.route('/rss.xml')
 def rss():
     cache = load_cache()
-    done_urls = {a['link'] for a in cache}
+    cache_by_url = {item['link']: item for item in cache}
 
     try:
         archive_links = fetch_archive_links()
     except Exception as e:
         return Response(f"Errore nel recupero dell'archivio: {str(e)}", status=500)
 
-    to_parse = [url for url in archive_links if url not in done_urls][:ARTICLES_PER_RUN]
+    to_process = [url for url in archive_links if url not in cache_by_url]
+    modified_check = [url for url in archive_links if url in cache_by_url]
 
-    for url in to_parse:
+    processed = 0
+
+    # Aggiunge nuovi articoli
+    for url in to_process:
+        if processed >= ARTICLES_PER_RUN:
+            break
         try:
             article = fetch_article_data(url)
             cache.append(article)
+            processed += 1
             time.sleep(1.5)
-        except Exception as e:
+        except:
+            continue
+
+    # Aggiorna articoli modificati
+    for url in modified_check:
+        if processed >= ARTICLES_PER_RUN:
+            break
+        try:
+            article = fetch_article_data(url)
+            old = cache_by_url[url]
+            if old['checksum'] != article['checksum']:
+                cache = [a for a in cache if a['link'] != url]
+                cache.append(article)
+                processed += 1
+                time.sleep(1.5)
+        except:
             continue
 
     save_cache(cache)
