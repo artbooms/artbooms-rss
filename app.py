@@ -18,7 +18,6 @@ def fetch_article_urls():
         soup = BeautifulSoup(resp.text, "html.parser")
 
         urls = []
-        # Trova i link dentro <ul class="archive-item-list">
         archive_list = soup.find("ul", class_="archive-item-list")
         if not archive_list:
             logging.warning("Archivio non trovato o struttura cambiata")
