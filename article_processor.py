@@ -14,21 +14,20 @@ def parse_article(url):
 
         meta = {}
 
-        # Estraggo meta og:title, og:description, og:url, og:image, datePublished ecc.
+        # Estrazione meta tag og:* e itemprop:*
         for tag in soup.find_all("meta"):
             if tag.get("property") and tag.get("content"):
                 meta[tag["property"]] = tag["content"]
             elif tag.get("itemprop") and tag.get("content"):
                 meta[tag["itemprop"]] = tag["content"]
 
-        # Ritorno i dati utili per RSS, con fallback se manca qualcosa
         return {
             "title": meta.get("og:title") or meta.get("name") or "No title",
             "link": meta.get("og:url") or url,
             "description": meta.get("og:description") or "",
             "image": meta.get("og:image") or "",
             "date_published": meta.get("datePublished") or meta.get("article:published_time") or "",
-            "author": meta.get("itemprop:author") or "",
+            "author": meta.get("author") or "",
         }
     except Exception as e:
         logging.warning(f"Worker: errore processing {url}: {e}")
