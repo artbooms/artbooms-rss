@@ -19,7 +19,8 @@ SLEEP_BETWEEN_BATCHES = 2  # secondi di pausa per non stressare il server
 
 def fetch_archive_links():
     """Scarica tutti i link degli articoli dall'archivio."""
-    response = requests.get(ARCHIVE_URL)
+    response = requests.get(ARCHIVE_URL, timeout=10)
+    response.raise_for_status()
     soup = BeautifulSoup(response.text, 'html.parser')
     links = soup.select('a[href^="/blog/"]')
     urls = list({BASE_URL + a['href'] for a in links})
@@ -28,7 +29,8 @@ def fetch_archive_links():
 
 def fetch_article_data(url):
     """Scarica i dati SEO e le informazioni dall'articolo."""
-    response = requests.get(url)
+    response = requests.get(url, timeout=10)
+    response.raise_for_status()
     soup = BeautifulSoup(response.text, 'html.parser')
 
     title_tag = soup.find('meta', property='og:title')
@@ -80,29 +82,45 @@ def background_loader():
     while True:
         try:
             cache = load_cache()
-            done_urls = {a['link'] for a in cache}
+            cache_dict = {a['link']: a for a in cache}
             archive_links = fetch_archive_links()
 
-            # articoli ancora da caricare
-            to_parse = [u for u in archive_links if u not in done_urls]
+            # articoli ancora da processare
+            to_parse = []
+            for link in archive_links:
+                if link not in cache_dict:
+                    to_parse.append(link)
+                else:
+                    # Controlla modifiche
+                    try:
+                        latest_data = fetch_article_data(link)
+                        if latest_data['lastUpdate'] != cache_dict[link]['lastUpdate']:
+                            cache_dict[link] = latest_data
+                            print(f"Aggiornato articolo modificato: {link}")
+                    except Exception:
+                        continue
 
-            if not to_parse:
-                time.sleep(300)  # ogni 5 minuti ricontrolla nuovi articoli
-                continue
+            # salva eventuali aggiornamenti da modifiche
+            save_cache(list(cache_dict.values()))
 
-            batch = to_parse[:ARTICLES_PER_BATCH]
-            for url in batch:
-                try:
-                    article = fetch_article_data(url)
-                    cache.append(article)
-                    save_cache(cache)
-                    time.sleep(1)
-                except Exception:
-                    continue
+            # batch caricamento nuovi
+            if to_parse:
+                batch = to_parse[:ARTICLES_PER_BATCH]
+                for url in batch:
+                    try:
+                        article = fetch_article_data(url)
+                        cache_dict[url] = article
+                        save_cache(list(cache_dict.values()))
+                        time.sleep(1)
+                    except Exception:
+                        continue
+                time.sleep(SLEEP_BETWEEN_BATCHES)
+            else:
+                # archivio completo → ricontrolla ogni 5 min
+                time.sleep(300)
 
-            time.sleep(SLEEP_BETWEEN_BATCHES)
-
-        except Exception:
+        except Exception as e:
+            print(f"Errore loader: {e}")
             time.sleep(60)
 
 
@@ -140,6 +158,5 @@ def rss():
 
 
 if __name__ == '__main__':
-    # Avvia caricamento in background
     threading.Thread(target=background_loader, daemon=True).start()
     app.run(host='0.0.0.0', port=5000)
