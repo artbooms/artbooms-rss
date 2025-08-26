@@ -42,12 +42,9 @@ def _save_cache(cache):
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=8))
 def fetch(url, etag=None, last_modified=None):
     headers = dict(HEADERS)
-    if etag:
-        headers["If-None-Match"] = etag
-    if last_modified:
-        headers["If-Modified-Since"] = last_modified
-    r = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
-    return r
+    if etag: headers["If-None-Match"] = etag
+    if last_modified: headers["If-Modified-Since"] = last_modified
+    return requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
 
 def _hash_text(text: str) -> str:
     return hashlib.sha256((text or "").encode("utf-8")).hexdigest()
@@ -55,8 +52,7 @@ def _hash_text(text: str) -> str:
 def _scan_archive(force=False):
     r = fetch(ARCHIVE_URL)
     r.raise_for_status()
-    links = extract_article_links(r.text, BASE_URL)
-    return links
+    return extract_article_links(r.text, BASE_URL)
 
 def _process_one(url: str, cache_item: dict | None, force=False):
     etag = cache_item.get("etag") if cache_item else None
@@ -67,10 +63,8 @@ def _process_one(url: str, cache_item: dict | None, force=False):
     except Exception:
         return cache_item, False
 
-    if r.status_code == 304 and cache_item:
-        return cache_item, False
-    if r.status_code != 200:
-        return cache_item, False
+    if r.status_code == 304 and cache_item: return cache_item, False
+    if r.status_code != 200: return cache_item, False
 
     item = parse_article(r.text, url, default_author=DEFAULT_AUTHOR)
     text_hash = _hash_text(item.get("content_text"))
@@ -82,7 +76,6 @@ def _process_one(url: str, cache_item: dict | None, force=False):
         "last_modified": headers.get("Last-Modified"),
         "content_hash": text_hash,
     })
-
     return item, changed
 
 def generate_items(force=False):
@@ -105,15 +98,13 @@ def generate_items(force=False):
 
     items_list = list(cache["items"].values())
     def to_dt(s):
-        try:
-            return datetime.fromisoformat(s)
-        except Exception:
-            return datetime(1970,1,1, tzinfo=timezone.utc)
+        try: return datetime.fromisoformat(s)
+        except Exception: return datetime(1970,1,1, tzinfo=timezone.utc)
     items_list.sort(key=lambda x: to_dt(x.get("published") or x.get("modified") or "1970-01-01T00:00:00+00:00"), reverse=True)
 
     meta = {
         "self_url": os.environ.get("SELF_FEED_URL", ""),
-        "title": os.environ.get("FEED_TITLE", "ARTBOOMS - Archivio completo"),
+        "title": os.environ.get("FEED_TITLE", "ARTBOOMS – Archivio completo"),
         "description": os.environ.get("FEED_DESCRIPTION", "Tutti gli articoli di Artbooms con aggiornamenti automatici"),
         "language": os.environ.get("FEED_LANGUAGE", "it-IT"),
         "build_time": _now_utc(),
