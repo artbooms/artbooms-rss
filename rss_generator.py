@@ -21,7 +21,6 @@ def build_rss(items: list[dict], meta: dict):
     fg.language(meta.get('language', 'it-IT'))
 
     last_modified = None
-
     for it in items:
         fe = fg.add_entry()
         fe.id(it.get('url'), permalink=True)
@@ -31,18 +30,15 @@ def build_rss(items: list[dict], meta: dict):
             fe.description(it['description'])
         if it.get('author'):
             fe.author({'name': it['author']})
-        if it.get('image'):
-            fe.enclosure(it['image'], 0, 'image/jpeg')
-
         pub = _as_dt(it.get('published'))
         mod = _as_dt(it.get('modified')) or pub
         if pub:
             fe.pubDate(format_datetime(pub))
         if mod:
             fe.dc({'creator': it.get('author')})
-            fe.extensions()['content'] = {}  # ensure namespace exists
+            fe.extensions()['content'] = {}
             fe._FeedEntry__setitem('dcterms:modified', format_datetime(mod))
-            if last_modified is None or mod > last_modified:
+            if (last_modified is None) or (mod > last_modified):
                 last_modified = mod
 
     build_time = meta.get('build_time') or datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -50,11 +46,9 @@ def build_rss(items: list[dict], meta: dict):
 
     rss_bytes = fg.rss_str(pretty=True)
     etag = hashlib.sha256(rss_bytes).hexdigest()
-
     headers = {
         'ETag': f'W/"{etag}"',
         'Last-Modified': format_datetime(last_modified or build_time),
         'Cache-Control': 'max-age=300',
     }
-
     return rss_bytes, headers
