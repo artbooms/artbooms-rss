@@ -14,7 +14,7 @@ def healthz():
 def root():
     return jsonify({
         "service": "artbooms-rss",
-        "endpoints": ["/rss.xml", "/feed", "/healthz"],
+        "endpoints": ["/rss.xml", "/feed", "/healthz"]
     })
 
 @app.get("/feed")
