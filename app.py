@@ -31,4 +31,9 @@ def feed():
     if headers.get("Last-Modified"):
         resp.headers["Last-Modified"] = headers["Last-Modified"]
     if headers.get("Cache-Control"):
-        resp.headers["Cache-Control"] = headers["Cache-Con]()
+        resp.headers["Cache-Control"] = headers["Cache-Control"]
+    return resp
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", "5000"))
+    app.run(host="0.0.0.0", port=port)
