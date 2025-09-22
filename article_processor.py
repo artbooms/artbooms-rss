@@ -1,4 +1,4 @@
-iimport json
+import json
 import os
 import hashlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -178,4 +178,3 @@ def generate_items(force=False):
 
 def load_cache():
     return _load_cache()
-
