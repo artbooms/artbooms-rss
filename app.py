@@ -1,4 +1,5 @@
 import os
+import traceback
 from flask import Flask, Response, request, jsonify, make_response
 from datetime import datetime
 from article_processor import generate_items, load_cache
@@ -12,27 +13,32 @@ def healthz():
 
 @app.get("/")
 def root():
-    return jsonify({
-        "service": "artbooms-rss",
-        "endpoints": ["/rss.xml", "/feed", "/healthz"]
-    })
+    return jsonify({"service": "artbooms-rss", "endpoints": ["/rss.xml", "/feed", "/healthz"]})
 
 @app.get("/feed")
 @app.get("/rss.xml")
 def feed():
     force = request.args.get("force") == "1"
-    items, meta = generate_items(force=force)
-    xml_bytes, headers = build_rss(items, meta)
+    try:
+        items, meta = generate_items(force=force)
+        xml_bytes, headers = build_rss(items, meta)
 
-    resp = make_response(xml_bytes)
-    resp.headers["Content-Type"] = "application/rss+xml; charset=utf-8"
-    if headers.get("ETag"):
-        resp.headers["ETag"] = headers["ETag"]
-    if headers.get("Last-Modified"):
-        resp.headers["Last-Modified"] = headers["Last-Modified"]
-    if headers.get("Cache-Control"):
-        resp.headers["Cache-Control"] = headers["Cache-Control"]
-    return resp
+        resp = make_response(xml_bytes)
+        resp.headers["Content-Type"] = "application/rss+xml; charset=utf-8"
+        if headers.get("ETag"):
+            resp.headers["ETag"] = headers["ETag"]
+        if headers.get("Last-Modified"):
+            resp.headers["Last-Modified"] = headers["Last-Modified"]
+        if headers.get("Cache-Control"):
+            resp.headers["Cache-Control"] = headers["Cache-Control"]
+        return resp
+
+    except Exception as e:
+        # stampiamo il traceback sui log di Render
+        tb = traceback.format_exc()
+        print("ERROR in /rss.xml:", tb)
+        # ritorniamo il traceback in chiaro per debugging (rimuovere in produzione)
+        return Response("Internal Server Error\n\n" + tb, status=500, mimetype="text/plain")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5000"))
