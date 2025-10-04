@@ -1,8 +1,13 @@
 import re
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from dateutil import parser as dateparser
+import requests
+import logging
 
+logger = logging.getLogger("article_parser")
+
+# mappa mesi italiani -> inglese per parser robusto su date in italiano
 MONTHS_IT = {
     "gennaio":"January","febbraio":"February","marzo":"March","aprile":"April",
     "maggio":"May","giugno":"June","luglio":"July","agosto":"August",
@@ -11,98 +16,145 @@ MONTHS_IT = {
     "lug":"Jul","ago":"Aug","set":"Sep","ott":"Oct","nov":"Nov","dic":"Dec"
 }
 
-DATE_RX = re.compile(
-    r"\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?|" + 
-    "|".join(MONTHS_IT.keys()) + 
-    r")[\s\-]+\d{1,2},?[\s\-]+\d{4}\b",
-    re.I
-)
+def _normalizza_date_str(s: str):
+    if not s:
+        return s
+    s = s.strip()
+    # sostituisco mesi IT con EN per date tipo "1 gennaio 2015"
+    for it, en in MONTHS_IT.items():
+        s = re.sub(r'\b' + re.escape(it) + r'\b', en, s, flags=re.IGNORECASE)
+    return s
 
-def normalize_date(txt: str):
-    if not txt:
+def _parse_date(s):
+    if not s:
         return None
-    low = txt.strip()
-    for it,en in MONTHS_IT.items():
-        low = re.sub(rf"\b{re.escape(it)}\b", en, low, flags=re.I)
+    s = _normalizza_date_str(s)
     try:
-        return dateparser.parse(low, dayfirst=False)
+        dt = dateparser.parse(s)
+        if dt and dt.tzinfo is None:
+            # assumo UTC quando timezone non presente (puoi cambiare se preferisci altra tz)
+            from datetime import timezone
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
     except Exception:
         return None
 
-def extract_article_links(archive_html: str, base_url: str):
-    soup = BeautifulSoup(archive_html, "lxml")
-    links = []
-    for a in soup.find_all("a", href=True):
-        href = a["href"].strip()
-        if any(domain in href for domain in ["facebook.com","instagram.com","x.com","twitter.com","pinterest.com","feeds.feedburner.com"]):
-            continue
-        if "/blog/" in href:
-            full = urljoin(base_url, href)
-            if full not in links:
-                links.append(full)
-    return links
+def _first_meta(soup, attrs_list):
+    """
+    attrs_list: lista di dict come {"property":"og:image"} o {"name":"description"} o {"itemprop":"datePublished"}
+    ritorna il primo valore 'content' non vuoto
+    """
+    for attrs in attrs_list:
+        tag = soup.find("meta", attrs=attrs)
+        if tag:
+            val = tag.get("content") or tag.get("value")
+            if val:
+                return val.strip()
+    return None
 
-def parse_article(html: str, url: str, default_author: str = "ARTBOOMS"):
+def extract_article_links_from_archive_html(html: str, base_url: str):
+    """
+    Data la HTML di archivio, ritorna lista ordinata di link assoluti (senza duplicati),
+    nell'ordine in cui appaiono nella pagina.
+    """
     soup = BeautifulSoup(html, "lxml")
+    anchors = soup.find_all("a", href=True)
+    urls = []
+    seen = set()
+    for a in anchors:
+        href = a["href"].strip()
+        # ignoro ancore javascript/mailto
+        if href.startswith("javascript:") or href.startswith("mailto:"):
+            continue
+        # normalizzo a url assoluto
+        abs_url = urljoin(base_url, href)
+        # solo stesso dominio (evitiamo link esterni)
+        if urlparse(abs_url).netloc.endswith(urlparse(base_url).netloc):
+            if abs_url not in seen:
+                seen.add(abs_url)
+                urls.append(abs_url)
+    return urls
+
+def fetch_html(url, session=None, timeout=15):
+    s = session or requests.Session()
+    headers = {"User-Agent": "artbooms-rss-bot/1.0 (+https://www.artbooms.com)"}
+    r = s.get(url, headers=headers, timeout=timeout)
+    r.raise_for_status()
+    return r.text
+
+def parse_article(url, html=None, session=None):
+    """
+    Restituisce dict con chiavi:
+    url, title, description, author, published (ISO), modified (ISO),
+    content_text, image
+    """
+    try:
+        if html is None:
+            html = fetch_html(url, session=session)
+    except Exception as e:
+        logger.exception("fetch_html failed for %s: %s", url, e)
+        return {"url": url, "title": None, "description": None, "author": None,
+                "published": None, "modified": None, "content_text": "", "image": None}
+
+    soup = BeautifulSoup(html, "lxml")
+    # title
     title = None
-    og = soup.find("meta", {"property":"og:title"})
-    if og and og.get("content"):
-        title = og["content"].strip()
+    title = title or _first_meta(soup, [{"property":"og:title"}, {"name":"title"}, {"name":"twitter:title"}])
     if not title:
-        h1 = soup.find("h1")
-        if h1: title = h1.get_text(strip=True)
+        ttag = soup.find("title")
+        title = ttag.get_text(strip=True) if ttag else None
 
-    description = None
-    ogd = soup.find("meta", {"property":"og:description"})
-    if ogd and ogd.get("content"):
-        description = ogd["content"].strip()
-    if not description:
-        p = soup.find("p")
-        if p: description = p.get_text(" ", strip=True)
+    # description
+    description = _first_meta(soup, [
+        {"property":"og:description"}, {"name":"description"}, {"name":"twitter:description"},
+        {"itemprop":"description"}
+    ])
 
-    author = default_author
-    meta_author = soup.find("meta", attrs={"name": re.compile(r"author", re.I)})
-    if meta_author and meta_author.get("content"):
-        author = meta_author["content"].strip()
-    else:
-        by = soup.find(attrs={"class": re.compile(r"author|byline", re.I)})
-        if by:
-            txt = by.get_text(" ", strip=True)
-            if txt: author = txt
+    # author
+    author = _first_meta(soup, [
+        {"name":"author"}, {"property":"article:author"}, {"name":"article:author"},
+        {"itemprop":"author"}
+    ])
+    if not author:
+        # prova rel author link
+        a = soup.find("a", rel="author")
+        if a:
+            author = a.get_text(strip=True)
 
-    pub = None
-    mod = None
-    for key in [{"property":"article:published_time"},{"itemprop":"datePublished"},{"name":"pubdate"},{"name":"date"}]:
-        tag = soup.find("meta", attrs=key)
-        if tag and tag.get("content"):
-            pub = normalize_date(tag["content"]) or pub
-    for key in [{"property":"article:modified_time"},{"property":"og:updated_time"},{"itemprop":"dateModified"},{"name":"lastmod"},{"name":"modified"}]:
-        tag = soup.find("meta", attrs=key)
-        if tag and tag.get("content"):
-            mod = normalize_date(tag["content"]) or mod
+    # published / modified
+    pub = _first_meta(soup, [{"property":"article:published_time"}, {"name":"pubdate"},
+                             {"itemprop":"datePublished"}, {"name":"date"}])
+    mod = _first_meta(soup, [{"property":"article:modified_time"}, {"itemprop":"dateModified"}, {"name":"last-modified"}])
 
+    # time tags
     if not pub:
-        header = soup.find("h1")
-        block_text = " ".join((header.find_parent().get_text(" ", strip=True) if header and header.find_parent() else soup.get_text(" ", strip=True))[:1200].split())
-        m = DATE_RX.search(block_text)
-        if m:
-            pub = normalize_date(m.group(0))
+        time_tag = soup.find("time")
+        if time_tag:
+            pub = time_tag.get("datetime") or time_tag.get_text(strip=True)
 
-    if (not mod) and pub:
-        mod = pub
+    # try to parse both
+    pub_dt = _parse_date(pub)
+    mod_dt = _parse_date(mod) or pub_dt
 
-    main = soup.find("article") or soup.find("main") or soup.find("div", class_=re.compile(r"post|entry|article|content|sqs-block-content", re.I))
+    # content text (fallback)
+    main = soup.find("article") or soup.find("main") or soup.find(class_=re.compile(r"post|entry|article|content|sqs-block-content", re.I))
     content_text = main.get_text(" ", strip=True) if main else soup.get_text(" ", strip=True)
-    image_tag = soup.find("meta", {"property":"og:image"})
-    image_url = image_tag["content"] if image_tag and image_tag.get("content") else None
+
+    # image
+    image_url = _first_meta(soup, [{"property":"og:image"}, {"name":"twitter:image"}, {"itemprop":"image"}])
+    if not image_url:
+        # rel image_src
+        link_img = soup.find("link", rel="image_src")
+        if link_img and link_img.get("href"):
+            image_url = link_img.get("href")
 
     return {
         "url": url,
         "title": title or url,
         "description": description or (content_text[:280] if content_text else None),
         "author": author,
-        "published": pub.isoformat() if pub else None,
-        "modified": mod.isoformat() if mod else None,
+        "published": pub_dt.isoformat() if pub_dt else None,
+        "modified": mod_dt.isoformat() if mod_dt else None,
         "content_text": content_text or "",
         "image": image_url
     }
