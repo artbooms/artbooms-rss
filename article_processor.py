@@ -1,43 +1,36 @@
-import json
 import os
+import json
+import time
 import hashlib
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone, timedelta
+import logging
+from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 import requests
-from tenacity import retry, stop_after_attempt, wait_exponential
 
-from article_parser import extract_article_links, parse_article
+from article_parser import extract_article_links_from_archive_html, parse_article, fetch_html
 
-# Config (ambiente)
+logger = logging.getLogger("article_processor")
+
+# Configurabili via env
 ARCHIVE_URL = os.environ.get("ARCHIVE_URL", "https://www.artbooms.com/archivio-completo")
 BASE_URL = os.environ.get("BASE_URL", "https://www.artbooms.com")
-DEFAULT_AUTHOR = os.environ.get("DEFAULT_AUTHOR", "ARTBOOMS")
 CACHE_PATH = os.environ.get("CACHE_PATH", "articles_cache.json")
-REQUEST_TIMEOUT = int(os.environ.get("REQUEST_TIMEOUT", "20"))
-MAX_CONCURRENCY = int(os.environ.get("MAX_CONCURRENCY", "6"))
-BATCH_SIZE = int(os.environ.get("BATCH_SIZE", "12"))
-STALE_HOURS = int(os.environ.get("STALE_HOURS", "12"))
+MAX_BATCH = int(os.environ.get("MAX_BATCH", "1"))   # quanti link processare per run (default 1 = uno per volta)
+REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY", "0.8"))  # delay tra richieste per non sovraccaricare
 
-HEADERS = {
-    "User-Agent": "artbooms-rss/1.0 (+https://www.artbooms.com)",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-}
-
-
-def _now_utc():
-    return datetime.utcnow().replace(tzinfo=timezone.utc)
-
+def _now_iso():
+    return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
 
 def _load_cache():
-    if not os.path.exists(CACHE_PATH):
-        return {"items": {}, "last_scan": None}
-    try:
-        with open(CACHE_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {"items": {}, "last_scan": None}
-
+    if os.path.exists(CACHE_PATH):
+        try:
+            with open(CACHE_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            logger.exception("Errore caricamento cache, rigenero")
+    # struttura minima cache
+    return {"items": {}, "cursor": 0, "last_scan": None, "links_hash": None}
 
 def _save_cache(cache):
     tmp = CACHE_PATH + ".tmp"
@@ -45,136 +38,154 @@ def _save_cache(cache):
         json.dump(cache, f, ensure_ascii=False, indent=2)
     os.replace(tmp, CACHE_PATH)
 
+def _hash_links(links):
+    h = hashlib.sha256()
+    for u in links:
+        h.update(u.encode("utf-8"))
+    return h.hexdigest()
 
-def _hash_text(text: str) -> str:
-    return hashlib.sha256((text or "").encode("utf-8")).hexdigest()
-
-
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=8))
-def _fetch(url, etag=None, last_modified=None):
-    headers = dict(HEADERS)
-    if etag:
-        headers["If-None-Match"] = etag
-    if last_modified:
-        headers["If-Modified-Since"] = last_modified
-    r = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
-    return r
-
-
-def _scan_archive():
-    r = _fetch(ARCHIVE_URL)
-    r.raise_for_status()
-    links = extract_article_links(r.text, BASE_URL)
+def _scan_archive(session=None):
+    s = session or requests.Session()
+    html = fetch_html(ARCHIVE_URL, session=s)
+    links = extract_article_links_from_archive_html(html, BASE_URL)
     return links
 
-
-def _select_batch(cache, links):
-    # ensure all links are present in cache
-    for url in links:
-        cache["items"].setdefault(url, {})
-
-    # score: oldest checked first (or never checked)
-    def last_checked(item):
-        checked = item.get("checked_at")
-        if not checked:
-            return datetime(1970, 1, 1, tzinfo=timezone.utc)
-        try:
-            return datetime.fromisoformat(checked)
-        except Exception:
-            return datetime(1970, 1, 1, tzinfo=timezone.utc)
-
-    items = sorted(((u, cache["items"][u]) for u in links), key=lambda t: last_checked(t[1]))
-
-    stale_before = _now_utc() - timedelta(hours=STALE_HOURS)
-    batch = []
-    for url, it in items:
-        if len(batch) >= BATCH_SIZE:
-            break
-        checked = it.get("checked_at")
-        if (not checked) or (datetime.fromisoformat(checked) < stale_before):
-            batch.append(url)
-
-    # fallback: if nothing stale, take first N
-    if not batch:
-        batch = [u for u, _ in items[:BATCH_SIZE]]
-    return batch
-
-
-def _process_one(url, cache_item, force=False):
-    etag = None if force else (cache_item.get("etag") if cache_item else None)
-    lastmod = None if force else (cache_item.get("last_modified") if cache_item else None)
-
+def _process_one(url, existing_item=None, session=None):
+    """
+    Scarica e parse l'articolo, ritorna (item_dict, changed_bool)
+    """
+    s = session or requests.Session()
     try:
-        r = _fetch(url, etag=etag, last_modified=lastmod)
+        item = parse_article(url, session=s)
     except Exception:
-        return cache_item, False
+        logger.exception("parse_article failed for %s", url)
+        return None, False
 
-    if r.status_code == 304 and cache_item:
-        cache_item["checked_at"] = _now_utc().isoformat()
-        return cache_item, False
+    # compute a small content hash per articolo per rilevare modifiche
+    content_hash = hashlib.sha256((item.get("content_text","") + (item.get("modified") or "")).encode("utf-8")).hexdigest()
+    if existing_item:
+        if existing_item.get("_hash") == content_hash:
+            return existing_item, False
+    item["_hash"] = content_hash
+    item["_fetched_at"] = _now_iso()
+    return item, True
 
-    if r.status_code != 200:
-        return cache_item, False
-
-    item = parse_article(r.text, url, default_author=DEFAULT_AUTHOR)
-    text_hash = _hash_text(item.get("content_text"))
-    changed = text_hash != (cache_item.get("content_hash") if cache_item else None)
-
-    headers = r.headers
-    item.update({
-        "etag": headers.get("ETag"),
-        "last_modified": headers.get("Last-Modified"),
-        "content_hash": text_hash,
-        "checked_at": _now_utc().isoformat(),
-    })
-    return item, changed
-
+def _select_batch(links, cache):
+    """
+    Sceglie i prossimi link da processare partendo da cache['cursor'].
+    Default: ritorna fino a MAX_BATCH link (sequenziali), aggiornamento del cursor gestito in generate_items.
+    """
+    if not links:
+        return []
+    cursor = cache.get("cursor", 0) or 0
+    n = len(links)
+    if cursor >= n:
+        cursor = 0
+    end = min(cursor + MAX_BATCH, n)
+    batch = links[cursor:end]
+    # se fine, e batch vuoto, prendi primi elementi
+    if not batch and n > 0:
+        batch = links[:min(MAX_BATCH, n)]
+    return batch
 
 def generate_items(force=False):
     """
-    Main entrypoint used by app.py.
-    Returns (items_list, meta) where items_list is a list of article dicts.
+    Main: ritorna (items_list, meta)
+    - se force=True -> processa tutta la lista di link (slow) (usalo una tantum per popolare cache)
+    - altrimenti processa il prossimo batch partendo dal cursor (default MAX_BATCH=1)
     """
     cache = _load_cache()
-    cache.setdefault("items", {})
 
-    links = _scan_archive()
-    # choose a batch to avoid hitting all articles at once
-    batch = links if force else _select_batch(cache, links)
+    session = requests.Session()
+    links = _scan_archive(session=session)
+    links_hash = _hash_links(links)
 
-    with ThreadPoolExecutor(max_workers=MAX_CONCURRENCY) as ex:
-        futures = {ex.submit(_process_one, url, cache["items"].get(url), force): url for url in batch}
-        for fut in as_completed(futures):
-            url = futures[fut]
-            try:
-                new_item, changed = fut.result()
-            except Exception:
-                new_item, changed = None, False
-            if new_item:
-                cache["items"][url] = new_item
+    # aggiorno cache se lista link cambiata (nuovi articoli)
+    if cache.get("links_hash") != links_hash:
+        cache["links_hash"] = links_hash
+        cache["last_scan"] = _now_iso()
+        # se era la prima volta, assicurati cursor a 0
+        if "cursor" not in cache:
+            cache["cursor"] = 0
 
-    cache["last_scan"] = _now_utc().isoformat()
+    # decide ordine: preferisco processare dal più vecchio al più nuovo.
+    # Se l'archivio è ordinato newest->oldest, invertiamo.
+    # Heuristics: se il primo link ha data già in cache e la prima data è più recente della ultima,
+    # supponiamo che la pagina sia newest-first -> invertire.
+    try:
+        if links:
+            first = cache.get("items", {}).get(links[0])
+            last = cache.get("items", {}).get(links[-1])
+            # se abbiamo date nel cache possiamo inferire l'ordine
+            if first and last and first.get("published") and last.get("published"):
+                # se first published > last published -> archive lists newest first -> invertiamo
+                from dateutil import parser as _p
+                fdt = _p.parse(first["published"])
+                ldt = _p.parse(last["published"])
+                if fdt > ldt:
+                    links = list(reversed(links))
+            else:
+                # fallback: invertiamo solo se n>50 (presuppongo archivio most recent first)
+                if len(links) > 50:
+                    links = list(reversed(links))
+    except Exception:
+        pass
+
+    # selezione batch
+    if force:
+        batch = links[:]  # processa tutto (attenzione: slow)
+        cache["cursor"] = 0
+    else:
+        batch = _select_batch(links, cache)
+
+    # process sequentialmente per non sovraccaricare
+    for url in batch:
+        existing = cache.get("items", {}).get(url)
+        try:
+            new_item, changed = _process_one(url, existing_item=existing, session=session)
+        except Exception:
+            logger.exception("Errore _process_one su %s", url)
+            new_item, changed = None, False
+        if new_item:
+            cache.setdefault("items", {})[url] = new_item
+            logger.info("Processed %s (changed=%s)", url, changed)
+        # delay prudenziale
+        time.sleep(REQUEST_DELAY)
+
+    # aggiorno cursor
+    if links:
+        cursor = cache.get("cursor", 0) or 0
+        cursor = (cursor + len(batch)) % max(1, len(links))
+        cache["cursor"] = cursor
+
+    # salva cache
     _save_cache(cache)
 
-    items_list = list(cache["items"].values())
-
-    def to_dt(s):
+    # prepara items_list ordinata (più nuova prima)
+    def _to_dt(s):
         try:
-            return datetime.fromisoformat(s)
+            from dateutil import parser as _p
+            if not s:
+                return datetime(1970,1,1, tzinfo=timezone.utc)
+            dt = _p.parse(s)
+            if dt.tzinfo is None:
+                return dt.replace(tzinfo=timezone.utc)
+            return dt
         except Exception:
-            return datetime(1970, 1, 1, tzinfo=timezone.utc)
+            return datetime(1970,1,1, tzinfo=timezone.utc)
 
-    items_list.sort(key=lambda x: to_dt(x.get("modified") or x.get("published") or "1970-01-01T00:00:00+00:00"), reverse=True)
+    items_list = list(cache.get("items", {}).values())
+    items_list.sort(key=lambda x: max(_to_dt(x.get("modified")), _to_dt(x.get("published"))), reverse=True)
 
     meta = {
         "self_url": os.environ.get("SELF_FEED_URL", ""),
         "title": os.environ.get("FEED_TITLE", "ARTBOOMS - Archivio completo"),
         "description": os.environ.get("FEED_DESCRIPTION", "Tutti gli articoli di Artbooms con aggiornamenti automatici"),
         "language": os.environ.get("FEED_LANGUAGE", "it-IT"),
-        "build_time": _now_utc(),
+        "build_time": datetime.utcnow().replace(tzinfo=timezone.utc)
     }
-    return items_list, meta
 
+    return items_list, meta
 
 def load_cache():
     return _load_cache()
