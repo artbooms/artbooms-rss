@@ -1,13 +1,18 @@
 import os
 import time
+import logging
 from article_processor import generate_items
 
-INTERVAL = int(os.environ.get('REFRESH_INTERVAL', '15'))  # minuti
+logger = logging.getLogger("worker")
+logging.basicConfig(level=logging.INFO)
 
-if __name__ == '__main__':
+INTERVAL_MIN = int(os.environ.get("REFRESH_INTERVAL_MIN", "15"))
+
+if __name__ == "__main__":
+    logger.info("Worker started: interval %s min", INTERVAL_MIN)
     while True:
         try:
             generate_items(force=False)
         except Exception:
-            pass
-        time.sleep(INTERVAL * 60)
+            logger.exception("Errore worker generate_items")
+        time.sleep(INTERVAL_MIN * 60)
