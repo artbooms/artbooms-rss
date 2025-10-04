@@ -5,9 +5,8 @@ import logging
 
 logger = logging.getLogger("rss_generator")
 
-
 def _as_dt(s):
-    """Converte stringhe in datetime con timezone."""
+    """Converte stringhe o datetime in datetime con timezone UTC."""
     if not s:
         return None
     if isinstance(s, datetime):
@@ -21,22 +20,17 @@ def _as_dt(s):
     except Exception:
         return None
 
-
 def build_rss(items: list, meta: dict):
-    """
-    Costruisce il feed RSS in modo robusto.
-    Usa feedgen se disponibile, altrimenti ElementTree di fallback.
-    """
+    """Costruisce il feed RSS. Tenta con feedgen, altrimenti fallback XML."""
     try:
         from feedgen.feed import FeedGenerator
         return _build_with_feedgen(items, meta)
     except Exception as e:
-        logger.warning("Feedgen non disponibile (%s). Uso fallback XML builder.", e)
+        logger.warning("feedgen non disponibile o errore (%s), uso fallback XML", e)
         return _build_fallback(items, meta)
 
-
 def _build_with_feedgen(items, meta):
-    """Costruisce feed con feedgen."""
+    """Versione con feedgen, se installato."""
     from feedgen.feed import FeedGenerator
     fg = FeedGenerator()
     fg.id(meta.get('self_url') or "")
@@ -46,14 +40,15 @@ def _build_with_feedgen(items, meta):
     fg.language(meta.get('language') or "it-IT")
 
     last_modified = None
-
     for it in items:
         fe = fg.add_entry()
         fe.id(it.get('url'))
         fe.title(it.get('title') or "")
         fe.link(href=it.get('url'))
+
         if it.get('description'):
             fe.description(it.get('description'))
+
         author = it.get('author')
         if author:
             try:
@@ -61,12 +56,10 @@ def _build_with_feedgen(items, meta):
             except Exception:
                 fe._FeedEntry__setitem('dc:creator', author)
 
-        # date published
         pub = _as_dt(it.get('published'))
         if pub:
             fe.pubDate(format_datetime(pub))
 
-        # date modified
         mod = _as_dt(it.get('modified'))
         if mod:
             try:
@@ -76,7 +69,6 @@ def _build_with_feedgen(items, meta):
             if (last_modified is None) or (mod > last_modified):
                 last_modified = mod
 
-        # immagini
         image_url = it.get('image')
         if image_url:
             try:
@@ -85,13 +77,11 @@ def _build_with_feedgen(items, meta):
                 pass
             try:
                 fe._FeedEntry__setitem('media:thumbnail', {'url': image_url})
-                fe._FeedEntry__setitem('media:content', {'url': image_url, 'medium': 'image'})
             except Exception:
                 pass
 
     build_time = meta.get('build_time') or datetime.utcnow().replace(tzinfo=timezone.utc)
     fg.lastBuildDate(format_datetime(last_modified or build_time))
-
     rss_bytes = fg.rss_str(pretty=True)
     etag = hashlib.sha256(rss_bytes).hexdigest()
     headers = {
@@ -101,14 +91,14 @@ def _build_with_feedgen(items, meta):
     }
     return rss_bytes, headers
 
-
 def _build_fallback(items, meta):
-    """Fallback XML manuale se feedgen non è disponibile."""
+    """Costruisce un RSS 2.0 manualmente se feedgen non è disponibile."""
     import xml.etree.ElementTree as ET
 
+    # Registrazione namespace validi
     ET.register_namespace("media", "http://search.yahoo.com/mrss/")
     ET.register_namespace("dc", "http://purl.org/dc/elements/1.1/")
-    ET.register_namespace("ns1", "http://purl.org/dc/terms/")
+    ET.register_namespace("dcterms", "http://purl.org/dc/terms/")
 
     rss = ET.Element("rss", version="2.0")
     channel = ET.SubElement(rss, "channel")
@@ -125,7 +115,6 @@ def _build_fallback(items, meta):
         ET.SubElement(item, "title").text = it.get('title') or ""
         ET.SubElement(item, "link").text = it.get('url') or ""
 
-        # guid con attributo isPermaLink per Google News
         guid = ET.SubElement(item, "guid", attrib={"isPermaLink": "true"})
         guid.text = it.get('url') or ""
 
@@ -153,17 +142,4 @@ def _build_fallback(items, meta):
             thumb = ET.SubElement(item, "{http://search.yahoo.com/mrss/}thumbnail")
             thumb.set("url", image)
             media_content = ET.SubElement(item, "{http://search.yahoo.com/mrss/}content")
-            media_content.set("url", image)
-            media_content.set("medium", "image")
-
-    build_time = meta.get('build_time') or datetime.utcnow().replace(tzinfo=timezone.utc)
-    ET.SubElement(channel, "lastBuildDate").text = format_datetime(last_modified or build_time)
-
-    xml_bytes = ET.tostring(rss, encoding="utf-8", xml_declaration=True)
-    etag = hashlib.sha256(xml_bytes).hexdigest()
-    headers = {
-        'ETag': f'W/"{etag}"',
-        'Last-Modified': format_datetime(last_modified or build_time),
-        'Cache-Control': 'max-age=300',
-    }
-    return xml_bytes, headers
+            media_content.set("url", ima_
