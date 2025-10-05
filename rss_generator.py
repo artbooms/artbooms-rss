@@ -32,10 +32,10 @@ def build_rss(items: list, meta: dict):
     Crea un feed RSS 2.0 con namespace media, atom e dcterms,
     compatibile con Google News e lettori RSS.
     """
-    # Namespace registrati
     ET.register_namespace("media", "http://search.yahoo.com/mrss/")
     ET.register_namespace("atom", "http://www.w3.org/2005/Atom")
     ET.register_namespace("dcterms", "http://purl.org/dc/terms/")
+    ET.register_namespace("dc", "http://purl.org/dc/elements/1.1/")
 
     rss = ET.Element("rss", version="2.0")
     channel = ET.SubElement(rss, "channel")
@@ -44,7 +44,7 @@ def build_rss(items: list, meta: dict):
     # Meta del canale
     # -----------------------------
     title = meta.get("title", "ARTBOOMS - Archivio completo")
-    self_url = "https://artbooms-rss.onrender.com/rss"  # link assoluto fisso
+    self_url = "https://artbooms-rss.onrender.com/rss"
     desc = meta.get("description", "Tutti gli articoli di Artbooms con aggiornamenti automatici")
     lang = meta.get("language", "it-IT")
 
@@ -53,7 +53,13 @@ def build_rss(items: list, meta: dict):
     ET.SubElement(channel, "description").text = desc
     ET.SubElement(channel, "language").text = lang
 
-    # Atom self-link (richiesto per i validator)
+    # Immagine/logo principale (Google News friendly)
+    img = ET.SubElement(channel, "image")
+    ET.SubElement(img, "url").text = "https://www.artbooms.com/favicon.ico"
+    ET.SubElement(img, "title").text = "ARTBOOMS"
+    ET.SubElement(img, "link").text = "https://www.artbooms.com"
+
+    # Atom self-link
     atom_link = ET.SubElement(channel, "{http://www.w3.org/2005/Atom}link")
     atom_link.set("href", self_url)
     atom_link.set("rel", "self")
@@ -86,15 +92,14 @@ def build_rss(items: list, meta: dict):
             desc = _make_excerpt(title or url)
         ET.SubElement(item, "description").text = desc
 
+        # ✅ Autore giornalistico corretto
         if author:
-            ET.SubElement(item, "author").text = author
+            ET.SubElement(item, "{http://purl.org/dc/elements/1.1/}creator").text = author
 
         if pub:
-            # formato RFC 822 richiesto da RSS standard
             ET.SubElement(item, "pubDate").text = format_datetime(pub)
 
         if mod:
-            # formato ISO 8601 per Google News
             ET.SubElement(item, "{http://purl.org/dc/terms/}modified").text = mod.astimezone(timezone.utc).isoformat()
             if (last_modified is None) or (mod > last_modified):
                 last_modified = mod
@@ -102,6 +107,11 @@ def build_rss(items: list, meta: dict):
         if image:
             thumb = ET.SubElement(item, "{http://search.yahoo.com/mrss/}thumbnail")
             thumb.set("url", image)
+
+        # 📎 Fonte editoriale (Google News)
+        source = ET.SubElement(item, "source")
+        source.set("url", "https://www.artbooms.com")
+        source.text = "ARTBOOMS"
 
     # -----------------------------
     # Ultima modifica globale
