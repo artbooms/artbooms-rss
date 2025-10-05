@@ -79,7 +79,6 @@ def debug_cache():
         "feed_last_build": FEED_CACHE["last_build"].isoformat() if FEED_CACHE["last_build"] else None,
     })
 
-# THREAD AUTOMATICO DI BACKGROUND
 def background_populator():
     while True:
         try:
@@ -88,16 +87,21 @@ def background_populator():
             logger.info("Cache aggiornata automaticamente")
         except Exception as e:
             logger.exception("Errore background_populator: %s", e)
-        time.sleep(60)  # ogni minuto
+        time.sleep(60)
 
 def start_background_thread():
-    t = threading.Thread(target=background_populator, daemon=True)
-    t.start()
-    logger.info("Thread di popolamento automatico avviato")
+    try:
+        if os.environ.get("RUN_MAIN") == "true":  # solo nel processo principale Gunicorn
+            threading.Thread(target=background_populator, daemon=True).start()
+            logger.info("Thread di popolamento automatico avviato (in background)")
+    except Exception as e:
+        logger.warning("Impossibile avviare il thread automatico: %s", e)
 
-@app.before_first_request
-def launch_background():
-    start_background_thread()
+@app.before_request
+def ensure_thread_running():
+    # garantisce che almeno un thread sia attivo
+    if not FEED_CACHE.get("last_build"):
+        start_background_thread()
 
 @app.get("/healthz")
 def healthz():
