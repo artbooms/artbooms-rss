@@ -29,10 +29,9 @@ def _as_dt(s):
 # ---------------------------------------------------------
 def build_rss(items: list, meta: dict):
     """
-    Crea un feed RSS 2.0 con namespace DC, media e atom compatibile con Google News.
+    Crea un feed RSS 2.0 con namespace media, atom e dcterms compatibile con Google News.
     """
     # Namespace
-    ET.register_namespace("dc", "http://purl.org/dc/elements/1.1/")
     ET.register_namespace("media", "http://search.yahoo.com/mrss/")
     ET.register_namespace("atom", "http://www.w3.org/2005/Atom")
     ET.register_namespace("dcterms", "http://purl.org/dc/terms/")
@@ -85,8 +84,8 @@ def build_rss(items: list, meta: dict):
             ET.SubElement(item, "description").text = desc
 
         if author:
-            dc_creator = ET.SubElement(item, "{http://purl.org/dc/elements/1.1/}creator")
-            dc_creator.text = author
+            # sostituito <dc:creator> con <author>
+            ET.SubElement(item, "author").text = author
 
         if pub:
             # formato RFC 822 richiesto da RSS standard
