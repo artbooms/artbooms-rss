@@ -1,18 +1,31 @@
-import os
 import time
 import logging
 from article_processor import generate_items
 
 logger = logging.getLogger("worker")
-logging.basicConfig(level=logging.INFO)
 
-INTERVAL_MIN = int(os.environ.get("REFRESH_INTERVAL_MIN", "15"))
+# quanto attendere tra un batch e l'altro (in secondi)
+INTERVAL = 60  # 1 minuto
+# quante iterazioni prima di fermarsi (per sicurezza)
+MAX_RUNS = 500
+
+def run():
+    """
+    Worker di background che richiama generate_items() a intervalli regolari.
+    Così la cache si popola poco alla volta, senza dover ricaricare /rss.
+    """
+    logger.info("Worker avviato: popolamento graduale del feed in corso...")
+    runs = 0
+    while runs < MAX_RUNS:
+        runs += 1
+        try:
+            items, meta = generate_items(force=False)
+            logger.info(f"[{runs}] Cache aggiornata ({len(items)} articoli)")
+        except Exception as e:
+            logger.exception("Errore durante il popolamento incrementale: %s", e)
+        time.sleep(INTERVAL)
+
+    logger.info("Worker terminato (raggiunto limite iterazioni)")
 
 if __name__ == "__main__":
-    logger.info("Worker started: interval %s min", INTERVAL_MIN)
-    while True:
-        try:
-            generate_items(force=False)
-        except Exception:
-            logger.exception("Errore worker generate_items")
-        time.sleep(INTERVAL_MIN * 60)
+    run()
