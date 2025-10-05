@@ -21,6 +21,7 @@ META = {
     "self_url": "https://artbooms-rss.onrender.com/rss",
 }
 
+
 def _items_from_cache_sorted():
     cache = load_cache() or {}
     items = list((cache.get("items") or {}).values())
@@ -40,6 +41,7 @@ def _items_from_cache_sorted():
     items.sort(key=lambda x: max(_to_dt(x.get("modified")), _to_dt(x.get("published"))), reverse=True)
     return items
 
+
 def _rebuild_feed_from_disk_cache():
     items = _items_from_cache_sorted()
     xml_bytes, headers = build_rss(items, META)
@@ -47,6 +49,7 @@ def _rebuild_feed_from_disk_cache():
     FEED_CACHE["headers"] = headers
     FEED_CACHE["last_build"] = datetime.utcnow().replace(tzinfo=timezone.utc)
     logger.info("Feed ricostruito da cache: %d articoli", len(items))
+
 
 @app.get("/rss")
 def rss():
@@ -59,6 +62,7 @@ def rss():
     resp.headers.setdefault("Content-Type", "application/rss+xml; charset=utf-8")
     return resp
 
+
 @app.get("/refresh")
 def refresh():
     try:
@@ -68,6 +72,7 @@ def refresh():
     except Exception as e:
         logger.exception("Errore refresh")
         return jsonify({"status": "error", "detail": str(e)}), 500
+
 
 @app.get("/debug/cache")
 def debug_cache():
@@ -79,7 +84,9 @@ def debug_cache():
         "feed_last_build": FEED_CACHE["last_build"].isoformat() if FEED_CACHE["last_build"] else None,
     })
 
+
 def background_populator():
+    """Thread che aggiorna la cache ogni minuto senza bloccare Flask"""
     while True:
         try:
             generate_items(force=False)
@@ -89,19 +96,21 @@ def background_populator():
             logger.exception("Errore background_populator: %s", e)
         time.sleep(60)
 
-def start_background_thread():
-    try:
-        if os.environ.get("RUN_MAIN") == "true":  # solo nel processo principale Gunicorn
-            threading.Thread(target=background_populator, daemon=True).start()
-            logger.info("Thread di popolamento automatico avviato (in background)")
-    except Exception as e:
-        logger.warning("Impossibile avviare il thread automatico: %s", e)
+
+def start_background_thread_once():
+    """Evita più thread se Flask/Gunicorn crea più processi"""
+    if not getattr(app, "_thread_started", False):
+        app._thread_started = True
+        t = threading.Thread(target=background_populator, daemon=True)
+        t.start()
+        logger.info("Thread di popolamento automatico avviato in background")
+
 
 @app.before_request
-def ensure_thread_running():
-    # garantisce che almeno un thread sia attivo
-    if not FEED_CACHE.get("last_build"):
-        start_background_thread()
+def ensure_background_thread():
+    """Avvia il thread al primo accesso, se non già attivo"""
+    start_background_thread_once()
+
 
 @app.get("/healthz")
 def healthz():
@@ -110,7 +119,8 @@ def healthz():
         "last_build": FEED_CACHE["last_build"].isoformat() if FEED_CACHE["last_build"] else None
     })
 
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5000"))
-    start_background_thread()
+    start_background_thread_once()
     app.run(host="0.0.0.0", port=port)
