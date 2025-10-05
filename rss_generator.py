@@ -25,13 +25,14 @@ def _as_dt(s):
 
 
 # ---------------------------------------------------------
-# Costruzione RSS (fallback XML, no dipendenze esterne)
+# Funzione principale: crea feed RSS 2.0 completo
 # ---------------------------------------------------------
 def build_rss(items: list, meta: dict):
     """
-    Crea un feed RSS 2.0 con namespace media, atom e dcterms compatibile con Google News.
+    Crea un feed RSS 2.0 con namespace media, atom e dcterms,
+    compatibile con Google News e lettori RSS.
     """
-    # Namespace
+    # Namespace registrati
     ET.register_namespace("media", "http://search.yahoo.com/mrss/")
     ET.register_namespace("atom", "http://www.w3.org/2005/Atom")
     ET.register_namespace("dcterms", "http://purl.org/dc/terms/")
@@ -40,10 +41,10 @@ def build_rss(items: list, meta: dict):
     channel = ET.SubElement(rss, "channel")
 
     # -----------------------------
-    # Meta canale
+    # Meta del canale
     # -----------------------------
     title = meta.get("title", "ARTBOOMS - Archivio completo")
-    self_url = meta.get("self_url", "https://artbooms-rss.onrender.com/rss")
+    self_url = "https://artbooms-rss.onrender.com/rss"  # link assoluto fisso
     desc = meta.get("description", "Tutti gli articoli di Artbooms con aggiornamenti automatici")
     lang = meta.get("language", "it-IT")
 
@@ -52,7 +53,7 @@ def build_rss(items: list, meta: dict):
     ET.SubElement(channel, "description").text = desc
     ET.SubElement(channel, "language").text = lang
 
-    # Atom self-link
+    # Atom self-link (richiesto per i validator)
     atom_link = ET.SubElement(channel, "{http://www.w3.org/2005/Atom}link")
     atom_link.set("href", self_url)
     atom_link.set("rel", "self")
@@ -61,7 +62,7 @@ def build_rss(items: list, meta: dict):
     last_modified = None
 
     # -----------------------------
-    # Articoli
+    # Articoli (items)
     # -----------------------------
     for it in items:
         item = ET.SubElement(channel, "item")
@@ -80,11 +81,12 @@ def build_rss(items: list, meta: dict):
         guid.text = url
         guid.set("isPermaLink", "true")
 
-        if desc:
-            ET.SubElement(item, "description").text = desc
+        # Se manca description, creiamo un estratto automatico
+        if not desc:
+            desc = _make_excerpt(title or url)
+        ET.SubElement(item, "description").text = desc
 
         if author:
-            # sostituito <dc:creator> con <author>
             ET.SubElement(item, "author").text = author
 
         if pub:
@@ -92,7 +94,7 @@ def build_rss(items: list, meta: dict):
             ET.SubElement(item, "pubDate").text = format_datetime(pub)
 
         if mod:
-            # formato W3CDTF (Google News preferisce ISO 8601)
+            # formato ISO 8601 per Google News
             ET.SubElement(item, "{http://purl.org/dc/terms/}modified").text = mod.astimezone(timezone.utc).isoformat()
             if (last_modified is None) or (mod > last_modified):
                 last_modified = mod
@@ -108,7 +110,7 @@ def build_rss(items: list, meta: dict):
     ET.SubElement(channel, "lastBuildDate").text = format_datetime(last_modified or build_time)
 
     # -----------------------------
-    # Conversione in bytes + header
+    # Conversione XML e header HTTP
     # -----------------------------
     xml_bytes = ET.tostring(rss, encoding="utf-8", xml_declaration=True)
     etag = hashlib.sha256(xml_bytes).hexdigest()
@@ -120,3 +122,16 @@ def build_rss(items: list, meta: dict):
     }
 
     return xml_bytes, headers
+
+
+# ---------------------------------------------------------
+# Helper per generare un estratto breve
+# ---------------------------------------------------------
+def _make_excerpt(text, length=200):
+    """
+    Crea un breve riassunto (excerpt) da testo o titolo se manca la descrizione.
+    """
+    clean = text.replace("\n", " ").replace("\r", " ").strip()
+    if len(clean) > length:
+        clean = clean[:length].rsplit(" ", 1)[0] + "…"
+    return clean
