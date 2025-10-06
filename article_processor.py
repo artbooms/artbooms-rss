@@ -4,76 +4,63 @@ import time
 import hashlib
 import logging
 from datetime import datetime, timezone
-from urllib.parse import urlparse
-
 import requests
 
 from article_parser import extract_article_links_from_archive_html, parse_article, fetch_html
 
 logger = logging.getLogger("article_processor")
 
-# Configurabili via env
 ARCHIVE_URL = os.environ.get("ARCHIVE_URL", "https://www.artbooms.com/archivio-completo")
 BASE_URL = os.environ.get("BASE_URL", "https://www.artbooms.com")
-
-# Cache locale (file nel container)
 CACHE_PATH = os.environ.get("CACHE_PATH", "articles_cache.json")
+MAX_BATCH = int(os.environ.get("MAX_BATCH", "1"))
+REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY", "0.8"))
 
-# Cache remota di fallback (RAW del tuo repo GitHub) – lettura all'avvio
-RAW_CACHE_URL = os.environ.get(
-    "RAW_CACHE_URL",
-    "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
-)
-
-MAX_BATCH = int(os.environ.get("MAX_BATCH", "1"))   # quanti link processare per run (default 1)
-REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY", "0.8"))  # pause tra richieste
+# 🔹 parametri per backup su GitHub
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
+GITHUB_API_URL = "https://api.github.com/repos/artbooms/artbooms-rss/contents/cache/articles_cache.json"
 
 def _now_iso():
     return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
 
-def _default_cache():
-    return {"items": {}, "cursor": 0, "last_scan": None, "links_hash": None}
-
-def _load_cache_local():
+def _load_cache():
     if os.path.exists(CACHE_PATH):
         try:
             with open(CACHE_PATH, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception:
-            logger.exception("Errore caricamento cache locale, rigenero")
-    return None
-
-def _load_cache_remote():
-    try:
-        r = requests.get(RAW_CACHE_URL, timeout=20, headers={"User-Agent":"artbooms-rss/1.0"})
-        if r.status_code == 200 and r.text.strip():
-            data = json.loads(r.text)
-            # convalida minima
-            if isinstance(data, dict) and "items" in data and "cursor" in data:
-                return data
-    except Exception:
-        logger.warning("Impossibile leggere cache remota da RAW_CACHE_URL")
-    return None
-
-def _load_cache():
-    # 1) prova locale
-    data = _load_cache_local()
-    if data:
-        return data
-    # 2) prova remota (RAW del repo) – per persistenza ai riavvii
-    data = _load_cache_remote()
-    if data:
-        # salva subito in locale per le run successive
-        _save_cache(data)
-        return data
-    # 3) fallback vuoto
-    return _default_cache()
+            logger.exception("Errore caricamento cache, rigenero")
+    return {"items": {}, "cursor": 0, "last_scan": None, "links_hash": None}
 
 def _save_cache(cache):
     tmp = CACHE_PATH + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(cache, f, ensure_ascii=False, indent=2)
     os.replace(tmp, CACHE_PATH)
+
+def _upload_cache_to_github(cache):
+    """Copia di sicurezza della cache su GitHub, se il token è presente."""
+    if not GITHUB_TOKEN:
+        return
+    try:
+        # leggo SHA esistente
+        r = requests.get(GITHUB_API_URL, headers={"Authorization": f"token {GITHUB_TOKEN}"})
+        sha = r.json().get("sha") if r.status_code == 200 else None
+        payload = {
+            "message": "Auto-update cache",
+            "content": json.dumps(cache, ensure_ascii=False, indent=2).encode("utf-8").decode("utf-8"),
+            "sha": sha,
+            "branch": "main"
+        }
+        resp = requests.put(
+            GITHUB_API_URL,
+            headers={"Authorization": f"token {GITHUB_TOKEN}", "Content-Type": "application/json"},
+            data=json.dumps(payload)
+        )
+        if resp.status_code not in (200, 201):
+            logger.warning(f"Upload cache fallito: {resp.status_code}")
+    except Exception as e:
+        logger.warning(f"Errore upload cache GitHub: {e}")
 
 def _hash_links(links):
     h = hashlib.sha256()
@@ -88,17 +75,12 @@ def _scan_archive(session=None):
     return links
 
 def _process_one(url, existing_item=None, session=None):
-    """
-    Scarica e parse l'articolo, ritorna (item_dict, changed_bool)
-    """
     s = session or requests.Session()
     try:
         item = parse_article(url, session=s)
     except Exception:
         logger.exception("parse_article failed for %s", url)
         return None, False
-
-    # hash contenuto per rilevare modifiche
     content_hash = hashlib.sha256((item.get("content_text","") + (item.get("modified") or "")).encode("utf-8")).hexdigest()
     if existing_item and existing_item.get("_hash") == content_hash:
         return existing_item, False
@@ -107,9 +89,6 @@ def _process_one(url, existing_item=None, session=None):
     return item, True
 
 def _select_batch(links, cache):
-    """
-    Sceglie i prossimi link da processare partendo da cache['cursor'].
-    """
     if not links:
         return []
     cursor = cache.get("cursor", 0) or 0
@@ -123,49 +102,36 @@ def _select_batch(links, cache):
     return batch
 
 def generate_items(force=False):
-    """
-    Main: ritorna (items_list, meta)
-    - se force=True -> processa tutta la lista di link
-    - altrimenti processa il prossimo batch partendo dal cursor
-    """
     cache = _load_cache()
-
     session = requests.Session()
     links = _scan_archive(session=session)
     links_hash = _hash_links(links)
 
-    # aggiorno cache se lista link cambiata (nuovi articoli)
     if cache.get("links_hash") != links_hash:
         cache["links_hash"] = links_hash
         cache["last_scan"] = _now_iso()
         if "cursor" not in cache:
             cache["cursor"] = 0
 
-    # preferisco processare dal più vecchio al più nuovo se la pagina è newest-first
     try:
         if links:
             first = cache.get("items", {}).get(links[0])
             last = cache.get("items", {}).get(links[-1])
             if first and last and first.get("published") and last.get("published"):
                 from dateutil import parser as _p
-                fdt = _p.parse(first["published"])
-                ldt = _p.parse(last["published"])
-                if fdt > ldt:
+                if _p.parse(first["published"]) > _p.parse(last["published"]):
                     links = list(reversed(links))
-            else:
-                if len(links) > 50:
-                    links = list(reversed(links))
+            elif len(links) > 50:
+                links = list(reversed(links))
     except Exception:
         pass
 
-    # selezione batch
     if force:
         batch = links[:]
         cache["cursor"] = 0
     else:
         batch = _select_batch(links, cache)
 
-    # process sequentialmente
     for url in batch:
         existing = cache.get("items", {}).get(url)
         try:
@@ -178,19 +144,17 @@ def generate_items(force=False):
             logger.info("Processed %s (changed=%s)", url, changed)
         time.sleep(REQUEST_DELAY)
 
-    # aggiorno cursor
     if links:
         cursor = cache.get("cursor", 0) or 0
         cursor = (cursor + len(batch)) % max(1, len(links))
         cache["cursor"] = cursor
 
-    # salva cache locale (poi verrà “fotografata” da GitHub Actions)
     _save_cache(cache)
+    _upload_cache_to_github(cache)
 
-    # prepara items_list ordinata (più nuova prima)
+    from dateutil import parser as _p
     def _to_dt(s):
         try:
-            from dateutil import parser as _p
             if not s:
                 return datetime(1970,1,1, tzinfo=timezone.utc)
             dt = _p.parse(s)
