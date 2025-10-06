@@ -1,7 +1,5 @@
 import os
 import logging
-import threading
-import time
 from flask import Flask, jsonify, make_response
 from datetime import datetime, timezone
 
@@ -13,114 +11,60 @@ logger = logging.getLogger("artbooms-rss")
 
 app = Flask(__name__)
 
-FEED_CACHE = {"xml": None, "headers": None, "last_build": None}
-META = {
-    "title": "ARTBOOMS - Archivio completo",
-    "description": "Tutti gli articoli di Artbooms con aggiornamenti automatici",
-    "language": "it-IT",
-    "self_url": "https://artbooms-rss.onrender.com/rss",
-}
+@app.get("/healthz")
+def healthz():
+    return jsonify({"ok": True, "time": datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()})
 
-
-def _items_from_cache_sorted():
-    cache = load_cache() or {}
-    items = list((cache.get("items") or {}).values())
-
-    from dateutil import parser as _p
-    def _to_dt(s):
-        try:
-            if not s:
-                return datetime(1970, 1, 1, tzinfo=timezone.utc)
-            dt = _p.parse(s)
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
-            return dt
-        except Exception:
-            return datetime(1970, 1, 1, tzinfo=timezone.utc)
-
-    items.sort(key=lambda x: max(_to_dt(x.get("modified")), _to_dt(x.get("published"))), reverse=True)
-    return items
-
-
-def _rebuild_feed_from_disk_cache():
-    items = _items_from_cache_sorted()
-    xml_bytes, headers = build_rss(items, META)
-    FEED_CACHE["xml"] = xml_bytes
-    FEED_CACHE["headers"] = headers
-    FEED_CACHE["last_build"] = datetime.utcnow().replace(tzinfo=timezone.utc)
-    logger.info("Feed ricostruito da cache: %d articoli", len(items))
-
+@app.get("/")
+def root():
+    return jsonify({
+        "service": "artbooms-rss",
+        "description": "Feed generator per Artbooms",
+        "endpoints": {
+            "/healthz": "health check",
+            "/rss": "il feed RSS generato",
+            "/debug/cache": "stato della cache",
+            "/cache/export": "cache completa in JSON (usata da GitHub Actions)"
+        }
+    })
 
 @app.get("/rss")
 def rss():
-    if FEED_CACHE["xml"] is None:
-        _rebuild_feed_from_disk_cache()
-    resp = make_response(FEED_CACHE["xml"])
-    for h in ("ETag", "Last-Modified", "Cache-Control", "Content-Type"):
-        if FEED_CACHE["headers"] and FEED_CACHE["headers"].get(h):
-            resp.headers[h] = FEED_CACHE["headers"][h]
-    resp.headers.setdefault("Content-Type", "application/rss+xml; charset=utf-8")
-    return resp
-
-
-@app.get("/refresh")
-def refresh():
     try:
-        generate_items(force=False)
-        _rebuild_feed_from_disk_cache()
-        return jsonify({"status": "ok", "last_build": FEED_CACHE["last_build"].isoformat()})
+        items, meta = generate_items(force=False)
     except Exception as e:
-        logger.exception("Errore refresh")
-        return jsonify({"status": "error", "detail": str(e)}), 500
+        logger.exception("Errore durante generate_items")
+        return jsonify({"error": "feed generation failed", "detail": str(e)}), 503
 
+    try:
+        xml_bytes, headers = build_rss(items, meta)
+    except Exception as e:
+        logger.exception("Errore durante build_rss")
+        return jsonify({"error": "rss build failed", "detail": str(e)}), 500
+
+    resp = make_response(xml_bytes)
+    resp.headers["Content-Type"] = "application/rss+xml; charset=utf-8"
+    for hname in ("ETag", "Last-Modified", "Cache-Control"):
+        if headers.get(hname):
+            resp.headers[hname] = headers[hname]
+    return resp
 
 @app.get("/debug/cache")
 def debug_cache():
-    cache = load_cache() or {}
+    cache = load_cache()
     return jsonify({
-        "items_count": len((cache.get("items") or {}).keys()),
+        "cache_exists": bool(cache),
+        "items_count": len(cache.get("items", {})),
         "cursor": cache.get("cursor", 0),
-        "last_scan": cache.get("last_scan"),
-        "feed_last_build": FEED_CACHE["last_build"].isoformat() if FEED_CACHE["last_build"] else None,
+        "last_scan": cache.get("last_scan")
     })
 
-
-def background_populator():
-    """Thread che aggiorna la cache ogni minuto senza bloccare Flask"""
-    while True:
-        try:
-            generate_items(force=False)
-            _rebuild_feed_from_disk_cache()
-            logger.info("Cache aggiornata automaticamente")
-        except Exception as e:
-            logger.exception("Errore background_populator: %s", e)
-        time.sleep(60)
-
-
-def start_background_thread_once():
-    """Evita più thread se Flask/Gunicorn crea più processi"""
-    if not getattr(app, "_thread_started", False):
-        app._thread_started = True
-        t = threading.Thread(target=background_populator, daemon=True)
-        t.start()
-        logger.info("Thread di popolamento automatico avviato in background")
-
-
-@app.before_request
-def ensure_background_thread():
-    """Avvia il thread al primo accesso, se non già attivo"""
-    start_background_thread_once()
-
-
-@app.get("/healthz")
-def healthz():
-    return jsonify({
-        "ok": True,
-        "last_build": FEED_CACHE["last_build"].isoformat() if FEED_CACHE["last_build"] else None
-    })
-
+@app.get("/cache/export")
+def cache_export():
+    """Esporta l'intera cache in JSON (usato dal workflow GitHub Actions)."""
+    cache = load_cache()
+    return jsonify(cache)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5000"))
-    start_background_thread_once()
     app.run(host="0.0.0.0", port=port)
