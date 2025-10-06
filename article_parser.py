@@ -32,7 +32,7 @@ def _parse_date(s):
     try:
         dt = dateparser.parse(s)
         if dt and dt.tzinfo is None:
-            # assumo UTC quando timezone non presente (puoi cambiare se preferisci altra tz)
+            # assumo UTC quando timezone non presente
             from datetime import timezone
             dt = dt.replace(tzinfo=timezone.utc)
         return dt
@@ -40,10 +40,7 @@ def _parse_date(s):
         return None
 
 def _first_meta(soup, attrs_list):
-    """
-    attrs_list: lista di dict come {"property":"og:image"} o {"name":"description"} o {"itemprop":"datePublished"}
-    ritorna il primo valore 'content' non vuoto
-    """
+    """Ritorna il primo meta content non vuoto trovato."""
     for attrs in attrs_list:
         tag = soup.find("meta", attrs=attrs)
         if tag:
@@ -53,22 +50,15 @@ def _first_meta(soup, attrs_list):
     return None
 
 def extract_article_links_from_archive_html(html: str, base_url: str):
-    """
-    Data la HTML di archivio, ritorna lista ordinata di link assoluti (senza duplicati),
-    nell'ordine in cui appaiono nella pagina.
-    """
+    """Estrae i link assoluti agli articoli dalla pagina archivio."""
     soup = BeautifulSoup(html, "lxml")
     anchors = soup.find_all("a", href=True)
-    urls = []
-    seen = set()
+    urls, seen = [], set()
     for a in anchors:
         href = a["href"].strip()
-        # ignoro ancore javascript/mailto
         if href.startswith("javascript:") or href.startswith("mailto:"):
             continue
-        # normalizzo a url assoluto
         abs_url = urljoin(base_url, href)
-        # solo stesso dominio (evitiamo link esterni)
         if urlparse(abs_url).netloc.endswith(urlparse(base_url).netloc):
             if abs_url not in seen:
                 seen.add(abs_url)
@@ -83,11 +73,7 @@ def fetch_html(url, session=None, timeout=15):
     return r.text
 
 def parse_article(url, html=None, session=None):
-    """
-    Restituisce dict con chiavi:
-    url, title, description, author, published (ISO), modified (ISO),
-    content_text, image
-    """
+    """Estrae i campi principali dall’articolo: titolo, descrizione, autore, date, immagine."""
     try:
         if html is None:
             html = fetch_html(url, session=session)
@@ -97,12 +83,15 @@ def parse_article(url, html=None, session=None):
                 "published": None, "modified": None, "content_text": "", "image": None}
 
     soup = BeautifulSoup(html, "lxml")
+
     # title
-    title = None
-    title = title or _first_meta(soup, [{"property":"og:title"}, {"name":"title"}, {"name":"twitter:title"}])
+    title = _first_meta(soup, [{"property":"og:title"}, {"name":"title"}, {"name":"twitter:title"}])
     if not title:
         ttag = soup.find("title")
         title = ttag.get_text(strip=True) if ttag else None
+    # 🔧 Rimuove “— ARTBOOMS” dal titolo
+    if title:
+        title = title.replace("— ARTBOOMS", "").replace(" — ARTBOOMS", "").strip()
 
     # description
     description = _first_meta(soup, [
@@ -116,7 +105,6 @@ def parse_article(url, html=None, session=None):
         {"itemprop":"author"}
     ])
     if not author:
-        # prova rel author link
         a = soup.find("a", rel="author")
         if a:
             author = a.get_text(strip=True)
@@ -126,13 +114,11 @@ def parse_article(url, html=None, session=None):
                              {"itemprop":"datePublished"}, {"name":"date"}])
     mod = _first_meta(soup, [{"property":"article:modified_time"}, {"itemprop":"dateModified"}, {"name":"last-modified"}])
 
-    # time tags
     if not pub:
         time_tag = soup.find("time")
         if time_tag:
             pub = time_tag.get("datetime") or time_tag.get_text(strip=True)
 
-    # try to parse both
     pub_dt = _parse_date(pub)
     mod_dt = _parse_date(mod) or pub_dt
 
@@ -143,10 +129,12 @@ def parse_article(url, html=None, session=None):
     # image
     image_url = _first_meta(soup, [{"property":"og:image"}, {"name":"twitter:image"}, {"itemprop":"image"}])
     if not image_url:
-        # rel image_src
         link_img = soup.find("link", rel="image_src")
         if link_img and link_img.get("href"):
             image_url = link_img.get("href")
+    # 🔒 Forza HTTPS per sicurezza
+    if image_url and image_url.startswith("http://"):
+        image_url = image_url.replace("http://", "https://")
 
     return {
         "url": url,
