@@ -8,7 +8,9 @@ import requests
 logger = logging.getLogger("cache_sync")
 
 # Inserisci qui il tuo token GitHub
-GITHUB_TOKEN = "ghp_XXXXXXXXXXXXXXXXXXXXXXXXXXXX"  # <-- sostituisci con il tuo vero token
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
+
+
 REPO_OWNER = "artbooms"
 REPO_NAME = "artbooms-rss"
 BRANCH = "main"
