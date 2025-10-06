@@ -1,0 +1,27 @@
+name: Persist RSS cache
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # ogni 15 minuti
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  persist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch cache from service
+        run: |
+          mkdir -p cache
+          curl -fsS https://artbooms-rss.onrender.com/cache/export -o cache/articles_cache.json || echo '{}' > cache/articles_cache.json
+      - name: Commit changes if any
+        run: |
+          git config user.name "artbooms-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add cache/articles_cache.json
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else:
+            git commit -m "Persist RSS cache from service"
+            git push
+          fi
