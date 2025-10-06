@@ -15,22 +15,59 @@ logger = logging.getLogger("article_processor")
 # Configurabili via env
 ARCHIVE_URL = os.environ.get("ARCHIVE_URL", "https://www.artbooms.com/archivio-completo")
 BASE_URL = os.environ.get("BASE_URL", "https://www.artbooms.com")
+
+# Cache locale (file nel container)
 CACHE_PATH = os.environ.get("CACHE_PATH", "articles_cache.json")
-MAX_BATCH = int(os.environ.get("MAX_BATCH", "1"))   # quanti link processare per run (default 1 = uno per volta)
-REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY", "0.8"))  # delay tra richieste per non sovraccaricare
+
+# Cache remota di fallback (RAW del tuo repo GitHub) – lettura all'avvio
+RAW_CACHE_URL = os.environ.get(
+    "RAW_CACHE_URL",
+    "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
+)
+
+MAX_BATCH = int(os.environ.get("MAX_BATCH", "1"))   # quanti link processare per run (default 1)
+REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY", "0.8"))  # pause tra richieste
 
 def _now_iso():
     return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
 
-def _load_cache():
+def _default_cache():
+    return {"items": {}, "cursor": 0, "last_scan": None, "links_hash": None}
+
+def _load_cache_local():
     if os.path.exists(CACHE_PATH):
         try:
             with open(CACHE_PATH, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception:
-            logger.exception("Errore caricamento cache, rigenero")
-    # struttura minima cache
-    return {"items": {}, "cursor": 0, "last_scan": None, "links_hash": None}
+            logger.exception("Errore caricamento cache locale, rigenero")
+    return None
+
+def _load_cache_remote():
+    try:
+        r = requests.get(RAW_CACHE_URL, timeout=20, headers={"User-Agent":"artbooms-rss/1.0"})
+        if r.status_code == 200 and r.text.strip():
+            data = json.loads(r.text)
+            # convalida minima
+            if isinstance(data, dict) and "items" in data and "cursor" in data:
+                return data
+    except Exception:
+        logger.warning("Impossibile leggere cache remota da RAW_CACHE_URL")
+    return None
+
+def _load_cache():
+    # 1) prova locale
+    data = _load_cache_local()
+    if data:
+        return data
+    # 2) prova remota (RAW del repo) – per persistenza ai riavvii
+    data = _load_cache_remote()
+    if data:
+        # salva subito in locale per le run successive
+        _save_cache(data)
+        return data
+    # 3) fallback vuoto
+    return _default_cache()
 
 def _save_cache(cache):
     tmp = CACHE_PATH + ".tmp"
@@ -61,11 +98,10 @@ def _process_one(url, existing_item=None, session=None):
         logger.exception("parse_article failed for %s", url)
         return None, False
 
-    # compute a small content hash per articolo per rilevare modifiche
+    # hash contenuto per rilevare modifiche
     content_hash = hashlib.sha256((item.get("content_text","") + (item.get("modified") or "")).encode("utf-8")).hexdigest()
-    if existing_item:
-        if existing_item.get("_hash") == content_hash:
-            return existing_item, False
+    if existing_item and existing_item.get("_hash") == content_hash:
+        return existing_item, False
     item["_hash"] = content_hash
     item["_fetched_at"] = _now_iso()
     return item, True
@@ -73,7 +109,6 @@ def _process_one(url, existing_item=None, session=None):
 def _select_batch(links, cache):
     """
     Sceglie i prossimi link da processare partendo da cache['cursor'].
-    Default: ritorna fino a MAX_BATCH link (sequenziali), aggiornamento del cursor gestito in generate_items.
     """
     if not links:
         return []
@@ -83,7 +118,6 @@ def _select_batch(links, cache):
         cursor = 0
     end = min(cursor + MAX_BATCH, n)
     batch = links[cursor:end]
-    # se fine, e batch vuoto, prendi primi elementi
     if not batch and n > 0:
         batch = links[:min(MAX_BATCH, n)]
     return batch
@@ -91,8 +125,8 @@ def _select_batch(links, cache):
 def generate_items(force=False):
     """
     Main: ritorna (items_list, meta)
-    - se force=True -> processa tutta la lista di link (slow) (usalo una tantum per popolare cache)
-    - altrimenti processa il prossimo batch partendo dal cursor (default MAX_BATCH=1)
+    - se force=True -> processa tutta la lista di link
+    - altrimenti processa il prossimo batch partendo dal cursor
     """
     cache = _load_cache()
 
@@ -104,28 +138,21 @@ def generate_items(force=False):
     if cache.get("links_hash") != links_hash:
         cache["links_hash"] = links_hash
         cache["last_scan"] = _now_iso()
-        # se era la prima volta, assicurati cursor a 0
         if "cursor" not in cache:
             cache["cursor"] = 0
 
-    # decide ordine: preferisco processare dal più vecchio al più nuovo.
-    # Se l'archivio è ordinato newest->oldest, invertiamo.
-    # Heuristics: se il primo link ha data già in cache e la prima data è più recente della ultima,
-    # supponiamo che la pagina sia newest-first -> invertire.
+    # preferisco processare dal più vecchio al più nuovo se la pagina è newest-first
     try:
         if links:
             first = cache.get("items", {}).get(links[0])
             last = cache.get("items", {}).get(links[-1])
-            # se abbiamo date nel cache possiamo inferire l'ordine
             if first and last and first.get("published") and last.get("published"):
-                # se first published > last published -> archive lists newest first -> invertiamo
                 from dateutil import parser as _p
                 fdt = _p.parse(first["published"])
                 ldt = _p.parse(last["published"])
                 if fdt > ldt:
                     links = list(reversed(links))
             else:
-                # fallback: invertiamo solo se n>50 (presuppongo archivio most recent first)
                 if len(links) > 50:
                     links = list(reversed(links))
     except Exception:
@@ -133,12 +160,12 @@ def generate_items(force=False):
 
     # selezione batch
     if force:
-        batch = links[:]  # processa tutto (attenzione: slow)
+        batch = links[:]
         cache["cursor"] = 0
     else:
         batch = _select_batch(links, cache)
 
-    # process sequentialmente per non sovraccaricare
+    # process sequentialmente
     for url in batch:
         existing = cache.get("items", {}).get(url)
         try:
@@ -149,7 +176,6 @@ def generate_items(force=False):
         if new_item:
             cache.setdefault("items", {})[url] = new_item
             logger.info("Processed %s (changed=%s)", url, changed)
-        # delay prudenziale
         time.sleep(REQUEST_DELAY)
 
     # aggiorno cursor
@@ -158,7 +184,7 @@ def generate_items(force=False):
         cursor = (cursor + len(batch)) % max(1, len(links))
         cache["cursor"] = cursor
 
-    # salva cache
+    # salva cache locale (poi verrà “fotografata” da GitHub Actions)
     _save_cache(cache)
 
     # prepara items_list ordinata (più nuova prima)
@@ -169,7 +195,7 @@ def generate_items(force=False):
                 return datetime(1970,1,1, tzinfo=timezone.utc)
             dt = _p.parse(s)
             if dt.tzinfo is None:
-                return dt.replace(tzinfo=timezone.utc)
+                dt = dt.replace(tzinfo=timezone.utc)
             return dt
         except Exception:
             return datetime(1970,1,1, tzinfo=timezone.utc)
