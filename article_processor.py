@@ -4,11 +4,10 @@ import time
 import hashlib
 import logging
 from datetime import datetime, timezone
-from urllib.parse import urlparse
 import requests
 
 from article_parser import extract_article_links_from_archive_html, parse_article, fetch_html
-import cache_sync  # 🔸 nuovo: per sincronizzare cache con GitHub
+import cache_sync
 
 logger = logging.getLogger("article_processor")
 
@@ -18,13 +17,17 @@ CACHE_PATH = os.environ.get("CACHE_PATH", "articles_cache.json")
 MAX_BATCH = int(os.environ.get("MAX_BATCH", "3"))
 REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY", "0.8"))
 
+
 def _now_iso():
     return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
 
+
 def _load_cache():
-    # 🔸 se la cache locale non esiste, prova a scaricarla da GitHub
     if not os.path.exists(CACHE_PATH):
-        cache_sync.pull_cache_if_missing(CACHE_PATH)
+        try:
+            cache_sync.pull_cache_if_missing(CACHE_PATH)
+        except Exception:
+            logger.warning("Impossibile ripristinare cache da GitHub")
     if os.path.exists(CACHE_PATH):
         try:
             with open(CACHE_PATH, "r", encoding="utf-8") as f:
@@ -33,16 +36,17 @@ def _load_cache():
             logger.exception("Errore caricamento cache, rigenero")
     return {"items": {}, "cursor": 0, "last_scan": None, "links_hash": None}
 
+
 def _save_cache(cache):
     tmp = CACHE_PATH + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(cache, f, ensure_ascii=False, indent=2)
     os.replace(tmp, CACHE_PATH)
-    # 🔸 dopo ogni salvataggio, sincronizza su GitHub
     try:
         cache_sync.push_cache_if_changed(CACHE_PATH)
     except Exception:
-        logger.exception("Errore sincronizzazione cache su GitHub")
+        logger.warning("Errore sincronizzazione cache su GitHub")
+
 
 def _hash_links(links):
     h = hashlib.sha256()
@@ -50,10 +54,12 @@ def _hash_links(links):
         h.update(u.encode("utf-8"))
     return h.hexdigest()
 
+
 def _scan_archive(session=None):
     s = session or requests.Session()
     html = fetch_html(ARCHIVE_URL, session=s)
     return extract_article_links_from_archive_html(html, BASE_URL)
+
 
 def _process_one(url, existing_item=None, session=None):
     s = session or requests.Session()
@@ -63,12 +69,15 @@ def _process_one(url, existing_item=None, session=None):
         logger.exception("parse_article failed for %s", url)
         return None, False
 
-    content_hash = hashlib.sha256((item.get("content_text", "") + (item.get("modified") or "")).encode("utf-8")).hexdigest()
+    content_hash = hashlib.sha256(
+        (item.get("content_text", "") + (item.get("modified") or "")).encode("utf-8")
+    ).hexdigest()
     if existing_item and existing_item.get("_hash") == content_hash:
         return existing_item, False
     item["_hash"] = content_hash
     item["_fetched_at"] = _now_iso()
     return item, True
+
 
 def _select_batch(links, cache):
     if not links:
@@ -82,6 +91,7 @@ def _select_batch(links, cache):
     if not batch and n > 0:
         batch = links[:min(MAX_BATCH, n)]
     return batch
+
 
 def generate_items(force=False):
     cache = _load_cache()
@@ -131,7 +141,10 @@ def generate_items(force=False):
             return datetime(1970, 1, 1, tzinfo=timezone.utc)
 
     items_list = list(cache.get("items", {}).values())
-    items_list.sort(key=lambda x: max(_to_dt(x.get("modified")), _to_dt(x.get("published"))), reverse=True)
+    items_list.sort(
+        key=lambda x: max(_to_dt(x.get("modified")), _to_dt(x.get("published"))),
+        reverse=True
+    )
 
     meta = {
         "self_url": os.environ.get("SELF_FEED_URL", ""),
@@ -142,6 +155,7 @@ def generate_items(force=False):
     }
 
     return items_list, meta
+
 
 def load_cache():
     return _load_cache()
