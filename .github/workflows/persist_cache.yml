@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write
+      contents: write  # serve per poter fare push sul repo
 
     steps:
       - name: Checkout repo
@@ -20,14 +20,15 @@ jobs:
         run: |
           mkdir -p cache
           echo "Scarico la cache da Render..."
-          curl -fsSL https://artbooms-rss.onrender.com/debug/cache -o cache/articles_cache.json || echo '{}' > cache/articles_cache.json
+          curl -fsSL https://artbooms-rss.onrender.com/cache/download -o cache/articles_cache.json || echo '{}' > cache/articles_cache.json
 
       - name: Force add and commit cache
         run: |
-          echo "Syncing at $(date)" > cache/last_sync.txt
+          mkdir -p cache
+          echo "syncing at $(date)" > cache/last_sync.txt
           git config user.name "artbooms-bot"
           git config user.email "bot@artbooms.com"
-          git add -f cache/articles_cache.json
+          git add -f cache/articles_cache.json || echo "niente cache da aggiungere"
           git add -f cache/last_sync.txt
           git commit -m "Aggiornamento automatico cache RSS" || echo "Nessun cambiamento"
           git push
