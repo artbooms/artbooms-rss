@@ -10,57 +10,30 @@ from article_parser import extract_article_links_from_archive_html, parse_articl
 
 logger = logging.getLogger("article_processor")
 
+# 🔧 Configurazione base
 ARCHIVE_URL = os.environ.get("ARCHIVE_URL", "https://www.artbooms.com/archivio-completo")
 BASE_URL = os.environ.get("BASE_URL", "https://www.artbooms.com")
 CACHE_PATH = os.environ.get("CACHE_PATH", "articles_cache.json")
-MAX_BATCH = int(os.environ.get("MAX_BATCH", "1"))
+MAX_BATCH = int(os.environ.get("MAX_BATCH", "3"))
 REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY", "0.8"))
 
-# 🔹 parametri per backup su GitHub
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
-GITHUB_API_URL = "https://api.github.com/repos/artbooms/artbooms-rss/contents/cache/articles_cache.json"
+# 🔗 URL pubblico del file cache su GitHub (raw)
+GITHUB_RAW_CACHE_URL = (
+    "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
+)
+
+
+# -----------------------------------------------------------------------------
+# Utility
+# -----------------------------------------------------------------------------
 
 def _now_iso():
     return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
 
-def _load_cache():
-    if os.path.exists(CACHE_PATH):
-        try:
-            with open(CACHE_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            logger.exception("Errore caricamento cache, rigenero")
-    return {"items": {}, "cursor": 0, "last_scan": None, "links_hash": None}
 
-def _save_cache(cache):
-    tmp = CACHE_PATH + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(cache, f, ensure_ascii=False, indent=2)
-    os.replace(tmp, CACHE_PATH)
+def _hash_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
-def _upload_cache_to_github(cache):
-    """Copia di sicurezza della cache su GitHub, se il token è presente."""
-    if not GITHUB_TOKEN:
-        return
-    try:
-        # leggo SHA esistente
-        r = requests.get(GITHUB_API_URL, headers={"Authorization": f"token {GITHUB_TOKEN}"})
-        sha = r.json().get("sha") if r.status_code == 200 else None
-        payload = {
-            "message": "Auto-update cache",
-            "content": json.dumps(cache, ensure_ascii=False, indent=2).encode("utf-8").decode("utf-8"),
-            "sha": sha,
-            "branch": "main"
-        }
-        resp = requests.put(
-            GITHUB_API_URL,
-            headers={"Authorization": f"token {GITHUB_TOKEN}", "Content-Type": "application/json"},
-            data=json.dumps(payload)
-        )
-        if resp.status_code not in (200, 201):
-            logger.warning(f"Upload cache fallito: {resp.status_code}")
-    except Exception as e:
-        logger.warning(f"Errore upload cache GitHub: {e}")
 
 def _hash_links(links):
     h = hashlib.sha256()
@@ -68,114 +41,116 @@ def _hash_links(links):
         h.update(u.encode("utf-8"))
     return h.hexdigest()
 
+
+# -----------------------------------------------------------------------------
+# Cache handling
+# -----------------------------------------------------------------------------
+
+def _load_cache():
+    """Carica la cache locale o, se mancante, prova a scaricarla da GitHub."""
+    if os.path.exists(CACHE_PATH):
+        try:
+            with open(CACHE_PATH, "r", encoding="utf-8") as f:
+                cache = json.load(f)
+                logger.info(f"Cache locale caricata con {len(cache.get('items', {}))} articoli.")
+                return cache
+        except Exception:
+            logger.exception("Errore durante il caricamento della cache locale, rigenero.")
+    else:
+        # 🔹 se non esiste cache locale, prova a leggere da GitHub raw
+        try:
+            logger.info("Cache locale non trovata, provo a scaricare da GitHub...")
+            resp = requests.get(GITHUB_RAW_CACHE_URL, timeout=10)
+            if resp.status_code == 200 and resp.text.strip():
+                cache = json.loads(resp.text)
+                _save_cache(cache)
+                logger.info(f"Cache scaricata da GitHub con {len(cache.get('items', {}))} articoli.")
+                return cache
+            else:
+                logger.warning(f"Nessuna cache valida trovata su GitHub (status {resp.status_code}).")
+        except Exception as e:
+            logger.warning(f"Errore nel recupero cache da GitHub: {e}")
+
+    # fallback vuoto
+    logger.info("Cache vuota inizializzata.")
+    return {"items": {}, "cursor": 0, "last_scan": None, "links_hash": None}
+
+
+def _save_cache(cache):
+    tmp = CACHE_PATH + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(cache, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, CACHE_PATH)
+
+
+def load_cache():
+    return _load_cache()
+
+
+# -----------------------------------------------------------------------------
+# Article scanning and processing
+# -----------------------------------------------------------------------------
+
 def _scan_archive(session=None):
     s = session or requests.Session()
     html = fetch_html(ARCHIVE_URL, session=s)
     links = extract_article_links_from_archive_html(html, BASE_URL)
     return links
 
+
 def _process_one(url, existing_item=None, session=None):
     s = session or requests.Session()
     try:
         item = parse_article(url, session=s)
     except Exception:
-        logger.exception("parse_article failed for %s", url)
+        logger.exception(f"Errore parse_article su {url}")
         return None, False
-    content_hash = hashlib.sha256((item.get("content_text","") + (item.get("modified") or "")).encode("utf-8")).hexdigest()
-    if existing_item and existing_item.get("_hash") == content_hash:
-        return existing_item, False
-    item["_hash"] = content_hash
-    item["_fetched_at"] = _now_iso()
+
+    # Calcola hash del contenuto per verificare modifiche
+    content_hash = _hash_text(item.get("description", "") + item.get("title", ""))
+    if existing_item and existing_item.get("hash") == content_hash:
+        return existing_item, False  # Nessuna modifica
+
+    item["hash"] = content_hash
+    item["updated_at"] = _now_iso()
     return item, True
 
-def _select_batch(links, cache):
-    if not links:
-        return []
-    cursor = cache.get("cursor", 0) or 0
-    n = len(links)
-    if cursor >= n:
-        cursor = 0
-    end = min(cursor + MAX_BATCH, n)
-    batch = links[cursor:end]
-    if not batch and n > 0:
-        batch = links[:min(MAX_BATCH, n)]
-    return batch
 
 def generate_items(force=False):
+    """Aggiorna la cache elaborando batch di articoli e restituisce gli item correnti."""
     cache = _load_cache()
     session = requests.Session()
-    links = _scan_archive(session=session)
+
+    links = _scan_archive(session)
     links_hash = _hash_links(links)
+    if not force and cache.get("links_hash") == links_hash:
+        logger.info("Nessun cambiamento negli archivi, uso la cache esistente.")
+        items = list(cache["items"].values())
+        return items, {"generated_at": _now_iso(), "total": len(items)}
 
-    if cache.get("links_hash") != links_hash:
-        cache["links_hash"] = links_hash
-        cache["last_scan"] = _now_iso()
-        if "cursor" not in cache:
-            cache["cursor"] = 0
+    cursor = cache.get("cursor", 0)
+    batch_links = links[cursor:cursor + MAX_BATCH]
+    logger.info(f"Elaboro batch di {len(batch_links)} articoli (cursor={cursor})...")
 
-    try:
-        if links:
-            first = cache.get("items", {}).get(links[0])
-            last = cache.get("items", {}).get(links[-1])
-            if first and last and first.get("published") and last.get("published"):
-                from dateutil import parser as _p
-                if _p.parse(first["published"]) > _p.parse(last["published"]):
-                    links = list(reversed(links))
-            elif len(links) > 50:
-                links = list(reversed(links))
-    except Exception:
-        pass
-
-    if force:
-        batch = links[:]
-        cache["cursor"] = 0
-    else:
-        batch = _select_batch(links, cache)
-
-    for url in batch:
-        existing = cache.get("items", {}).get(url)
-        try:
-            new_item, changed = _process_one(url, existing_item=existing, session=session)
-        except Exception:
-            logger.exception("Errore _process_one su %s", url)
-            new_item, changed = None, False
-        if new_item:
-            cache.setdefault("items", {})[url] = new_item
-            logger.info("Processed %s (changed=%s)", url, changed)
+    updated = 0
+    for url in batch_links:
+        existing_item = cache["items"].get(url)
+        item, changed = _process_one(url, existing_item, session)
+        if item:
+            cache["items"][url] = item
+            if changed:
+                updated += 1
         time.sleep(REQUEST_DELAY)
 
-    if links:
-        cursor = cache.get("cursor", 0) or 0
-        cursor = (cursor + len(batch)) % max(1, len(links))
-        cache["cursor"] = cursor
-
+    cache["cursor"] = cursor + len(batch_links)
+    cache["last_scan"] = _now_iso()
+    cache["links_hash"] = links_hash
     _save_cache(cache)
-    _upload_cache_to_github(cache)
 
-    from dateutil import parser as _p
-    def _to_dt(s):
-        try:
-            if not s:
-                return datetime(1970,1,1, tzinfo=timezone.utc)
-            dt = _p.parse(s)
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
-            return dt
-        except Exception:
-            return datetime(1970,1,1, tzinfo=timezone.utc)
-
-    items_list = list(cache.get("items", {}).values())
-    items_list.sort(key=lambda x: max(_to_dt(x.get("modified")), _to_dt(x.get("published"))), reverse=True)
-
-    meta = {
-        "self_url": os.environ.get("SELF_FEED_URL", ""),
-        "title": os.environ.get("FEED_TITLE", "ARTBOOMS - Archivio completo"),
-        "description": os.environ.get("FEED_DESCRIPTION", "Tutti gli articoli di Artbooms con aggiornamenti automatici"),
-        "language": os.environ.get("FEED_LANGUAGE", "it-IT"),
-        "build_time": datetime.utcnow().replace(tzinfo=timezone.utc)
+    total_items = len(cache["items"])
+    logger.info(f"Cache aggiornata: {total_items} articoli totali, {updated} modificati.")
+    return list(cache["items"].values()), {
+        "generated_at": _now_iso(),
+        "total": total_items,
+        "updated": updated,
     }
-
-    return items_list, meta
-
-def load_cache():
-    return _load_cache()
