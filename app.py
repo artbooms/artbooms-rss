@@ -103,12 +103,18 @@ def debug_cache():
 
 
 def background_populator():
-    """Thread che aggiorna la cache ogni minuto senza bloccare Flask"""
+    """Thread che aggiorna la cache ogni minuto e rigenera il feed se cambia"""
+    previous_count = 0
     while True:
         try:
-            generate_items(force=False)
-            _rebuild_feed_from_disk_cache()
-            logger.info("Cache aggiornata automaticamente")
+            items, _ = generate_items(force=False)
+            current_count = len(items)
+            if current_count != previous_count:
+                _rebuild_feed_from_disk_cache()
+                logger.info("Feed ricostruito automaticamente: %d articoli", current_count)
+                previous_count = current_count
+            else:
+                logger.info("Nessun nuovo articolo, feed invariato (%d articoli)", current_count)
         except Exception as e:
             logger.exception("Errore background_populator: %s", e)
         time.sleep(60)
