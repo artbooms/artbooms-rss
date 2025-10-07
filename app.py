@@ -102,6 +102,13 @@ def debug_cache():
     )
 
 
+@app.get("/cache/download")
+def cache_download():
+    """Restituisce la cache completa come file JSON per GitHub Actions"""
+    cache = load_cache() or {}
+    return jsonify(cache)
+
+
 def background_populator():
     """Thread che aggiorna la cache ogni minuto e rigenera il feed se cambia"""
     previous_count = 0
@@ -111,47 +118,14 @@ def background_populator():
             current_count = len(items)
             if current_count != previous_count:
                 _rebuild_feed_from_disk_cache()
-                logger.info("Feed ricostruito automaticamente: %d articoli", current_count)
+                logger.info(
+                    "Feed ricostruito automaticamente: %d articoli", current_count
+                )
                 previous_count = current_count
             else:
-                logger.info("Nessun nuovo articolo, feed invariato (%d articoli)", current_count)
+                logger.info(
+                    "Nessun nuovo articolo, feed invariato (%d articoli)", current_count
+                )
         except Exception as e:
             logger.exception("Errore background_populator: %s", e)
         time.sleep(60)
-
-
-def start_background_thread_once():
-    """Evita più thread se Flask/Gunicorn crea più processi"""
-    if not getattr(app, "_thread_started", False):
-        app._thread_started = True
-        t = threading.Thread(target=background_populator, daemon=True)
-        t.start()
-        logger.info("Thread di popolamento automatico avviato in background")
-
-
-@app.before_request
-def ensure_background_thread():
-    """Avvia il thread al primo accesso, se non già attivo"""
-    start_background_thread_once()
-
-
-@app.get("/healthz")
-def healthz():
-    return jsonify(
-        {
-            "ok": True,
-            "last_build": FEED_CACHE["last_build"].isoformat()
-            if FEED_CACHE["last_build"]
-            else None,
-        }
-    )
-
-
-# -----------------------------------------------------------------------------
-# 🚀 FIX: avvia sempre il thread anche quando Render risveglia Gunicorn
-# -----------------------------------------------------------------------------
-start_background_thread_once()
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", "5000"))
-    app.run(host="0.0.0.0", port=port)
