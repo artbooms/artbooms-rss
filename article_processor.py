@@ -4,75 +4,56 @@ import time
 import hashlib
 import logging
 from datetime import datetime, timezone
+from urllib.parse import urlparse
+
 import requests
 
 from article_parser import extract_article_links_from_archive_html, parse_article, fetch_html
 
 logger = logging.getLogger("article_processor")
 
-# 🔧 Configurazione base
+# Configurabili via env
 ARCHIVE_URL = os.environ.get("ARCHIVE_URL", "https://www.artbooms.com/archivio-completo")
 BASE_URL = os.environ.get("BASE_URL", "https://www.artbooms.com")
 CACHE_PATH = os.environ.get("CACHE_PATH", "articles_cache.json")
-MAX_BATCH = int(os.environ.get("MAX_BATCH", "3"))
-REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY", "0.8"))
+MAX_BATCH = int(os.environ.get("MAX_BATCH", "1"))   # quanti link processare per run
+REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY", "0.8"))  # delay tra richieste
+GITHUB_RAW_CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
 
-# 🔗 URL pubblico del file cache su GitHub (raw)
-GITHUB_RAW_CACHE_URL = (
-    "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
-)
-
-
-# -----------------------------------------------------------------------------
-# Utility
-# -----------------------------------------------------------------------------
 
 def _now_iso():
     return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
 
 
-def _hash_text(text: str) -> str:
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
-
-
-def _hash_links(links):
-    h = hashlib.sha256()
-    for u in links:
-        h.update(u.encode("utf-8"))
-    return h.hexdigest()
-
-
-# -----------------------------------------------------------------------------
-# Cache handling
-# -----------------------------------------------------------------------------
-
 def _load_cache():
-    """Carica la cache locale o, se mancante, prova a scaricarla da GitHub."""
+    """
+    Carica la cache locale; se mancante, tenta il recupero automatico da GitHub raw.
+    """
     if os.path.exists(CACHE_PATH):
         try:
             with open(CACHE_PATH, "r", encoding="utf-8") as f:
                 cache = json.load(f)
-                logger.info(f"Cache locale caricata con {len(cache.get('items', {}))} articoli.")
+                logger.info("Cache locale caricata (%d articoli)", len(cache.get("items", {})))
                 return cache
         except Exception:
-            logger.exception("Errore durante il caricamento della cache locale, rigenero.")
-    else:
-        # 🔹 se non esiste cache locale, prova a leggere da GitHub raw
-        try:
-            logger.info("Cache locale non trovata, provo a scaricare da GitHub...")
-            resp = requests.get(GITHUB_RAW_CACHE_URL, timeout=10)
-            if resp.status_code == 200 and resp.text.strip():
-                cache = json.loads(resp.text)
-                _save_cache(cache)
-                logger.info(f"Cache scaricata da GitHub con {len(cache.get('items', {}))} articoli.")
-                return cache
-            else:
-                logger.warning(f"Nessuna cache valida trovata su GitHub (status {resp.status_code}).")
-        except Exception as e:
-            logger.warning(f"Errore nel recupero cache da GitHub: {e}")
+            logger.exception("Errore caricamento cache locale, rigenero")
 
-    # fallback vuoto
-    logger.info("Cache vuota inizializzata.")
+    # se non esiste, prova a scaricare da GitHub
+    try:
+        logger.info("Cache locale mancante: provo a scaricare da GitHub...")
+        resp = requests.get(GITHUB_RAW_CACHE_URL, timeout=10)
+        if resp.status_code == 200 and resp.text.strip():
+            cache = json.loads(resp.text)
+            _save_cache(cache)
+            logger.info("Cache scaricata da GitHub (%d articoli)", len(cache.get("items", {})))
+            return cache
+        else:
+            logger.warning(f"Nessuna cache valida trovata su GitHub (status={resp.status_code})")
+    except Exception as e:
+        logger.warning(f"Errore recupero cache da GitHub: {e}")
+
+    # struttura minima cache
+    logger.info("Cache vuota inizializzata")
     return {"items": {}, "cursor": 0, "last_scan": None, "links_hash": None}
 
 
@@ -83,13 +64,12 @@ def _save_cache(cache):
     os.replace(tmp, CACHE_PATH)
 
 
-def load_cache():
-    return _load_cache()
+def _hash_links(links):
+    h = hashlib.sha256()
+    for u in links:
+        h.update(u.encode("utf-8"))
+    return h.hexdigest()
 
-
-# -----------------------------------------------------------------------------
-# Article scanning and processing
-# -----------------------------------------------------------------------------
 
 def _scan_archive(session=None):
     s = session or requests.Session()
@@ -103,54 +83,109 @@ def _process_one(url, existing_item=None, session=None):
     try:
         item = parse_article(url, session=s)
     except Exception:
-        logger.exception(f"Errore parse_article su {url}")
+        logger.exception("parse_article failed for %s", url)
         return None, False
 
-    # Calcola hash del contenuto per verificare modifiche
-    content_hash = _hash_text(item.get("description", "") + item.get("title", ""))
-    if existing_item and existing_item.get("hash") == content_hash:
-        return existing_item, False  # Nessuna modifica
-
-    item["hash"] = content_hash
-    item["updated_at"] = _now_iso()
+    content_hash = hashlib.sha256((item.get("content_text", "") + (item.get("modified") or "")).encode("utf-8")).hexdigest()
+    if existing_item and existing_item.get("_hash") == content_hash:
+        return existing_item, False
+    item["_hash"] = content_hash
+    item["_fetched_at"] = _now_iso()
     return item, True
 
 
+def _select_batch(links, cache):
+    if not links:
+        return []
+    cursor = cache.get("cursor", 0) or 0
+    n = len(links)
+    if cursor >= n:
+        cursor = 0
+    end = min(cursor + MAX_BATCH, n)
+    batch = links[cursor:end]
+    if not batch and n > 0:
+        batch = links[:min(MAX_BATCH, n)]
+    return batch
+
+
 def generate_items(force=False):
-    """Aggiorna la cache elaborando batch di articoli e restituisce gli item correnti."""
     cache = _load_cache()
     session = requests.Session()
-
-    links = _scan_archive(session)
+    links = _scan_archive(session=session)
     links_hash = _hash_links(links)
-    if not force and cache.get("links_hash") == links_hash:
-        logger.info("Nessun cambiamento negli archivi, uso la cache esistente.")
-        items = list(cache["items"].values())
-        return items, {"generated_at": _now_iso(), "total": len(items)}
 
-    cursor = cache.get("cursor", 0)
-    batch_links = links[cursor:cursor + MAX_BATCH]
-    logger.info(f"Elaboro batch di {len(batch_links)} articoli (cursor={cursor})...")
+    if cache.get("links_hash") != links_hash:
+        cache["links_hash"] = links_hash
+        cache["last_scan"] = _now_iso()
+        if "cursor" not in cache:
+            cache["cursor"] = 0
 
-    updated = 0
-    for url in batch_links:
-        existing_item = cache["items"].get(url)
-        item, changed = _process_one(url, existing_item, session)
-        if item:
-            cache["items"][url] = item
-            if changed:
-                updated += 1
+    try:
+        if links:
+            first = cache.get("items", {}).get(links[0])
+            last = cache.get("items", {}).get(links[-1])
+            if first and last and first.get("published") and last.get("published"):
+                from dateutil import parser as _p
+                fdt = _p.parse(first["published"])
+                ldt = _p.parse(last["published"])
+                if fdt > ldt:
+                    links = list(reversed(links))
+            else:
+                if len(links) > 50:
+                    links = list(reversed(links))
+    except Exception:
+        pass
+
+    if force:
+        batch = links[:]
+        cache["cursor"] = 0
+    else:
+        batch = _select_batch(links, cache)
+
+    for url in batch:
+        existing = cache.get("items", {}).get(url)
+        try:
+            new_item, changed = _process_one(url, existing_item=existing, session=session)
+        except Exception:
+            logger.exception("Errore _process_one su %s", url)
+            new_item, changed = None, False
+        if new_item:
+            cache.setdefault("items", {})[url] = new_item
+            logger.info("Processed %s (changed=%s)", url, changed)
         time.sleep(REQUEST_DELAY)
 
-    cache["cursor"] = cursor + len(batch_links)
-    cache["last_scan"] = _now_iso()
-    cache["links_hash"] = links_hash
+    if links:
+        cursor = cache.get("cursor", 0) or 0
+        cursor = (cursor + len(batch)) % max(1, len(links))
+        cache["cursor"] = cursor
+
     _save_cache(cache)
 
-    total_items = len(cache["items"])
-    logger.info(f"Cache aggiornata: {total_items} articoli totali, {updated} modificati.")
-    return list(cache["items"].values()), {
-        "generated_at": _now_iso(),
-        "total": total_items,
-        "updated": updated,
+    def _to_dt(s):
+        try:
+            from dateutil import parser as _p
+            if not s:
+                return datetime(1970, 1, 1, tzinfo=timezone.utc)
+            dt = _p.parse(s)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt
+        except Exception:
+            return datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+    items_list = list(cache.get("items", {}).values())
+    items_list.sort(key=lambda x: max(_to_dt(x.get("modified")), _to_dt(x.get("published"))), reverse=True)
+
+    meta = {
+        "self_url": os.environ.get("SELF_FEED_URL", ""),
+        "title": os.environ.get("FEED_TITLE", "ARTBOOMS - Archivio completo"),
+        "description": os.environ.get("FEED_DESCRIPTION", "Tutti gli articoli di Artbooms con aggiornamenti automatici"),
+        "language": os.environ.get("FEED_LANGUAGE", "it-IT"),
+        "build_time": datetime.utcnow().replace(tzinfo=timezone.utc)
     }
+
+    return items_list, meta
+
+
+def load_cache():
+    return _load_cache()
