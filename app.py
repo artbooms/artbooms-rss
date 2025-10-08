@@ -21,9 +21,11 @@ META = {
     "self_url": "https://artbooms-rss.onrender.com/rss",
 }
 
-# ✅ Percorso corretto della cache (nella sottocartella /cache)
 CACHE_PATH = "cache/articles_cache.json"
 GITHUB_CACHE_RAW_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
+
+# 🔒 Lock globale per sincronizzare il bootstrap
+_bootstrap_lock = threading.Lock()
 
 
 def _items_from_cache_sorted():
@@ -91,7 +93,7 @@ def debug_cache():
 
 @app.get("/cache/download")
 def cache_download():
-    """✅ Serve al workflow GitHub per scaricare la cache"""
+    """Usato da GitHub Actions per salvare la cache"""
     if not os.path.exists(CACHE_PATH):
         return jsonify({"error": "cache not found"}), 404
     with open(CACHE_PATH, "r", encoding="utf-8") as f:
@@ -121,7 +123,6 @@ def start_background_thread_once():
 
 @app.before_request
 def ensure_background_thread():
-    """Avvia il thread al primo accesso, se non già attivo"""
     start_background_thread_once()
 
 
@@ -133,32 +134,29 @@ def healthz():
     })
 
 
-# ✅ Carica la cache da GitHub se manca in locale
 def bootstrap_cache():
     """Scarica la cache persistente da GitHub raw se non esiste in locale"""
-    if os.path.exists(CACHE_PATH):
-        logger.info(f"[Bootstrap] Cache locale trovata: {CACHE_PATH}")
-        return
-    import requests
-    try:
-        logger.info("[Bootstrap] Scarico cache da GitHub...")
-        os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
-        r = requests.get(GITHUB_CACHE_RAW_URL, timeout=15)
-        if r.status_code == 200 and r.content:
-            with open(CACHE_PATH, "wb") as f:
-                f.write(r.content)
-            logger.info("[Bootstrap] Cache scaricata con successo.")
-        else:
-            logger.warning(f"[Bootstrap] Nessuna cache disponibile (HTTP {r.status_code})")
-    except Exception as e:
-        logger.warning(f"[Bootstrap] Errore nel download cache: {e}")
+    with _bootstrap_lock:
+        if os.path.exists(CACHE_PATH):
+            logger.info(f"[Bootstrap] Cache locale trovata: {CACHE_PATH}")
+            return
+        import requests
+        try:
+            logger.info("[Bootstrap] Scarico cache da GitHub...")
+            os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
+            r = requests.get(GITHUB_CACHE_RAW_URL, timeout=15)
+            if r.status_code == 200 and r.content:
+                with open(CACHE_PATH, "wb") as f:
+                    f.write(r.content)
+                logger.info("[Bootstrap] Cache scaricata con successo.")
+            else:
+                logger.warning(f"[Bootstrap] Nessuna cache disponibile (HTTP {r.status_code})")
+        except Exception as e:
+            logger.warning(f"[Bootstrap] Errore nel download cache: {e}")
 
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5000"))
-
-    # ✅ tenta di caricare la cache persistente all’avvio
-    bootstrap_cache()
-
+    bootstrap_cache()     # ✅ Garantito thread-safe
     start_background_thread_once()
     app.run(host="0.0.0.0", port=port)
