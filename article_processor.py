@@ -2,200 +2,139 @@ import os
 import json
 import time
 import hashlib
-import logging
 from datetime import datetime, timezone
+from typing import Dict, Any, List, Optional
 import requests
+from xml.etree import ElementTree as ET
 
-from article_parser import extract_article_links_from_archive_html, parse_article, fetch_html
-
-logger = logging.getLogger("article_processor")
-
-# 🔧 Configurazione base
-ARCHIVE_URL = os.environ.get("ARCHIVE_URL", "https://www.artbooms.com/archivio-completo")
+# Se preferisci continuare con la tua pagina "archivio", imposta INDEX_FEED_URL di conseguenza.
+# L'RSS di Squarespace è leggero e stabile per l'indice.
+INDEX_FEED_URL = os.environ.get("INDEX_FEED_URL", "https://www.artbooms.com/blog?format=rss")
 BASE_URL = os.environ.get("BASE_URL", "https://www.artbooms.com")
 CACHE_PATH = os.environ.get("CACHE_PATH", "articles_cache.json")
-MAX_BATCH = int(os.environ.get("MAX_BATCH", "3"))
-REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY", "0.8"))
+HTTP_TIMEOUT = float(os.environ.get("HTTP_TIMEOUT", "15"))
+USER_AGENT = os.environ.get("HTTP_USER_AGENT", "artbooms-rss/1.0 (+https://www.artbooms.com)")
 
-# 🔗 URL pubblico della cache su GitHub (no token richiesto)
-GITHUB_RAW_CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
+def _headers() -> Dict[str, str]:
+    return {"User-Agent": USER_AGENT, "Accept": "*/*"}
 
-# -----------------------------------------------------------------------------
-# Funzioni di utilità
-# -----------------------------------------------------------------------------
-def _now_iso():
-    return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
+# ===== Cache I/O =====
 
+def read_cache(local_path: str) -> Dict[str, Any]:
+    if not os.path.exists(local_path):
+        return {"version": 1, "last_updated": None, "articles": []}
+    with open(local_path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
-def _save_cache(cache):
-    tmp = CACHE_PATH + ".tmp"
+def _atomic_write(path: str, data: Dict[str, Any]) -> None:
+    tmp = f"{path}.tmp"
     with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(cache, f, ensure_ascii=False, indent=2)
-    os.replace(tmp, CACHE_PATH)
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, path)
 
+def save_cache(local_path: str, cache: Dict[str, Any]) -> None:
+    cache["last_updated"] = _now_iso()
+    _atomic_write(local_path, cache)
 
-def _hash_links(links):
-    h = hashlib.sha256()
-    for u in links:
-        h.update(u.encode("utf-8"))
-    return h.hexdigest()
-
-
-# -----------------------------------------------------------------------------
-# Gestione cache (locale + GitHub)
-# -----------------------------------------------------------------------------
-def _load_cache():
-    """Carica la cache locale o la scarica da GitHub se mancante."""
-    if os.path.exists(CACHE_PATH):
+def ensure_cache(local_path: str, github_raw_url: Optional[str] = None) -> None:
+    """Se la cache locale non esiste, prova a scaricarla dal raw GitHub; altrimenti inizializza vuota."""
+    if os.path.exists(local_path):
+        return
+    if github_raw_url:
         try:
-            with open(CACHE_PATH, "r", encoding="utf-8") as f:
-                cache = json.load(f)
-                logger.info("Cache locale caricata con %d articoli", len(cache.get("items", {})))
-                return cache
+            r = requests.get(github_raw_url, headers=_headers(), timeout=HTTP_TIMEOUT)
+            if r.status_code == 200 and r.content:
+                cache = json.loads(r.content.decode("utf-8"))
+                _atomic_write(local_path, cache)
+                return
         except Exception:
-            logger.exception("Errore caricamento cache locale, rigenero")
+            pass
+    _atomic_write(local_path, {"version": 1, "last_updated": None, "articles": []})
 
-    # Se la cache non esiste, tenta da GitHub
-    try:
-        logger.info("Cache locale mancante: provo a scaricare da GitHub...")
-        resp = requests.get(GITHUB_RAW_CACHE_URL, timeout=10)
-        if resp.status_code == 200 and resp.text.strip():
-            cache = json.loads(resp.text)
-            _save_cache(cache)
-            logger.info("Cache scaricata da GitHub con %d articoli", len(cache.get("items", {})))
-            return cache
-        else:
-            logger.warning(f"Nessuna cache valida trovata su GitHub (status={resp.status_code})")
-    except Exception as e:
-        logger.warning(f"Errore recupero cache da GitHub: {e}")
+# ===== Fetch indice + parsing articoli =====
 
-    # Cache vuota come fallback
-    logger.info("Inizializzo nuova cache vuota")
-    return {"items": {}, "cursor": 0, "last_scan": None, "links_hash": None}
+def _fetch_index_items() -> List[Dict[str, str]]:
+    """Ritorna [{title, link, guid, pub_date}] dall'RSS di Squarespace."""
+    r = requests.get(INDEX_FEED_URL, headers=_headers(), timeout=HTTP_TIMEOUT)
+    r.raise_for_status()
+    root = ET.fromstring(r.content)
+    items: List[Dict[str, str]] = []
+    for item in root.findall("./channel/item"):
+        title = (item.findtext("title") or "").strip()
+        link = (item.findtext("link") or "").strip()
+        guid = (item.findtext("guid") or link).strip()
+        pub_date = (item.findtext("pubDate") or "").strip()
+        items.append({"title": title, "link": link, "guid": guid, "pub_date": pub_date})
+    return items
 
+def _fetch_html(url: str) -> str:
+    r = requests.get(url, headers=_headers(), timeout=HTTP_TIMEOUT)
+    r.raise_for_status()
+    return r.text
 
-# -----------------------------------------------------------------------------
-# Parsing e aggiornamento articoli
-# -----------------------------------------------------------------------------
-def _scan_archive(session=None):
-    s = session or requests.Session()
-    html = fetch_html(ARCHIVE_URL, session=s)
-    links = extract_article_links_from_archive_html(html, BASE_URL)
-    return links
+# Usa il tuo parser già corretto
+import article_parser  # parse_article(html, url) -> dict con titolo, autore, descrizione, ecc.
 
+def _article_id(guid_or_url: str) -> str:
+    return hashlib.sha1(guid_or_url.encode("utf-8")).hexdigest()
 
-def _process_one(url, existing_item=None, session=None):
-    s = session or requests.Session()
-    try:
-        item = parse_article(url, session=s)
-    except Exception:
-        logger.exception("parse_article failed for %s", url)
-        return None, False
+def _merge_article(cache: Dict[str, Any], article: Dict[str, Any]) -> None:
+    articles = cache.setdefault("articles", [])
+    idx = next((i for i, a in enumerate(articles) if a.get("id") == article.get("id")), None)
+    if idx is None:
+        articles.append(article)
+    else:
+        articles[idx] = article
+    # ordina per data se disponibile
+    def key(a): return a.get("published_iso") or a.get("published") or ""
+    articles.sort(key=key, reverse=True)
 
-    content_hash = hashlib.sha256(
-        (item.get("content_text", "") + (item.get("modified") or "")).encode("utf-8")
-    ).hexdigest()
-
-    if existing_item and existing_item.get("_hash") == content_hash:
-        return existing_item, False
-
-    item["_hash"] = content_hash
-    item["_fetched_at"] = _now_iso()
-    return item, True
-
-
-def _select_batch(links, cache):
-    """Seleziona i prossimi link da processare (batch)."""
-    if not links:
-        return []
-    cursor = cache.get("cursor", 0) or 0
-    n = len(links)
-    if cursor >= n:
-        cursor = 0
-    end = min(cursor + MAX_BATCH, n)
-    batch = links[cursor:end]
-    if not batch and n > 0:
-        batch = links[:min(MAX_BATCH, n)]
-    return batch
-
-
-def generate_items(force=False):
-    """Aggiorna la cache e restituisce gli articoli."""
-    cache = _load_cache()
-    session = requests.Session()
-    links = _scan_archive(session=session)
-    links_hash = _hash_links(links)
-
-    if cache.get("links_hash") != links_hash:
-        cache["links_hash"] = links_hash
-        cache["last_scan"] = _now_iso()
-        if "cursor" not in cache:
-            cache["cursor"] = 0
-
-    # inversione ordine se archivio newest->oldest
-    try:
-        if links and len(links) > 50:
-            links = list(reversed(links))
-    except Exception:
-        pass
-
-    batch = links[:] if force else _select_batch(links, cache)
-
-    for url in batch:
-        existing = cache.get("items", {}).get(url)
-        try:
-            new_item, changed = _process_one(url, existing_item=existing, session=session)
-        except Exception:
-            logger.exception("Errore _process_one su %s", url)
-            new_item, changed = None, False
-        if new_item:
-            cache.setdefault("items", {})[url] = new_item
-            logger.info("Processed %s (changed=%s)", url, changed)
-        time.sleep(REQUEST_DELAY)
-
-    if links:
-        cursor = cache.get("cursor", 0) or 0
-        cursor = (cursor + len(batch)) % max(1, len(links))
-        cache["cursor"] = cursor
-
-    _save_cache(cache)
-
-    # ordina articoli (più nuovi prima)
-    def _to_dt(s):
-        try:
-            from dateutil import parser as _p
-            if not s:
-                return datetime(1970, 1, 1, tzinfo=timezone.utc)
-            dt = _p.parse(s)
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
-            return dt
-        except Exception:
-            return datetime(1970, 1, 1, tzinfo=timezone.utc)
-
-    items_list = list(cache.get("items", {}).values())
-    items_list.sort(
-        key=lambda x: max(_to_dt(x.get("modified")), _to_dt(x.get("published"))),
-        reverse=True
-    )
-
-    meta = {
-        "self_url": os.environ.get("SELF_FEED_URL", ""),
-        "title": os.environ.get("FEED_TITLE", "ARTBOOMS - Archivio completo"),
-        "description": os.environ.get(
-            "FEED_DESCRIPTION",
-            "Tutti gli articoli di Artbooms con aggiornamenti automatici"
-        ),
-        "language": os.environ.get("FEED_LANGUAGE", "it-IT"),
-        "build_time": datetime.utcnow().replace(tzinfo=timezone.utc)
+def _normalize_article(parsed: Dict[str, Any], link: str, guid: str, pub_date: str) -> Dict[str, Any]:
+    aid = _article_id(guid or link)
+    base = {
+        "id": aid,
+        "url": link,
+        "guid": guid or link,
+        "fetched_at": _now_iso(),
+        "published": pub_date,
+        "published_iso": parsed.get("published_iso"),
     }
+    base.update(parsed or {})
+    return base
 
-    return items_list, meta
+def update_cache_batch(batch_size: int, local_path: str) -> Dict[str, Any]:
+    """
+    Elabora fino a `batch_size` articoli:
+      - legge l'indice RSS
+      - identifica i nuovi link (e riprocessa i più recenti per update minori)
+      - salva su disco se cambia qualcosa
+    """
+    cache = read_cache(local_path)
+    existing_urls = {a.get("url") for a in cache.get("articles", [])}
 
+    index_items = _fetch_index_items()
 
-def load_cache():
-    """Accesso pubblico alla cache."""
-    return _load_cache()
+    # Selezione worklist: prima i nuovi, poi (se serve) i più recenti già presenti
+    to_process: List[Dict[str, str]] = [it for it in index_items if it["link"] not in existing_urls]
+    if len(to_process) < batch_size:
+        for it in index_items:
+            if it["link"] in existing_urls and it not in to_process:
+                to_process.append(it)
+    to_process = to_process[:batch_size]
 
+    updated = 0
+    for it in to_process:
+        html = _fetch_html(it["link"])
+        parsed = article_parser.parse_article(html, it["link"])
+        article = _normalize_article(parsed, it["link"], it["guid"], it["pub_date"])
+        _merge_article(cache, article)
+        updated += 1
+        time.sleep(0.5)  # gentilezza verso Squarespace
 
+    if updated > 0:
+        save_cache(local_path, cache)
+
+    return {"updated": updated, "total": len(cache.get("articles", [])), "last_updated": cache.get("last_updated")}
