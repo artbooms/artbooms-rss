@@ -24,7 +24,6 @@ META = {
 CACHE_PATH = "cache/articles_cache.json"
 GITHUB_CACHE_RAW_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
 
-# 🔒 Lock globale per sincronizzare il bootstrap
 _bootstrap_lock = threading.Lock()
 
 
@@ -82,6 +81,7 @@ def refresh():
 
 @app.get("/debug/cache")
 def debug_cache():
+    """🔁 Ora legge la cache direttamente da disco, non da memoria"""
     cache = load_cache() or {}
     return jsonify({
         "items_count": len((cache.get("items") or {}).keys()),
@@ -101,37 +101,15 @@ def cache_download():
 
 
 def background_populator():
-    """Thread che aggiorna la cache ogni minuto senza bloccare Flask"""
+    """Thread che aggiorna la cache ogni minuto"""
     while True:
         try:
             generate_items(force=False)
             _rebuild_feed_from_disk_cache()
-            logger.info("Cache aggiornata automaticamente")
+            logger.info("✅ Cache aggiornata automaticamente")
         except Exception as e:
             logger.exception("Errore background_populator: %s", e)
         time.sleep(60)
-
-
-def start_background_thread_once():
-    """Evita più thread se Flask/Gunicorn crea più processi"""
-    if not getattr(app, "_thread_started", False):
-        app._thread_started = True
-        t = threading.Thread(target=background_populator, daemon=True)
-        t.start()
-        logger.info("Thread di popolamento automatico avviato in background")
-
-
-@app.before_request
-def ensure_background_thread():
-    start_background_thread_once()
-
-
-@app.get("/healthz")
-def healthz():
-    return jsonify({
-        "ok": True,
-        "last_build": FEED_CACHE["last_build"].isoformat() if FEED_CACHE["last_build"] else None
-    })
 
 
 def bootstrap_cache():
@@ -155,8 +133,26 @@ def bootstrap_cache():
             logger.warning(f"[Bootstrap] Errore nel download cache: {e}")
 
 
+@app.get("/healthz")
+def healthz():
+    return jsonify({
+        "ok": True,
+        "last_build": FEED_CACHE["last_build"].isoformat() if FEED_CACHE["last_build"] else None
+    })
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5000"))
-    bootstrap_cache()     # ✅ Garantito thread-safe
-    start_background_thread_once()
+
+    # ✅ 1. Carica la cache da GitHub
+    bootstrap_cache()
+
+    # ✅ 2. Ricostruisce subito il feed (così /rss è pronto anche al primo avvio)
+    _rebuild_feed_from_disk_cache()
+
+    # ✅ 3. Avvia il thread subito, non solo al primo accesso
+    t = threading.Thread(target=background_populator, daemon=True)
+    t.start()
+
+    logger.info("🚀 Background updater avviato e feed pronto")
     app.run(host="0.0.0.0", port=port)
