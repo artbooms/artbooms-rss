@@ -2,53 +2,64 @@ name: Persist RSS Cache
 
 on:
   schedule:
-    - cron: "*/30 * * * *" # ogni 30 minuti
+    - cron: "*/30 * * * *"   # ogni 30 minuti
   workflow_dispatch: {}
 
 jobs:
-  persist:
+  persist-cache:
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     env:
-      RENDER_CACHE_URL: "https://artbooms-rss.onrender.com/cache/download"
-      CACHE_FILE_PATH: cache/articles_cache.json
+      CACHE_FILE: cache/articles_cache.json
+      RENDER_CACHE_URL: https://artbooms-rss.onrender.com/cache/download
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Scarica cache da Render
         run: |
-          mkdir -p "$(dirname "${CACHE_FILE_PATH}")"
-          curl -fsSL "${RENDER_CACHE_URL}" -o "${CACHE_FILE_PATH}.tmp"
-          python - << 'PY'
-import json,os
-p=os.environ["CACHE_FILE_PATH"]+".tmp"
-with open(p,"r",encoding="utf-8") as f: json.load(f)
-print("JSON valido:", p)
+          echo "Scarico la cache da Render..."
+          mkdir -p "$(dirname "$CACHE_FILE")"
+          if curl -fsSL "$RENDER_CACHE_URL" -o "$CACHE_FILE.tmp"; then
+            echo "Cache scaricata, verifico validità..."
+            python - << 'PY'
+import json, sys, os
+p = os.environ["CACHE_FILE"] + ".tmp"
+try:
+    with open(p, "r", encoding="utf-8") as f:
+        json.load(f)
+    print("✅ Cache JSON valida.")
+except Exception as e:
+    print("❌ Cache non valida:", e)
+    sys.exit(1)
 PY
-          mv "${CACHE_FILE_PATH}.tmp" "${CACHE_FILE_PATH}"
+            mv "$CACHE_FILE.tmp" "$CACHE_FILE"
+          else
+            echo "❌ Impossibile scaricare la cache da Render"
+            exit 1
+          fi
 
       - name: Configura Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Pull con rebase
+      - name: Pull con rebase per evitare conflitti
         run: git pull --rebase
 
-      - name: Commit se cambiata
+      - name: Commit se la cache è cambiata
         run: |
-          if git diff --quiet -- "${CACHE_FILE_PATH}"; then
-            echo "Nessun cambiamento."
+          if git diff --quiet -- "$CACHE_FILE"; then
+            echo "Nessuna modifica alla cache, esco."
             exit 0
           fi
-          git add "${CACHE_FILE_PATH}"
-          git commit -m "Aggiornamento cache RSS [skip ci]"
+          git add "$CACHE_FILE"
+          git commit -m "Aggiornamento cache RSS automatico [skip ci]"
 
-      - name: Push
+      - name: Push aggiornamento
         run: git push
