@@ -1,149 +1,74 @@
 import os
-import json
 import threading
 import time
-from datetime import datetime, timezone
-from flask import Flask, Response, jsonify, abort
-
-import article_processor as ap
-import rss_generator as rg
+from flask import Flask, jsonify, Response
+import article_processor
+import rss_generator
 
 app = Flask(__name__)
 
-# ===== CONFIG =====
 CACHE_PATH = "articles_cache.json"
-GITHUB_CACHE_RAW_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
-BATCH_SIZE = 3
-UPDATE_INTERVAL_SECONDS = 60
 
-_state = {
-    "thread_started": False,
-    "last_cycle_start": None,
-    "last_cycle_end": None,
-    "last_cycle_error": None,
-    "cycles": 0,
-}
+# ✅ ADD: URL del file cache su GitHub (serve per ricaricarlo dopo un riavvio)
+GITHUB_CACHE_RAW_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/articles_cache.json"
 
-
-# ===== FUNZIONI DI SUPPORTO =====
-def bootstrap_cache():
-    """Carica la cache locale o la scarica da GitHub se manca."""
-    ap.ensure_cache(local_path=CACHE_PATH, github_raw_url=GITHUB_CACHE_RAW_URL)
-
-
-_bg_lock = threading.Lock()
-_bg_started = False
-
-
-def _background_worker():
-    """Aggiorna periodicamente la cache."""
+def background_task():
+    """Thread di background per aggiornare gli articoli."""
     while True:
         try:
-            _state["last_cycle_start"] = datetime.now(timezone.utc).isoformat()
-            result = ap.update_cache_batch(batch_size=BATCH_SIZE, local_path=CACHE_PATH)
-            _state["cycles"] += 1
-            _state["last_cycle_error"] = None
-            print(f"[Worker] ✅ {result['updated']} articoli aggiornati. Totale: {result['total']}")
+            article_processor.generate_items()
         except Exception as e:
-            _state["last_cycle_error"] = str(e)
-            print(f"[Worker] ⚠️ Errore: {e}")
-        finally:
-            _state["last_cycle_end"] = datetime.now(timezone.utc).isoformat()
-            time.sleep(UPDATE_INTERVAL_SECONDS)
+            print("Errore nel thread:", e)
+        time.sleep(60)
 
-
-def start_background_thread_once():
-    """Avvia il thread di background una sola volta."""
-    global _bg_started
-    with _bg_lock:
-        if _bg_started:
-            return
-        bootstrap_cache()
-        t = threading.Thread(target=_background_worker, daemon=True)
-        t.start()
-        _bg_started = True
-        _state["thread_started"] = True
-
-
-# Avvio immediato (Render parte da qui)
-start_background_thread_once()
-
-
-# ===== ENDPOINTS =====
-@app.get("/healthz")
+@app.route("/healthz")
 def healthz():
-    return jsonify({
-        "ok": True,
-        "time": datetime.utcnow().isoformat() + "Z",
-        "cycles": _state["cycles"],
-        "last_error": _state["last_cycle_error"]
-    })
+    return jsonify({"status": "ok"})
 
-
-@app.get("/debug/cache")
+@app.route("/debug/cache")
 def debug_cache():
-    cache = ap.read_cache(CACHE_PATH)
-    return jsonify({
-        "articles_count": len(cache.get("articles", [])),
-        "last_updated": cache.get("last_updated"),
-        "version": cache.get("version"),
-        "state": _state
-    })
+    data = article_processor.load_cache()
+    return jsonify({"count": len(data.get("articles", []))})
 
-
-@app.get("/cache/download")
-def download_cache():
-    """Usato da GitHub Actions per salvare la cache."""
-    if not os.path.exists(CACHE_PATH):
-        abort(404)
-    with open(CACHE_PATH, "rb") as f:
-        data = f.read()
-    return Response(data, mimetype="application/json")
-
-
-@app.get("/cache/refresh")
-def cache_refresh():
-    """Forza aggiornamento immediato."""
-    try:
-        result = ap.update_cache_batch(batch_size=BATCH_SIZE, local_path=CACHE_PATH)
-        return jsonify({"ok": True, "result": result})
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
-
-
-@app.get("/rss")
+@app.route("/rss")
 def rss():
-    """Feed RSS completo e persistente."""
-    cache = ap.read_cache(CACHE_PATH)
-    meta = {
-        "title": "Artbooms RSS Feed",
-        "link": "https://www.artbooms.com",
-        "description": "Ultimi articoli pubblicati su Artbooms.com",
-        "language": "it-IT",
-    }
+    data = article_processor.load_cache()
+    xml = rss_generator.build_rss(data.get("articles", []))
+    return Response(xml, mimetype="application/rss+xml")
 
-    # Usa build_rss() come nella tua versione originale
+# ✅ ADD: nuovo endpoint per GitHub Actions (salva la cache vera)
+@app.route("/cache/download")
+def cache_download():
+    """Restituisce la cache locale in formato JSON per GitHub Actions."""
+    if not os.path.exists(CACHE_PATH):
+        return jsonify({"error": "cache not found"}), 404
+    with open(CACHE_PATH, "r", encoding="utf-8") as f:
+        return Response(f.read(), mimetype="application/json")
+
+# ✅ ADD: funzione per caricare la cache da GitHub all’avvio
+def bootstrap_cache():
+    """Se la cache locale manca, la scarica dal GitHub raw."""
+    if os.path.exists(CACHE_PATH):
+        return
+    import requests
     try:
-        xml = rg.build_rss(cache.get("articles", []), meta)
-    except TypeError:
-        xml = rg.build_rss(cache.get("articles", []))
-
-    return Response(
-        xml,
-        mimetype="application/rss+xml; charset=utf-8",
-        headers={
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Pragma": "no-cache",
-            "Expires": "0",
-        },
-    )
-
+        print("[Bootstrap] Scarico la cache da GitHub...")
+        r = requests.get(GITHUB_CACHE_RAW_URL, timeout=15)
+        if r.status_code == 200 and r.content:
+            with open(CACHE_PATH, "wb") as f:
+                f.write(r.content)
+            print("[Bootstrap] Cache scaricata con successo.")
+        else:
+            print(f"[Bootstrap] Nessuna cache disponibile (HTTP {r.status_code})")
+    except Exception as e:
+        print(f"[Bootstrap] Errore nel download cache: {e}")
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", "10000"))
-    try:
-        bootstrap_cache()
-    except Exception:
-        pass
-    start_background_thread_once()
-    app.run(host="0.0.0.0", port=port)
+    # ✅ ADD: tenta di ricaricare la cache da GitHub prima di avviare il thread
+    bootstrap_cache()
+
+    # avvia il thread di background
+    t = threading.Thread(target=background_task, daemon=True)
+    t.start()
+
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
