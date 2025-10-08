@@ -86,3 +86,83 @@ def healthz():
         "time": datetime.utcnow().isoformat() + "Z",
         "cycles": _state["cycles"],
         "last_error": _state["last_cycle_error"],
+    })
+
+
+@app.get("/debug/cache")
+def debug_cache():
+    """Mostra lo stato attuale della cache."""
+    cache = ap.read_cache(CACHE_PATH)
+    return jsonify({
+        "articles_count": len(cache.get("articles", [])),
+        "last_updated": cache.get("last_updated"),
+        "version": cache.get("version"),
+        "state": _state,
+    })
+
+
+@app.get("/cache/download")
+def download_cache():
+    """Endpoint usato da GitHub Actions per scaricare la cache."""
+    if not os.path.exists(CACHE_PATH):
+        abort(404, description="Cache file not found")
+    with open(CACHE_PATH, "rb") as f:
+        data = f.read()
+    return Response(data, mimetype="application/json")
+
+
+@app.get("/cache/refresh")
+def cache_refresh():
+    """Forza manualmente un ciclo di aggiornamento immediato."""
+    try:
+        result = ap.update_cache_batch(batch_size=BATCH_SIZE, local_path=CACHE_PATH)
+        print(f"[Manual Refresh] ✅ {result}")
+        return jsonify({"ok": True, "result": result})
+    except Exception as e:
+        print(f"[Manual Refresh] ⚠️ Errore: {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.get("/rss")
+def rss():
+    """Genera il feed RSS completo, compatibile con Google News."""
+    cache = ap.read_cache(CACHE_PATH)
+
+    # Metadati del feed (come nella versione validata)
+    meta = {
+        "title": "Artbooms RSS Feed",
+        "link": "https://www.artbooms.com",
+        "description": "Ultimi articoli pubblicati su Artbooms.com",
+        "language": "it-IT",
+    }
+
+    try:
+        # Se esiste generate_feed(), usala
+        if hasattr(rg, "generate_feed"):
+            xml = rg.generate_feed(cache)
+        # Se build_rss accetta due argomenti, passiamo meta
+        else:
+            xml = rg.build_rss(cache, meta)
+    except TypeError:
+        # fallback se build_rss accetta solo un argomento
+        xml = rg.build_rss(cache)
+
+    return Response(
+        xml,
+        mimetype="application/rss+xml; charset=utf-8",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+    )
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", "10000"))
+    try:
+        bootstrap_cache()
+    except Exception:
+        pass
+    start_background_thread_once()
+    app.run(host="0.0.0.0", port=port)
