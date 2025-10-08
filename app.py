@@ -10,19 +10,19 @@ import rss_generator as rg
 
 app = Flask(__name__)
 
-# ===== Config (fissa, nessuna variabile richiesta su Render) =====
+# ===== CONFIGURAZIONE FISSA (nessuna variabile Render necessaria) =====
 CACHE_PATH = "articles_cache.json"
 
-# URL pubblico del file cache su GitHub (serve per mantenere la memoria dopo i riavvii)
+# URL del file cache su GitHub (serve per mantenere la memoria)
 GITHUB_CACHE_RAW_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
 
-# Numero di articoli da scaricare a ogni ciclo
+# Numero di articoli da scaricare per ciclo
 BATCH_SIZE = 3
 
-# Intervallo (in secondi) tra un ciclo e l'altro
+# Intervallo di aggiornamento in secondi
 UPDATE_INTERVAL_SECONDS = 60
 
-# ===== Stato interno =====
+# ===== STATO INTERNO (debug) =====
 _state = {
     "thread_started": False,
     "last_cycle_start": None,
@@ -32,13 +32,12 @@ _state = {
 }
 
 
-# ===== Bootstrap =====
+# ===== FUNZIONI DI AVVIO =====
 def bootstrap_cache():
-    """Assicura che la cache locale esista; se manca, la scarica da GitHub."""
+    """Carica la cache locale, oppure la scarica da GitHub se manca."""
     ap.ensure_cache(local_path=CACHE_PATH, github_raw_url=GITHUB_CACHE_RAW_URL or None)
 
 
-# ===== Background worker =====
 _bg_lock = threading.Lock()
 _bg_started = False
 
@@ -51,17 +50,17 @@ def _background_worker():
             result = ap.update_cache_batch(batch_size=BATCH_SIZE, local_path=CACHE_PATH)
             _state["cycles"] += 1
             _state["last_cycle_error"] = None
-            print(f"[Worker] ✅ Batch aggiornato: {result['updated']} articoli, totale {result['total']}")
+            print(f"[Worker] ✅ Aggiornati {result['updated']} articoli. Totale in cache: {result['total']}")
         except Exception as e:
             _state["last_cycle_error"] = str(e)
-            print(f"[Worker] ⚠️ Errore: {e}")
+            print(f"[Worker] ⚠️ Errore durante aggiornamento: {e}")
         finally:
             _state["last_cycle_end"] = datetime.now(timezone.utc).isoformat()
             time.sleep(UPDATE_INTERVAL_SECONDS)
 
 
 def start_background_thread_once():
-    """Avvia il thread solo una volta (anche con più worker)."""
+    """Avvia il thread di background una sola volta."""
     global _bg_started
     with _bg_lock:
         if _bg_started:
@@ -73,37 +72,37 @@ def start_background_thread_once():
         _state["thread_started"] = True
 
 
-# Avvio thread subito (Render lo lancia al boot)
+# Avvio thread all'import (Render lo lancerà automaticamente)
 start_background_thread_once()
 
 
-# ===== Endpoints =====
+# ===== ENDPOINTS =====
 @app.get("/healthz")
 def healthz():
-    """Stato rapido del servizio (usato da Render per check di salute)."""
+    """Check di salute del servizio (usato da Render)."""
     return jsonify({
         "ok": True,
         "time": datetime.utcnow().isoformat() + "Z",
         "cycles": _state["cycles"],
-        "last_error": _state["last_cycle_error"],
+        "last_error": _state["last_cycle_error"]
     })
 
 
 @app.get("/debug/cache")
 def debug_cache():
-    """Mostra lo stato attuale della cache."""
+    """Mostra informazioni sulla cache."""
     cache = ap.read_cache(CACHE_PATH)
     return jsonify({
         "articles_count": len(cache.get("articles", [])),
         "last_updated": cache.get("last_updated"),
         "version": cache.get("version"),
-        "state": _state,
+        "state": _state
     })
 
 
 @app.get("/cache/download")
 def download_cache():
-    """Endpoint usato da GitHub Actions per scaricare la cache."""
+    """Usato da GitHub Actions per scaricare la cache."""
     if not os.path.exists(CACHE_PATH):
         abort(404, description="Cache file not found")
     with open(CACHE_PATH, "rb") as f:
@@ -128,12 +127,12 @@ def rss():
     """Genera il feed RSS completo, compatibile con Google News."""
     cache = ap.read_cache(CACHE_PATH)
 
-    # Metadati del feed (come nella versione validata)
+    # Metadati del feed
     meta = {
         "title": "Artbooms RSS Feed",
         "link": "https://www.artbooms.com",
         "description": "Ultimi articoli pubblicati su Artbooms.com",
-        "language": "it-IT",
+        "language": "it-IT"
     }
 
     try:
@@ -144,7 +143,7 @@ def rss():
         else:
             xml = rg.build_rss(cache, meta)
     except TypeError:
-        # fallback se build_rss accetta solo un argomento
+        # Fallback se build_rss accetta solo un argomento
         xml = rg.build_rss(cache)
 
     return Response(
@@ -153,8 +152,8 @@ def rss():
         headers={
             "Cache-Control": "no-cache, no-store, must-revalidate",
             "Pragma": "no-cache",
-            "Expires": "0",
-        },
+            "Expires": "0"
+        }
     )
 
 
