@@ -1,19 +1,18 @@
-name: Persist RSS cache
+name: Persist RSS Cache
 
 on:
   schedule:
-    - cron: "*/15 * * * *"   # ogni 15 minuti
+    - cron: "*/30 * * * *" # ogni 30 minuti
   workflow_dispatch: {}
 
 jobs:
   persist:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     permissions:
       contents: write
 
     env:
-      RENDER_CACHE_URL: ${{ secrets.RENDER_CACHE_URL }}
+      RENDER_CACHE_URL: "https://artbooms-rss.onrender.com/cache/download"
       CACHE_FILE_PATH: cache/articles_cache.json
 
     steps:
@@ -25,14 +24,9 @@ jobs:
       - name: Scarica cache da Render
         run: |
           mkdir -p "$(dirname "${CACHE_FILE_PATH}")"
-          if [ -z "${RENDER_CACHE_URL}" ]; then
-            echo "RENDER_CACHE_URL non configurato. Esco senza errore."
-            exit 0
-          fi
-          echo "Scarico ${RENDER_CACHE_URL} -> ${CACHE_FILE_PATH}"
           curl -fsSL "${RENDER_CACHE_URL}" -o "${CACHE_FILE_PATH}.tmp"
           python - << 'PY'
-import json, os
+import json,os
 p=os.environ["CACHE_FILE_PATH"]+".tmp"
 with open(p,"r",encoding="utf-8") as f: json.load(f)
 print("JSON valido:", p)
@@ -47,14 +41,14 @@ PY
       - name: Pull con rebase
         run: git pull --rebase
 
-      - name: Commit solo se cambia
+      - name: Commit se cambiata
         run: |
           if git diff --quiet -- "${CACHE_FILE_PATH}"; then
-            echo "Nessun cambiamento nella cache."
+            echo "Nessun cambiamento."
             exit 0
           fi
           git add "${CACHE_FILE_PATH}"
-          git commit -m "chore(cache): update articles_cache.json [skip ci]"
+          git commit -m "Aggiornamento cache RSS [skip ci]"
 
       - name: Push
         run: git push
