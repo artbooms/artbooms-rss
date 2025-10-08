@@ -10,17 +10,19 @@ import rss_generator as rg
 
 app = Flask(__name__)
 
-# ===== Config =====
-CACHE_PATH = os.environ.get("CACHE_PATH", "articles_cache.json")
-GITHUB_CACHE_RAW_URL = os.environ.get(
-    "GITHUB_CACHE_RAW_URL",
-    # es: "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
-    ""
-)
-BATCH_SIZE = int(os.environ.get("BATCH_SIZE", "3"))
-UPDATE_INTERVAL_SECONDS = int(os.environ.get("UPDATE_INTERVAL_SECONDS", "60"))
+# ===== Config (fissa, nessuna variabile richiesta) =====
+CACHE_PATH = "articles_cache.json"
 
-# Stato per debug
+# URL pubblico del file cache su GitHub (serve per mantenere la memoria)
+GITHUB_CACHE_RAW_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
+
+# Numero di articoli da scaricare per ciclo
+BATCH_SIZE = 3
+
+# Intervallo tra un aggiornamento e l'altro (in secondi)
+UPDATE_INTERVAL_SECONDS = 60
+
+# ===== Stato interno (per debug e monitoraggio) =====
 _state = {
     "thread_started": False,
     "last_cycle_start": None,
@@ -31,7 +33,7 @@ _state = {
 
 # ===== Bootstrap =====
 def bootstrap_cache():
-    """Assicura che la cache locale esista; se manca, prova a scaricarla dal raw GitHub."""
+    """Assicura che la cache locale esista; se manca, la scarica da GitHub."""
     ap.ensure_cache(local_path=CACHE_PATH, github_raw_url=GITHUB_CACHE_RAW_URL or None)
 
 # ===== Background worker =====
@@ -39,6 +41,7 @@ _bg_lock = threading.Lock()
 _bg_started = False
 
 def _background_worker():
+    """Aggiorna periodicamente la cache in background."""
     while True:
         try:
             _state["last_cycle_start"] = datetime.now(timezone.utc).isoformat()
@@ -52,25 +55,30 @@ def _background_worker():
             time.sleep(UPDATE_INTERVAL_SECONDS)
 
 def start_background_thread_once():
+    """Avvia il thread solo una volta (anche con più worker Flask/Gunicorn)."""
     global _bg_started
     with _bg_lock:
         if _bg_started:
             return
-        # bootstrap prima di partire
         bootstrap_cache()
         t = threading.Thread(target=_background_worker, daemon=True)
         t.start()
         _bg_started = True
         _state["thread_started"] = True
 
-# Avvio il thread già in import (per ambienti WSGI)
+# Avvio thread in import (Render lo lancia automaticamente)
 start_background_thread_once()
 
 # ===== Endpoints =====
 
 @app.get("/healthz")
 def healthz():
-    return jsonify({"ok": True, "time": datetime.utcnow().isoformat() + "Z", "cycles": _state["cycles"]})
+    return jsonify({
+        "ok": True,
+        "time": datetime.utcnow().isoformat() + "Z",
+        "cycles": _state["cycles"],
+        "last_error": _state["last_cycle_error"],
+    })
 
 @app.get("/debug/cache")
 def debug_cache():
@@ -84,20 +92,44 @@ def debug_cache():
 
 @app.get("/cache/download")
 def download_cache():
+    """Endpoint usato da GitHub Actions per salvare la cache."""
     if not os.path.exists(CACHE_PATH):
         abort(404, description="Cache file not found")
     with open(CACHE_PATH, "rb") as f:
         data = f.read()
     return Response(data, mimetype="application/json")
 
+@app.get("/cache/refresh")
+def cache_refresh():
+    """Forza manualmente un ciclo di aggiornamento immediato."""
+    try:
+        result = ap.update_cache_batch(batch_size=BATCH_SIZE, local_path=CACHE_PATH)
+        return jsonify({"ok": True, "result": result})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
 @app.get("/rss")
 def rss():
+    """Genera il feed RSS completo (compatibile con Google News)."""
     cache = ap.read_cache(CACHE_PATH)
-    xml = rg.generate_feed(cache) if hasattr(rg, "generate_feed") else rg.build_rss(cache)  # compatibilità col tuo modulo
-    return Response(xml, mimetype="application/rss+xml; charset=utf-8")
+
+    # Metadati del feed (come nella versione validata)
+    meta = {
+        "title": "Artbooms RSS Feed",
+        "link": "https://www.artbooms.com",
+        "description": "Ultimi articoli pubblicati su Artbooms.com",
+        "language": "it-IT",
+    }
+
+    # Usa la tua build_rss(cache, meta)
+    xml = rg.build_rss(cache, meta)
+    return Response(xml, mimetype="application/rss+xml; charset=utf-8", headers={
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+    })
 
 if __name__ == "__main__":
-    # utile in dev; su Render usa gunicorn
     port = int(os.environ.get("PORT", "10000"))
     try:
         bootstrap_cache()
