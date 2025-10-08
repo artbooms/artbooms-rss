@@ -12,7 +12,7 @@ jobs:
       contents: write
 
     env:
-      CACHE_FILE: cache/articles_cache.json
+      CACHE_FILE: articles_cache.json
       RENDER_CACHE_URL: https://artbooms-rss.onrender.com/cache/download
 
     steps:
@@ -24,7 +24,6 @@ jobs:
       - name: Scarica cache da Render
         run: |
           echo "Scarico la cache da Render..."
-          mkdir -p "$(dirname "$CACHE_FILE")"
           if curl -fsSL "$RENDER_CACHE_URL" -o "$CACHE_FILE.tmp"; then
             echo "Cache scaricata, verifico validità..."
             python - << 'PY'
