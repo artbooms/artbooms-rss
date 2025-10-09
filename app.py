@@ -136,20 +136,17 @@ def healthz():
     })
 
 
-# 🚀 Questa funzione parte sempre, anche su Render (Gunicorn)
-@app.before_first_request
-def startup_tasks():
-    """Assicura bootstrap e avvio del thread anche sotto Gunicorn."""
-    if not getattr(app, "_boot_done", False):
-        logger.info("[Startup] 🚀 Avvio del server Artbooms RSS sotto Gunicorn")
-        bootstrap_cache()                 # scarica cache se non esiste
-        _rebuild_feed_from_disk_cache()   # costruisce subito il feed
-        t = threading.Thread(target=background_populator, daemon=True)
-        t.start()
-        app._boot_done = True
-        logger.info("[Startup] ✅ Thread background avviato, caricamento continuo abilitato")
+# 🚀 Eseguito SUBITO al caricamento del modulo (non serve una richiesta HTTP)
+logger.info("[Main] 🚀 Avvio Artbooms RSS (Render compatibile)")
+try:
+    bootstrap_cache()
+    _rebuild_feed_from_disk_cache()
+    t = threading.Thread(target=background_populator, daemon=True)
+    t.start()
+    logger.info("[Main] ✅ Thread background avviato immediatamente")
+except Exception as e:
+    logger.exception(f"[Main] ❌ Errore all'avvio: {e}")
 
-
-# Avvio Flask (Render rileva automaticamente la porta)
+# Render rileva automaticamente la porta
 port = int(os.environ.get("PORT", "5000"))
 app.run(host="0.0.0.0", port=port)
