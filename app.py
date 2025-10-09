@@ -23,32 +23,30 @@ META = {
 }
 
 CACHE_PATH = "articles_cache.json"
-GITHUB_CACHE_RAW_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/refs/heads/main/cache/articles_cache.json"
+CACHE_GITHUB_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/refs/heads/main/cache/articles_cache.json"
 
 
-# ✅ nuovo blocco per bootstrap
-def bootstrap_cache_from_github():
-    """Scarica la cache persistente da GitHub se non esiste in locale"""
-    if os.path.exists(CACHE_PATH):
-        logger.info("[Bootstrap] Cache locale trovata, nessun download necessario.")
+def bootstrap_cache():
+    """Scarica la cache persistente da GitHub se non esiste o è vuota"""
+    if os.path.exists(CACHE_PATH) and os.path.getsize(CACHE_PATH) > 10:
+        logger.info("[Bootstrap] Cache locale trovata.")
         return
     try:
-        logger.info("[Bootstrap] Nessuna cache locale trovata, scarico da GitHub...")
-        r = requests.get(GITHUB_CACHE_RAW_URL, timeout=20)
+        logger.info("[Bootstrap] Scarico cache da GitHub...")
+        r = requests.get(CACHE_GITHUB_URL, timeout=20)
         if r.status_code == 200 and r.text.strip().startswith("{"):
             with open(CACHE_PATH, "w", encoding="utf-8") as f:
                 f.write(r.text)
-            logger.info("[Bootstrap] ✅ Cache scaricata da GitHub con successo.")
+            logger.info("[Bootstrap] ✅ Cache scaricata da GitHub.")
         else:
-            logger.warning(f"[Bootstrap] ⚠️ Nessuna cache valida trovata su GitHub (HTTP {r.status_code})")
+            logger.warning(f"[Bootstrap] Nessuna cache valida trovata su GitHub ({r.status_code})")
     except Exception as e:
-        logger.exception("[Bootstrap] ❌ Errore durante il download cache: %s", e)
+        logger.exception("[Bootstrap] ❌ Errore download cache: %s", e)
 
 
 def _items_from_cache_sorted():
     cache = load_cache() or {}
     items = list((cache.get("items") or {}).values())
-
     from dateutil import parser as _p
 
     def _to_dt(s):
@@ -78,17 +76,26 @@ def _rebuild_feed_from_disk_cache():
     logger.info("Feed ricostruito da cache: %d articoli", len(items))
 
 
-def background_populator():
-    """Thread che aggiorna costantemente la cache ogni minuto"""
-    logger.info("[Worker] 🌀 Thread background avviato, aggiorno articoli...")
+def background_updater():
+    """Thread che aggiorna la cache ogni minuto"""
+    logger.info("[Worker] 🔁 Thread di aggiornamento avviato.")
     while True:
         try:
-            new_items = generate_items(force=False)
-            logger.info(f"[Worker] ✅ {new_items} articoli aggiornati o verificati.")
+            new = generate_items(force=False)
+            logger.info(f"[Worker] ✅ {new} nuovi articoli elaborati.")
             _rebuild_feed_from_disk_cache()
         except Exception as e:
-            logger.exception(f"[Worker] ❌ Errore background_populator: {e}")
+            logger.exception("[Worker] ❌ Errore durante aggiornamento: %s", e)
         time.sleep(60)
+
+
+@app.before_request
+def ensure_background_thread():
+    """Garantisce che il thread di aggiornamento sia sempre attivo"""
+    if not getattr(app, "_worker_started", False):
+        app._worker_started = True
+        threading.Thread(target=background_updater, daemon=True).start()
+        logger.info("[Main] 🚀 Thread background avviato automaticamente.")
 
 
 @app.get("/rss")
@@ -113,9 +120,10 @@ def debug_cache():
 
 @app.get("/cache/download")
 def cache_download():
-    if not os.path.exists("cache/articles_cache.json"):
+    path = "cache/articles_cache.json"
+    if not os.path.exists(path):
         return jsonify({})
-    with open("cache/articles_cache.json", "r", encoding="utf-8") as f:
+    with open(path, "r", encoding="utf-8") as f:
         return Response(f.read(), mimetype="application/json")
 
 
@@ -127,10 +135,8 @@ def healthz():
     })
 
 
-if __name__ == "__main__":
-    logger.info("[Main] 🚀 Avvio Artbooms RSS con bootstrap da GitHub")
-    bootstrap_cache_from_github()
-    _rebuild_feed_from_disk_cache()
-    threading.Thread(target=background_populator, daemon=True).start()
-    port = int(os.environ.get("PORT", "5000"))
-    app.run(host="0.0.0.0", port=port)
+# ⚙️ Parte anche su Render (non solo in __main__)
+bootstrap_cache()
+_rebuild_feed_from_disk_cache()
+threading.Thread(target=background_updater, daemon=True).start()
+logger.info("[Main] ✅ Bootstrap completato e thread background attivo.")
