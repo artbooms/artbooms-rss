@@ -34,6 +34,7 @@ def _items_from_cache_sorted():
         return []
 
     from dateutil import parser as _p
+
     def _to_dt(s):
         try:
             if not s:
@@ -45,7 +46,10 @@ def _items_from_cache_sorted():
         except Exception:
             return datetime(1970, 1, 1, tzinfo=timezone.utc)
 
-    items.sort(key=lambda x: max(_to_dt(x.get("modified")), _to_dt(x.get("published"))), reverse=True)
+    items.sort(
+        key=lambda x: max(_to_dt(x.get("modified")), _to_dt(x.get("published"))),
+        reverse=True,
+    )
     return items
 
 
@@ -86,7 +90,7 @@ def background_populator():
     while True:
         try:
             new_items = generate_items(force=False)
-            logger.info(f"[Worker] ✅ Articoli aggiornati ({new_items} nuovi o modificati)")
+            logger.info(f"[Worker] ✅ Articoli aggiornati o verificati ({new_items})")
             _rebuild_feed_from_disk_cache()
         except Exception as e:
             logger.exception(f"[Worker] ❌ Errore background_populator: {e}")
@@ -132,14 +136,20 @@ def healthz():
     })
 
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", "5000"))
+# 🚀 Questa funzione parte sempre, anche su Render (Gunicorn)
+@app.before_first_request
+def startup_tasks():
+    """Assicura bootstrap e avvio del thread anche sotto Gunicorn."""
+    if not getattr(app, "_boot_done", False):
+        logger.info("[Startup] 🚀 Avvio del server Artbooms RSS sotto Gunicorn")
+        bootstrap_cache()                 # scarica cache se non esiste
+        _rebuild_feed_from_disk_cache()   # costruisce subito il feed
+        t = threading.Thread(target=background_populator, daemon=True)
+        t.start()
+        app._boot_done = True
+        logger.info("[Startup] ✅ Thread background avviato, caricamento continuo abilitato")
 
-    logger.info("[Main] 🚀 Avvio del server Artbooms RSS")
-    bootstrap_cache()                 # scarica cache se manca
-    _rebuild_feed_from_disk_cache()   # costruisce feed
-    t = threading.Thread(target=background_populator, daemon=True)
-    t.start()
-    logger.info("[Main] ✅ Thread background avviato, caricamento continuo abilitato")
 
-    app.run(host="0.0.0.0", port=port)
+# Avvio Flask (Render rileva automaticamente la porta)
+port = int(os.environ.get("PORT", "5000"))
+app.run(host="0.0.0.0", port=port)
