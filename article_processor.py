@@ -61,7 +61,7 @@ def generate_items(force=False):
         cache["last_scan"] = datetime.now(timezone.utc).isoformat()
         save_cache(cache)
 
-        # ✅ Scrive la cache persistente per GitHub
+        # ✅ Scrive la cache persistente per GitHub Actions
         os.makedirs("cache", exist_ok=True)
         with open("cache/articles_cache.json", "w", encoding="utf-8") as f:
             json.dump(cache, f, ensure_ascii=False, indent=2)
