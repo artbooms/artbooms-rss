@@ -10,6 +10,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Scarica cache da Render
         run: |
@@ -17,7 +19,7 @@ jobs:
           mkdir -p cache
           curl -fsSL https://artbooms-rss.onrender.com/cache/download -o cache/articles_cache.json || echo "{}" > cache/articles_cache.json
           echo "Ultima sincronizzazione: $(date -u)" > cache/last_sync.txt
-          cat cache/last_sync.txt
+          ls -l cache/
 
       - name: Configura git
         run: |
@@ -26,7 +28,9 @@ jobs:
 
       - name: Commit & Push aggiornamenti cache
         run: |
-          git pull --rebase
           git add cache/articles_cache.json cache/last_sync.txt || true
-          git diff --quiet && echo "Nessuna modifica, skip commit." || git commit -m "Aggiorna cache RSS da Render [ci skip]"
-          git push
+          git stash push --include-untracked -m "pre-rebase stash" || true
+          git pull --rebase --autostash || true
+          git stash pop || true
+          git diff --quiet && echo "Nessuna modifica da committare." || git commit -am "Aggiorna cache RSS da Render [ci skip]"
+          git push || echo "Nessuna modifica da pushare."
