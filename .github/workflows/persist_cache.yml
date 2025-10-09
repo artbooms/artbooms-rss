@@ -1,7 +1,7 @@
 name: Persist RSS cache
 on:
   schedule:
-    - cron: "*/15 * * * *"   # ogni 15 minuti
+    - cron: "*/15 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -15,7 +15,6 @@ jobs:
 
       - name: Scarica cache da Render
         run: |
-          echo "Scarico cache da Render..."
           mkdir -p cache
           curl -fsSL https://artbooms-rss.onrender.com/cache/download -o cache/articles_cache.json || echo "{}" > cache/articles_cache.json
           echo "Ultima sincronizzazione: $(date -u)" > cache/last_sync.txt
