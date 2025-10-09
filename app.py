@@ -1,79 +1,137 @@
 import os
-import json
+import logging
+import threading
 import time
-import requests
+from flask import Flask, jsonify, make_response, Response
 from datetime import datetime, timezone
-from article_parser import parse_article
+import requests
 
-CACHE_FILE = "articles_cache.json"
-REMOTE_BASE = "https://www.artbooms.com"
-ARCHIVE_URL = f"{REMOTE_BASE}/blog?offset={{offset}}"
+from article_processor import generate_items, load_cache
+from rss_generator import build_rss
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("artbooms-rss")
+
+app = Flask(__name__)
+
+FEED_CACHE = {"xml": None, "headers": None, "last_build": None}
+META = {
+    "title": "ARTBOOMS - Archivio completo",
+    "description": "Tutti gli articoli di Artbooms con aggiornamenti automatici",
+    "language": "it-IT",
+    "self_url": "https://artbooms-rss.onrender.com/rss",
+}
+
+CACHE_PATH = "cache/articles_cache.json"
+GITHUB_CACHE_RAW_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/refs/heads/main/cache/articles_cache.json"
 
 
-def load_cache():
-    """Carica la cache locale se esiste."""
-    if not os.path.exists(CACHE_FILE):
-        return {"items": {}, "cursor": 0, "last_scan": None}
+def _items_from_cache_sorted():
+    cache = load_cache() or {}
+    items = list((cache.get("items") or {}).values())
+
+    from dateutil import parser as _p
+
+    def _to_dt(s):
+        try:
+            if not s:
+                return datetime(1970, 1, 1, tzinfo=timezone.utc)
+            dt = _p.parse(s)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt
+        except Exception:
+            return datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+    items.sort(
+        key=lambda x: max(_to_dt(x.get("modified")), _to_dt(x.get("published"))),
+        reverse=True,
+    )
+    return items
+
+
+def _rebuild_feed_from_disk_cache():
+    items = _items_from_cache_sorted()
+    xml_bytes, headers = build_rss(items, META)
+    FEED_CACHE["xml"] = xml_bytes
+    FEED_CACHE["headers"] = headers
+    FEED_CACHE["last_build"] = datetime.utcnow().replace(tzinfo=timezone.utc)
+    logger.info("Feed ricostruito da cache: %d articoli", len(items))
+
+
+def bootstrap_cache():
+    """Scarica la cache persistente da GitHub se non esiste in locale"""
+    if os.path.exists(CACHE_PATH):
+        logger.info("[Bootstrap] Cache locale trovata.")
+        return
     try:
-        with open(CACHE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {"items": {}, "cursor": 0, "last_scan": None}
+        os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
+        logger.info("[Bootstrap] Scarico cache da GitHub...")
+        r = requests.get(GITHUB_CACHE_RAW_URL, timeout=20)
+        if r.status_code == 200 and r.text.strip().startswith("{"):
+            with open(CACHE_PATH, "w", encoding="utf-8") as f:
+                f.write(r.text)
+            logger.info("[Bootstrap] ✅ Cache scaricata da GitHub con successo.")
+        else:
+            logger.warning("[Bootstrap] Nessuna cache valida trovata su GitHub.")
+    except Exception as e:
+        logger.exception("[Bootstrap] Errore nel download cache: %s", e)
 
 
-def save_cache(cache):
-    """Salva la cache locale."""
-    with open(CACHE_FILE, "w", encoding="utf-8") as f:
-        json.dump(cache, f, ensure_ascii=False, indent=2)
+def background_populator():
+    """Thread che aggiorna costantemente la cache ogni minuto"""
+    logger.info("[Worker] 🌀 Thread background avviato.")
+    while True:
+        try:
+            new_items = generate_items(force=False)
+            logger.info(f"[Worker] ✅ Aggiornati {new_items} articoli.")
+            _rebuild_feed_from_disk_cache()
+        except Exception as e:
+            logger.exception("[Worker] Errore background_populator: %s", e)
+        time.sleep(60)
 
 
-def fetch_articles(offset=0, limit=3):
-    """Scarica un blocco di articoli da Squarespace (3 alla volta)."""
-    url = ARCHIVE_URL.format(offset=offset)
-    resp = requests.get(url, timeout=20)
-    if resp.status_code != 200:
-        return []
-    html = resp.text
-    return parse_article(html)
+@app.get("/rss")
+def rss():
+    if FEED_CACHE["xml"] is None:
+        _rebuild_feed_from_disk_cache()
+    resp = make_response(FEED_CACHE["xml"])
+    resp.headers.setdefault("Content-Type", "application/rss+xml; charset=utf-8")
+    return resp
 
 
-def generate_items(force=False):
-    """Scarica articoli, aggiorna la cache e restituisce il numero di nuovi articoli."""
-    cache = load_cache()
-    items = cache.get("items", {})
-    cursor = cache.get("cursor", 0)
-    new_count = 0
+@app.get("/debug/cache")
+def debug_cache():
+    cache = load_cache() or {}
+    return jsonify({
+        "items_count": len((cache.get("items") or {}).keys()),
+        "cursor": cache.get("cursor", 0),
+        "last_scan": cache.get("last_scan"),
+        "feed_last_build": FEED_CACHE["last_build"].isoformat() if FEED_CACHE["last_build"] else None,
+    })
 
-    # Ogni ciclo scarica 3 articoli nuovi
-    articles = fetch_articles(offset=cursor)
-    if not articles:
-        print("[Processor] Nessun nuovo articolo trovato.")
-        cache["last_scan"] = datetime.now(timezone.utc).isoformat()
-        save_cache(cache)
-        return 0
 
-    for art in articles:
-        art_id = art.get("id") or art.get("url")
-        if not art_id:
-            continue
-        old = items.get(art_id)
-        if not old or old.get("modified") != art.get("modified"):
-            items[art_id] = art
-            new_count += 1
+@app.get("/cache/download")
+def cache_download():
+    if not os.path.exists(CACHE_PATH):
+        return jsonify({})
+    with open(CACHE_PATH, "r", encoding="utf-8") as f:
+        return Response(f.read(), mimetype="application/json")
 
-    if new_count:
-        cache["items"] = items
-        cache["cursor"] = cursor + len(articles)
-        cache["last_scan"] = datetime.now(timezone.utc).isoformat()
-        save_cache(cache)
 
-        # ✅ Salva anche la cache completa su disco per GitHub Actions
-        os.makedirs("cache", exist_ok=True)
-        with open("cache/articles_cache.json", "w", encoding="utf-8") as f:
-            json.dump(cache, f, ensure_ascii=False, indent=2)
+@app.get("/healthz")
+def healthz():
+    return jsonify({
+        "ok": True,
+        "last_build": FEED_CACHE["last_build"].isoformat() if FEED_CACHE["last_build"] else None
+    })
 
-        print(f"[Processor] ✅ {new_count} nuovi articoli aggiunti. Totale: {len(items)}")
-    else:
-        print("[Processor] Nessuna modifica rilevata negli articoli esistenti.")
 
-    return new_count
+# 🚀 Avvio immediato
+if __name__ == "__main__":
+    logger.info("[Main] 🚀 Avvio Artbooms RSS")
+    bootstrap_cache()
+    _rebuild_feed_from_disk_cache()
+    threading.Thread(target=background_populator, daemon=True).start()
+    port = int(os.environ.get("PORT", "5000"))
+    app.run(host="0.0.0.0", port=port)
