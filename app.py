@@ -2,9 +2,9 @@ import os
 import logging
 import threading
 import time
+import requests
 from flask import Flask, jsonify, make_response, Response
 from datetime import datetime, timezone
-import requests
 
 from article_processor import generate_items, load_cache
 from rss_generator import build_rss
@@ -22,8 +22,27 @@ META = {
     "self_url": "https://artbooms-rss.onrender.com/rss",
 }
 
-CACHE_PATH = "cache/articles_cache.json"
+CACHE_PATH = "articles_cache.json"
 GITHUB_CACHE_RAW_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/refs/heads/main/cache/articles_cache.json"
+
+
+# ✅ nuovo blocco per bootstrap
+def bootstrap_cache_from_github():
+    """Scarica la cache persistente da GitHub se non esiste in locale"""
+    if os.path.exists(CACHE_PATH):
+        logger.info("[Bootstrap] Cache locale trovata, nessun download necessario.")
+        return
+    try:
+        logger.info("[Bootstrap] Nessuna cache locale trovata, scarico da GitHub...")
+        r = requests.get(GITHUB_CACHE_RAW_URL, timeout=20)
+        if r.status_code == 200 and r.text.strip().startswith("{"):
+            with open(CACHE_PATH, "w", encoding="utf-8") as f:
+                f.write(r.text)
+            logger.info("[Bootstrap] ✅ Cache scaricata da GitHub con successo.")
+        else:
+            logger.warning(f"[Bootstrap] ⚠️ Nessuna cache valida trovata su GitHub (HTTP {r.status_code})")
+    except Exception as e:
+        logger.exception("[Bootstrap] ❌ Errore durante il download cache: %s", e)
 
 
 def _items_from_cache_sorted():
@@ -59,35 +78,16 @@ def _rebuild_feed_from_disk_cache():
     logger.info("Feed ricostruito da cache: %d articoli", len(items))
 
 
-def bootstrap_cache():
-    """Scarica la cache persistente da GitHub se non esiste in locale"""
-    if os.path.exists(CACHE_PATH):
-        logger.info("[Bootstrap] Cache locale trovata.")
-        return
-    try:
-        os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
-        logger.info("[Bootstrap] Scarico cache da GitHub...")
-        r = requests.get(GITHUB_CACHE_RAW_URL, timeout=20)
-        if r.status_code == 200 and r.text.strip().startswith("{"):
-            with open(CACHE_PATH, "w", encoding="utf-8") as f:
-                f.write(r.text)
-            logger.info("[Bootstrap] ✅ Cache scaricata da GitHub con successo.")
-        else:
-            logger.warning("[Bootstrap] Nessuna cache valida trovata su GitHub.")
-    except Exception as e:
-        logger.exception("[Bootstrap] Errore nel download cache: %s", e)
-
-
 def background_populator():
     """Thread che aggiorna costantemente la cache ogni minuto"""
-    logger.info("[Worker] 🌀 Thread background avviato.")
+    logger.info("[Worker] 🌀 Thread background avviato, aggiorno articoli...")
     while True:
         try:
             new_items = generate_items(force=False)
-            logger.info(f"[Worker] ✅ Aggiornati {new_items} articoli.")
+            logger.info(f"[Worker] ✅ {new_items} articoli aggiornati o verificati.")
             _rebuild_feed_from_disk_cache()
         except Exception as e:
-            logger.exception("[Worker] Errore background_populator: %s", e)
+            logger.exception(f"[Worker] ❌ Errore background_populator: {e}")
         time.sleep(60)
 
 
@@ -113,9 +113,9 @@ def debug_cache():
 
 @app.get("/cache/download")
 def cache_download():
-    if not os.path.exists(CACHE_PATH):
+    if not os.path.exists("cache/articles_cache.json"):
         return jsonify({})
-    with open(CACHE_PATH, "r", encoding="utf-8") as f:
+    with open("cache/articles_cache.json", "r", encoding="utf-8") as f:
         return Response(f.read(), mimetype="application/json")
 
 
@@ -127,10 +127,9 @@ def healthz():
     })
 
 
-# 🚀 Avvio immediato
 if __name__ == "__main__":
-    logger.info("[Main] 🚀 Avvio Artbooms RSS")
-    bootstrap_cache()
+    logger.info("[Main] 🚀 Avvio Artbooms RSS con bootstrap da GitHub")
+    bootstrap_cache_from_github()
     _rebuild_feed_from_disk_cache()
     threading.Thread(target=background_populator, daemon=True).start()
     port = int(os.environ.get("PORT", "5000"))
