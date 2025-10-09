@@ -22,7 +22,7 @@ META = {
 }
 
 CACHE_PATH = "cache/articles_cache.json"
-GITHUB_CACHE_RAW_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
+GITHUB_CACHE_RAW_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/refs/heads/main/cache/articles_cache.json"
 
 _bootstrap_lock = threading.Lock()
 
@@ -81,7 +81,7 @@ def refresh():
 
 @app.get("/debug/cache")
 def debug_cache():
-    """🔁 Ora legge la cache direttamente da disco, non da memoria"""
+    """Legge la cache reale da disco, non solo quella in memoria"""
     cache = load_cache() or {}
     return jsonify({
         "items_count": len((cache.get("items") or {}).keys()),
@@ -93,7 +93,7 @@ def debug_cache():
 
 @app.get("/cache/download")
 def cache_download():
-    """Usato da GitHub Actions per salvare la cache"""
+    """Endpoint usato dal workflow GitHub per scaricare la cache"""
     if not os.path.exists(CACHE_PATH):
         return jsonify({"error": "cache not found"}), 404
     with open(CACHE_PATH, "r", encoding="utf-8") as f:
@@ -120,7 +120,7 @@ def bootstrap_cache():
             return
         import requests
         try:
-            logger.info("[Bootstrap] Scarico cache da GitHub...")
+            logger.info(f"[Bootstrap] Download da {GITHUB_CACHE_RAW_URL}")
             os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
             r = requests.get(GITHUB_CACHE_RAW_URL, timeout=15)
             if r.status_code == 200 and r.content:
@@ -143,16 +143,9 @@ def healthz():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5000"))
-
-    # ✅ 1. Carica la cache da GitHub
-    bootstrap_cache()
-
-    # ✅ 2. Ricostruisce subito il feed (così /rss è pronto anche al primo avvio)
-    _rebuild_feed_from_disk_cache()
-
-    # ✅ 3. Avvia il thread subito, non solo al primo accesso
+    bootstrap_cache()                 # ✅ Scarica la cache GitHub
+    _rebuild_feed_from_disk_cache()   # ✅ Costruisce subito il feed
     t = threading.Thread(target=background_populator, daemon=True)
     t.start()
-
     logger.info("🚀 Background updater avviato e feed pronto")
     app.run(host="0.0.0.0", port=port)
