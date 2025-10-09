@@ -30,6 +30,8 @@ _bootstrap_lock = threading.Lock()
 def _items_from_cache_sorted():
     cache = load_cache() or {}
     items = list((cache.get("items") or {}).values())
+    if not items:
+        return []
 
     from dateutil import parser as _p
     def _to_dt(s):
@@ -53,7 +55,42 @@ def _rebuild_feed_from_disk_cache():
     FEED_CACHE["xml"] = xml_bytes
     FEED_CACHE["headers"] = headers
     FEED_CACHE["last_build"] = datetime.utcnow().replace(tzinfo=timezone.utc)
-    logger.info("Feed ricostruito da cache: %d articoli", len(items))
+    logger.info(f"Feed ricostruito da cache: {len(items)} articoli")
+
+
+def bootstrap_cache():
+    """Scarica la cache persistente da GitHub se non esiste in locale"""
+    with _bootstrap_lock:
+        if os.path.exists(CACHE_PATH):
+            logger.info(f"[Bootstrap] Cache locale trovata: {CACHE_PATH}")
+            return
+        import requests
+        try:
+            logger.info(f"[Bootstrap] Scarico cache da GitHub da {GITHUB_CACHE_RAW_URL} ...")
+            os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
+            r = requests.get(GITHUB_CACHE_RAW_URL, timeout=20)
+            logger.info(f"[Bootstrap] Risposta HTTP {r.status_code}, {len(r.content)} byte")
+            if r.status_code == 200 and r.content:
+                with open(CACHE_PATH, "wb") as f:
+                    f.write(r.content)
+                logger.info("[Bootstrap] ✅ Cache scaricata e salvata con successo.")
+            else:
+                logger.warning(f"[Bootstrap] ⚠️ Nessuna cache disponibile su GitHub (HTTP {r.status_code})")
+        except Exception as e:
+            logger.exception(f"[Bootstrap] ❌ Errore nel download cache: {e}")
+
+
+def background_populator():
+    """Thread che aggiorna costantemente la cache ogni minuto"""
+    logger.info("[Worker] 🌀 Thread background avviato, aggiorno articoli...")
+    while True:
+        try:
+            new_items = generate_items(force=False)
+            logger.info(f"[Worker] ✅ Articoli aggiornati ({new_items} nuovi o modificati)")
+            _rebuild_feed_from_disk_cache()
+        except Exception as e:
+            logger.exception(f"[Worker] ❌ Errore background_populator: {e}")
+        time.sleep(60)
 
 
 @app.get("/rss")
@@ -68,20 +105,8 @@ def rss():
     return resp
 
 
-@app.get("/refresh")
-def refresh():
-    try:
-        generate_items(force=False)
-        _rebuild_feed_from_disk_cache()
-        return jsonify({"status": "ok", "last_build": FEED_CACHE["last_build"].isoformat()})
-    except Exception as e:
-        logger.exception("Errore refresh")
-        return jsonify({"status": "error", "detail": str(e)}), 500
-
-
 @app.get("/debug/cache")
 def debug_cache():
-    """Legge la cache reale da disco, non solo quella in memoria"""
     cache = load_cache() or {}
     return jsonify({
         "items_count": len((cache.get("items") or {}).keys()),
@@ -93,44 +118,10 @@ def debug_cache():
 
 @app.get("/cache/download")
 def cache_download():
-    """Endpoint usato dal workflow GitHub per scaricare la cache"""
     if not os.path.exists(CACHE_PATH):
         return jsonify({"error": "cache not found"}), 404
     with open(CACHE_PATH, "r", encoding="utf-8") as f:
         return Response(f.read(), mimetype="application/json")
-
-
-def background_populator():
-    """Thread che aggiorna la cache ogni minuto"""
-    while True:
-        try:
-            generate_items(force=False)
-            _rebuild_feed_from_disk_cache()
-            logger.info("✅ Cache aggiornata automaticamente")
-        except Exception as e:
-            logger.exception("Errore background_populator: %s", e)
-        time.sleep(60)
-
-
-def bootstrap_cache():
-    """Scarica la cache persistente da GitHub raw se non esiste in locale"""
-    with _bootstrap_lock:
-        if os.path.exists(CACHE_PATH):
-            logger.info(f"[Bootstrap] Cache locale trovata: {CACHE_PATH}")
-            return
-        import requests
-        try:
-            logger.info(f"[Bootstrap] Download da {GITHUB_CACHE_RAW_URL}")
-            os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
-            r = requests.get(GITHUB_CACHE_RAW_URL, timeout=15)
-            if r.status_code == 200 and r.content:
-                with open(CACHE_PATH, "wb") as f:
-                    f.write(r.content)
-                logger.info("[Bootstrap] Cache scaricata con successo.")
-            else:
-                logger.warning(f"[Bootstrap] Nessuna cache disponibile (HTTP {r.status_code})")
-        except Exception as e:
-            logger.warning(f"[Bootstrap] Errore nel download cache: {e}")
 
 
 @app.get("/healthz")
@@ -143,9 +134,12 @@ def healthz():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "5000"))
-    bootstrap_cache()                 # ✅ Scarica la cache GitHub
-    _rebuild_feed_from_disk_cache()   # ✅ Costruisce subito il feed
+
+    logger.info("[Main] 🚀 Avvio del server Artbooms RSS")
+    bootstrap_cache()                 # scarica cache se manca
+    _rebuild_feed_from_disk_cache()   # costruisce feed
     t = threading.Thread(target=background_populator, daemon=True)
     t.start()
-    logger.info("🚀 Background updater avviato e feed pronto")
+    logger.info("[Main] ✅ Thread background avviato, caricamento continuo abilitato")
+
     app.run(host="0.0.0.0", port=port)
