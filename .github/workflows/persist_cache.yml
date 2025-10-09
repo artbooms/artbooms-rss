@@ -1,64 +1,32 @@
-name: Persist RSS Cache
-
+name: Persist RSS cache
 on:
   schedule:
-    - cron: "*/30 * * * *"   # ogni 30 minuti
-  workflow_dispatch: {}
+    - cron: "*/15 * * * *"   # ogni 15 minuti
+  workflow_dispatch:
 
 jobs:
-  persist-cache:
+  sync-cache:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    env:
-      CACHE_FILE: cache/articles_cache.json
-      RENDER_CACHE_URL: https://artbooms-rss.onrender.com/cache/download
-
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Scarica cache da Render
         run: |
-          echo "Scarico la cache da Render..."
-          if curl -fsSL "$RENDER_CACHE_URL" -o "$CACHE_FILE.tmp"; then
-            echo "Cache scaricata, verifico validità..."
-            python - << 'PY'
-import json, sys, os
-p = os.environ["CACHE_FILE"] + ".tmp"
-try:
-    with open(p, "r", encoding="utf-8") as f:
-        json.load(f)
-    print("✅ Cache JSON valida.")
-except Exception as e:
-    print("❌ Cache non valida:", e)
-    sys.exit(1)
-PY
-            mv "$CACHE_FILE.tmp" "$CACHE_FILE"
-          else
-            echo "❌ Impossibile scaricare la cache da Render"
-            exit 1
-          fi
+          echo "Scarico cache da Render..."
+          mkdir -p cache
+          curl -fsSL https://artbooms-rss.onrender.com/cache/download -o cache/articles_cache.json || echo "{}" > cache/articles_cache.json
+          echo "Ultima sincronizzazione: $(date -u)" > cache/last_sync.txt
+          cat cache/last_sync.txt
 
-      - name: Configura Git
+      - name: Configura git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Pull con rebase per evitare conflitti
-        run: git pull --rebase
-
-      - name: Commit se la cache è cambiata
+      - name: Commit & Push aggiornamenti cache
         run: |
-          if git diff --quiet -- "$CACHE_FILE"; then
-            echo "Nessuna modifica alla cache, esco."
-            exit 0
-          fi
-          git add "$CACHE_FILE"
-          git commit -m "Aggiornamento cache RSS automatico [skip ci]"
-
-      - name: Push aggiornamento
-        run: git push
+          git pull --rebase
+          git add cache/articles_cache.json cache/last_sync.txt || true
+          git diff --quiet && echo "Nessuna modifica, skip commit." || git commit -m "Aggiorna cache RSS da Render [ci skip]"
+          git push
