@@ -83,19 +83,23 @@ def rebuild_feed():
         return
 
     try:
-        # Compatibile con build_rss(items) o build_rss(items, meta)
+        logging.info("Chiamo build_rss() con %s articoli.", len(items))
         try:
             result = build_rss(items, meta)
         except TypeError:
             result = build_rss(items)
 
-        # Se build_rss() restituisce una tupla, prendi solo l'XML
+        logging.info("build_rss() ha restituito tipo: %s", type(result))
+
+        # 🔧 Estrai il vero XML da qualunque formato
         if isinstance(result, tuple):
             rss_xml = result[0]
-        else:
+        elif isinstance(result, (bytes, str)):
             rss_xml = result
+        else:
+            rss_xml = str(result)
 
-        # Se è stringa, convertila in bytes
+        # 🔧 Converte in bytes se serve
         if isinstance(rss_xml, str):
             rss_xml = rss_xml.encode("utf-8")
 
