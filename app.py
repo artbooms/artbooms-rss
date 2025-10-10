@@ -1,10 +1,11 @@
+
 import os
 import logging
 import threading
 import time
-import requests
 from flask import Flask, jsonify, make_response, Response
 from datetime import datetime, timezone
+import requests
 
 from article_processor import generate_items, load_cache
 from rss_generator import build_rss
@@ -14,6 +15,9 @@ logger = logging.getLogger("artbooms-rss")
 
 app = Flask(__name__)
 
+CACHE_PATH = "cache/articles_cache.json"
+GITHUB_CACHE_RAW_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
+
 FEED_CACHE = {"xml": None, "headers": None, "last_build": None}
 META = {
     "title": "ARTBOOMS - Archivio completo",
@@ -22,41 +26,12 @@ META = {
     "self_url": "https://artbooms-rss.onrender.com/rss",
 }
 
-CACHE_PATH = "articles_cache.json"
-CACHE_GITHUB_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/refs/heads/main/cache/articles_cache.json"
 
-
-# ---------------------------------------------------------
-# Bootstrap: scarica la cache da GitHub se non presente
-# ---------------------------------------------------------
-def bootstrap_cache():
-    if os.path.exists(CACHE_PATH) and os.path.getsize(CACHE_PATH) > 10:
-        logger.info("[Bootstrap] Cache locale trovata.")
-        return
-    try:
-        logger.info("[Bootstrap] Scarico cache da GitHub...")
-        r = requests.get(CACHE_GITHUB_URL, timeout=20)
-        if r.status_code == 200 and r.text.strip().startswith("{"):
-            os.makedirs(os.path.dirname(CACHE_PATH) or ".", exist_ok=True)
-            with open(CACHE_PATH, "w", encoding="utf-8") as f:
-                f.write(r.text)
-            logger.info("[Bootstrap] ✅ Cache scaricata da GitHub con successo.")
-        else:
-            logger.warning(f"[Bootstrap] Nessuna cache valida trovata su GitHub (HTTP {r.status_code})")
-    except Exception as e:
-        logger.exception("[Bootstrap] ❌ Errore download cache: %s", e)
-
-
-# ---------------------------------------------------------
-# Costruzione feed da cache
-# ---------------------------------------------------------
 def _items_from_cache_sorted():
     cache = load_cache() or {}
     items = list((cache.get("items") or {}).values())
-    if not items:
-        return []
-    from dateutil import parser as _p
 
+    from dateutil import parser as _p
     def _to_dt(s):
         try:
             if not s:
@@ -68,56 +43,58 @@ def _items_from_cache_sorted():
         except Exception:
             return datetime(1970, 1, 1, tzinfo=timezone.utc)
 
-    items.sort(
-        key=lambda x: max(_to_dt(x.get("modified")), _to_dt(x.get("published"))),
-        reverse=True,
-    )
+    items.sort(key=lambda x: max(_to_dt(x.get("modified")), _to_dt(x.get("published"))), reverse=True)
     return items
 
 
 def _rebuild_feed_from_disk_cache():
     items = _items_from_cache_sorted()
-    if not items:
-        logger.warning("[Feed] Nessun articolo trovato nella cache.")
     xml_bytes, headers = build_rss(items, META)
     FEED_CACHE["xml"] = xml_bytes
     FEED_CACHE["headers"] = headers
     FEED_CACHE["last_build"] = datetime.utcnow().replace(tzinfo=timezone.utc)
-    logger.info("[Feed] Ricostruito da cache: %d articoli", len(items))
+    logger.info(f"[Feed] Ricostruito da cache: {len(items)} articoli")
 
 
-# ---------------------------------------------------------
-# Worker di aggiornamento (in background)
-# ---------------------------------------------------------
-def background_updater():
+def bootstrap_cache():
+    """Scarica la cache persistente da GitHub se non esiste in locale"""
+    if os.path.exists(CACHE_PATH):
+        logger.info(f"[Bootstrap] Cache locale trovata: {CACHE_PATH}")
+        return
+    try:
+        logger.info(f"[Bootstrap] Scarico cache da GitHub...")
+        os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
+        r = requests.get(GITHUB_CACHE_RAW_URL, timeout=15)
+        if r.status_code == 200 and r.content:
+            with open(CACHE_PATH, "wb") as f:
+                f.write(r.content)
+            logger.info("[Bootstrap] ✅ Cache scaricata da GitHub con successo.")
+        else:
+            logger.warning(f"[Bootstrap] ⚠️ Nessuna cache disponibile su GitHub (HTTP {r.status_code})")
+    except Exception as e:
+        logger.exception(f"[Bootstrap] ❌ Errore nel download cache: {e}")
+
+
+def background_populator():
+    """Thread che aggiorna la cache e ricostruisce il feed ogni minuto"""
     logger.info("[Worker] 🔁 Thread di aggiornamento avviato.")
     while True:
         try:
-            new_count = generate_items(force=False)
-            logger.info(f"[Worker] ✅ {new_count} articoli aggiornati o verificati.")
+            generate_items(force=False)
             _rebuild_feed_from_disk_cache()
         except Exception as e:
-            logger.exception("[Worker] ❌ Errore durante aggiornamento: %s", e)
+            logger.exception(f"[Worker] ❌ Errore durante aggiornamento: {e}")
         time.sleep(60)
 
 
-@app.before_request
-def ensure_background_thread():
-    """Avvia il thread background una sola volta anche su Render"""
-    if not getattr(app, "_worker_started", False):
-        app._worker_started = True
-        threading.Thread(target=background_updater, daemon=True).start()
-        logger.info("[Main] 🚀 Thread background avviato automaticamente.")
-
-
-# ---------------------------------------------------------
-# Endpoint Flask
-# ---------------------------------------------------------
 @app.get("/rss")
 def rss():
     if FEED_CACHE["xml"] is None:
         _rebuild_feed_from_disk_cache()
     resp = make_response(FEED_CACHE["xml"])
+    for h in ("ETag", "Last-Modified", "Cache-Control", "Content-Type"):
+        if FEED_CACHE["headers"] and FEED_CACHE["headers"].get(h):
+            resp.headers[h] = FEED_CACHE["headers"][h]
     resp.headers.setdefault("Content-Type", "application/rss+xml; charset=utf-8")
     return resp
 
@@ -135,10 +112,9 @@ def debug_cache():
 
 @app.get("/cache/download")
 def cache_download():
-    path = "cache/articles_cache.json"
-    if not os.path.exists(path):
-        return jsonify({})
-    with open(path, "r", encoding="utf-8") as f:
+    if not os.path.exists(CACHE_PATH):
+        return jsonify({"error": "cache not found"}), 404
+    with open(CACHE_PATH, "r", encoding="utf-8") as f:
         return Response(f.read(), mimetype="application/json")
 
 
@@ -150,10 +126,13 @@ def healthz():
     })
 
 
-# ---------------------------------------------------------
-# Avvio immediato su Render
-# ---------------------------------------------------------
+# === Avvio immediato per Render ===
+logger.info("[Main] 🚀 Avvio Artbooms RSS")
 bootstrap_cache()
 _rebuild_feed_from_disk_cache()
-threading.Thread(target=background_updater, daemon=True).start()
+t = threading.Thread(target=background_populator, daemon=True)
+t.start()
 logger.info("[Main] ✅ Bootstrap completato e thread background attivo.")
+
+port = int(os.environ.get("PORT", "5000"))
+app.run(host="0.0.0.0", port=port)
