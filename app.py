@@ -41,6 +41,7 @@ def bootstrap_cache():
 
 # 🧩 Rigenera il feed RSS da cache locale (tollerante)
 def rebuild_feed():
+    """Rigenera il feed RSS a partire dalla cache locale (se presente)."""
     if not os.path.exists(CACHE_PATH):
         logging.warning("Nessuna cache trovata, creo nuova cache vuota.")
         with open(CACHE_PATH, "w", encoding="utf-8") as f:
@@ -55,11 +56,23 @@ def rebuild_feed():
         data = {"items": []}
 
     items = data.get("items", [])
+    meta = data.get("meta", {
+        "title": "Artbooms RSS Feed",
+        "link": "https://www.artbooms.com",
+        "description": "Ultimi articoli da Artbooms",
+        "language": "it-IT"
+    })
+
     if not items:
         logging.info("Cache vuota — feed iniziale verrà popolato nei prossimi cicli.")
         return
 
-    rss_xml = build_rss(items)
+    try:
+        rss_xml = build_rss(items, meta)
+    except Exception as e:
+        logging.error("Errore durante la generazione del feed RSS: %s", e)
+        return
+
     with open("feed.xml", "wb") as f:
         f.write(rss_xml)
     logging.info("Feed rigenerato da cache: %s articoli", len(items))
