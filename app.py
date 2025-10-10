@@ -8,7 +8,9 @@ from flask import Flask, Response, jsonify, send_file
 from article_processor import generate_items
 from rss_generator import build_rss
 
-# 🔹 CONFIGURAZIONE CACHE PERSISTENTE
+# ============================================================
+# ⚙️ CONFIGURAZIONE GENERALE
+# ============================================================
 CACHE_PATH = "cache/articles_cache.json"
 RAW_CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
 USER_AGENT = "artbooms-rss/1.0 (+https://artbooms.com)"
@@ -16,9 +18,14 @@ USER_AGENT = "artbooms-rss/1.0 (+https://artbooms.com)"
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-# 🧠 Scarica cache da GitHub o crea una nuova cache vuota
+
+# ============================================================
+# 🧠 BOOTSTRAP CACHE
+# ============================================================
 def bootstrap_cache():
+    """Scarica la cache da GitHub o crea una vuota se non disponibile."""
     os.makedirs("cache", exist_ok=True)
+
     if os.path.exists(CACHE_PATH) and os.path.getsize(CACHE_PATH) > 10:
         logging.info("Cache locale trovata, salto bootstrap.")
         return
@@ -29,7 +36,7 @@ def bootstrap_cache():
         if r.ok and r.text.strip() not in ("", "{}", "null"):
             with open(CACHE_PATH, "w", encoding="utf-8") as f:
                 f.write(r.text)
-            logging.info("Cache scaricata da GitHub (%s bytes).", len(r.text))
+            logging.info("Cache scaricata da GitHub (%s byte).", len(r.text))
         else:
             logging.warning("Cache remota vuota o non trovata — parto da zero.")
             with open(CACHE_PATH, "w", encoding="utf-8") as f:
@@ -39,9 +46,12 @@ def bootstrap_cache():
         with open(CACHE_PATH, "w", encoding="utf-8") as f:
             json.dump({"items": []}, f)
 
-# 🧩 Rigenera il feed RSS da cache locale (tollerante)
+
+# ============================================================
+# 🧩 RIGENERA FEED RSS
+# ============================================================
 def rebuild_feed():
-    """Rigenera il feed RSS a partire dalla cache locale (se presente)."""
+    """Rigenera il feed RSS a partire dalla cache locale (tollerante a tutto)."""
     if not os.path.exists(CACHE_PATH):
         logging.warning("Nessuna cache trovata, creo nuova cache vuota.")
         with open(CACHE_PATH, "w", encoding="utf-8") as f:
@@ -63,19 +73,23 @@ def rebuild_feed():
         "language": "it-IT"
     })
 
-    # 🔹 Se la cache è vuota, genera feed vuoto ma valido (niente 500)
+    # Se la cache è vuota → crea un feed XML minimo
     if not items:
-        logging.warning("Cache vuota — nessun articolo da pubblicare nel feed.")
-        empty_feed = b"<?xml version='1.0' encoding='UTF-8'?><rss><channel></channel></rss>"
+        logging.info("Cache vuota — creo feed vuoto temporaneo.")
+        empty_feed = b"<?xml version='1.0' encoding='UTF-8'?><rss><channel><title>Artbooms RSS Feed</title></channel></rss>"
         with open("feed.xml", "wb") as f:
             f.write(empty_feed)
         return
 
+    # Protezione extra: accetta build_rss() con o senza meta
     try:
-        rss_xml = build_rss(items, meta)
+        try:
+            rss_xml = build_rss(items, meta)
+        except TypeError:
+            rss_xml = build_rss(items)
     except Exception as e:
         logging.error("Errore durante la generazione del feed RSS: %s", e)
-        empty_feed = b"<?xml version='1.0' encoding='UTF-8'?><rss><channel></channel></rss>"
+        empty_feed = b"<?xml version='1.0' encoding='UTF-8'?><rss><channel><title>Errore feed</title></channel></rss>"
         with open("feed.xml", "wb") as f:
             f.write(empty_feed)
         return
@@ -84,25 +98,32 @@ def rebuild_feed():
         f.write(rss_xml)
     logging.info("Feed rigenerato da cache: %s articoli", len(items))
 
-# 🔁 Thread che aggiorna la cache ogni minuto
+
+# ============================================================
+# 🔁 THREAD DI AGGIORNAMENTO
+# ============================================================
 def background_populator():
+    """Aggiorna periodicamente la cache e il feed."""
     while True:
         try:
-            generate_items()  # batch di 3 articoli alla volta
+            generate_items()  # batch di 3 articoli
             rebuild_feed()
         except Exception as e:
             logging.error("Errore nel popolatore: %s", e)
-        time.sleep(60)  # aggiorna ogni 60 secondi
+        time.sleep(60)  # ogni minuto
 
-# 🔗 Endpoint principale per il feed RSS
+
+# ============================================================
+# 🌐 ENDPOINTS FLASK
+# ============================================================
 @app.route("/rss")
 def rss():
-    """Serve il feed RSS; se non esiste o è vuoto, lo rigenera."""
+    """Restituisce il feed RSS (rigenera se mancante)."""
     if not os.path.exists("feed.xml") or os.path.getsize("feed.xml") < 100:
         logging.warning("Feed assente o vuoto, rigenero...")
         rebuild_feed()
     if not os.path.exists("feed.xml"):
-        return Response("Feed non ancora disponibile. Riprova tra 1 minuto.", status=503)
+        return Response("Feed non ancora disponibile, riprova tra poco.", status=503)
     try:
         with open("feed.xml", "rb") as f:
             data = f.read()
@@ -111,9 +132,10 @@ def rss():
         return Response("Errore nel feed RSS.", status=500)
     return Response(data, mimetype="application/rss+xml")
 
-# 🔍 Endpoint debug: mostra quanti articoli in cache
+
 @app.route("/debug/cache")
 def debug_cache():
+    """Mostra quanti articoli sono attualmente in cache."""
     if not os.path.exists(CACHE_PATH):
         return jsonify({"articles_in_cache": 0})
     try:
@@ -124,24 +146,28 @@ def debug_cache():
         count = 0
     return jsonify({"articles_in_cache": count})
 
-# 📦 Endpoint per GitHub Actions
+
 @app.route("/cache/download")
 def cache_download():
+    """Permette a GitHub Actions di scaricare la cache."""
     if not os.path.exists(CACHE_PATH):
         return "{}"
     return send_file(CACHE_PATH, mimetype="application/json")
 
-# ❤️ Health check
+
 @app.route("/healthz")
 def healthz():
     return jsonify({"ok": True, "service": "artbooms-rss"})
 
-# 🧵 Avvio thread e bootstrap
+
+# ============================================================
+# 🚀 AVVIO
+# ============================================================
 def start_background():
     t = threading.Thread(target=background_populator, daemon=True)
     t.start()
 
-# 🚀 MAIN
+
 if __name__ == "__main__":
     bootstrap_cache()
     rebuild_feed()
