@@ -1,27 +1,33 @@
 name: Persist RSS cache
-
 on:
   schedule:
-    - cron: "*/15 * * * *" # ogni 15 minuti
+    - cron: "*/15 * * * *"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  persist-cache:
+  persist:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Download cache from Render
         run: |
           mkdir -p cache
-          curl -s -o cache/articles_cache.json https://artbooms-rss.onrender.com/cache/download
-
-      - name: Commit and push
+          curl -fsSL https://artbooms-rss.onrender.com/cache/download -o cache/articles_cache.json
+          test -s cache/articles_cache.json || (echo "Cache vuota, skip" && exit 0)
+      - name: Commit & push if changed
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "rss-bot"
+          git config user.email "rss-bot@users.noreply.github.com"
           git pull --rebase
-          git add cache/articles_cache.json
-          git commit -m "[Persist Cache] Updated cache/articles_cache.json" || echo "No changes to commit"
-          git push origin main
+          if ! git diff --quiet -- cache/articles_cache.json; then
+            git add cache/articles_cache.json
+            git commit -m "Persist cache $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            git push
+          else
+            echo "Nessuna modifica nella cache"
+          fi
