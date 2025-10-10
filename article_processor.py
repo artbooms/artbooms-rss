@@ -12,14 +12,13 @@ MAX_BATCH = 3
 
 
 def load_cache():
-    """Carica la cache locale, garantendo che sia sempre un dizionario valido."""
+    """Carica la cache locale in modo sicuro."""
     if not os.path.exists(CACHE_PATH):
         return {"items": []}
 
     try:
         with open(CACHE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
-        # Garantisce che la cache sia sempre un dizionario corretto
         if isinstance(data, list):
             data = {"items": data}
         elif not isinstance(data, dict):
@@ -39,28 +38,28 @@ def save_cache(data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def filter_valid_links(links):
+def filter_and_sort_links(links):
     """
-    Mantiene solo i link che puntano a veri articoli del blog.
-    Evita home, categorie o pagine statiche come /arte, /design, /about, ecc.
+    Filtra solo i link validi del blog e li ordina dal più vecchio al più nuovo.
     """
-    valid = []
-    for link in links:
-        if "/blog/" not in link:
-            continue
-        if any(x in link for x in ["/tag/", "?month=", "#", "/category/"]):
-            continue
-        valid.append(link)
-    return valid
+    # Filtra i link agli articoli veri
+    valid = [link for link in links if "/blog/" in link and "/tag/" not in link]
+    # Rimuovi duplicati mantenendo l’ordine
+    seen = set()
+    ordered = [l for l in valid if not (l in seen or seen.add(l))]
+    # 🔁 Ordina cronologicamente (più vecchi prima)
+    ordered.sort()
+    return ordered
 
 
 def generate_items():
-    """Scarica articoli dall’archivio e aggiorna la cache locale."""
+    """Scarica nuovi articoli dall’archivio e aggiorna la cache."""
     try:
+        logger.info("[Processor] Scarico archivio da %s", ARCHIVE_URL)
         html = fetch_html(ARCHIVE_URL)
         all_links = extract_article_links_from_archive_html(html, ARCHIVE_URL)
-        valid_links = filter_valid_links(all_links)
-        logger.info("[Parser] %s link articolo validi trovati nell'archivio.", len(valid_links))
+        sorted_links = filter_and_sort_links(all_links)
+        logger.info("[Parser] %s link articolo validi trovati nell'archivio.", len(sorted_links))
     except Exception as e:
         logger.error("Errore scaricando l'archivio: %s", e)
         return
@@ -69,12 +68,13 @@ def generate_items():
     cached_urls = {a["url"] for a in cache.get("items", [])}
     new_articles = []
 
-    # Scarica MAX_BATCH articoli nuovi
-    for link in valid_links:
+    # Scorre dal più vecchio al più recente
+    for link in sorted_links:
         if link not in cached_urls:
             art = parse_article(link)
             if art and art.get("title"):
                 new_articles.append(art)
+                logger.info("[Processor] Processed %s", link)
             if len(new_articles) >= MAX_BATCH:
                 break
 
