@@ -26,8 +26,10 @@ CACHE_PATH = "articles_cache.json"
 CACHE_GITHUB_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/refs/heads/main/cache/articles_cache.json"
 
 
+# ---------------------------------------------------------
+# Bootstrap: scarica la cache da GitHub se non presente
+# ---------------------------------------------------------
 def bootstrap_cache():
-    """Scarica la cache persistente da GitHub se non esiste o è vuota"""
     if os.path.exists(CACHE_PATH) and os.path.getsize(CACHE_PATH) > 10:
         logger.info("[Bootstrap] Cache locale trovata.")
         return
@@ -35,18 +37,24 @@ def bootstrap_cache():
         logger.info("[Bootstrap] Scarico cache da GitHub...")
         r = requests.get(CACHE_GITHUB_URL, timeout=20)
         if r.status_code == 200 and r.text.strip().startswith("{"):
+            os.makedirs(os.path.dirname(CACHE_PATH) or ".", exist_ok=True)
             with open(CACHE_PATH, "w", encoding="utf-8") as f:
                 f.write(r.text)
-            logger.info("[Bootstrap] ✅ Cache scaricata da GitHub.")
+            logger.info("[Bootstrap] ✅ Cache scaricata da GitHub con successo.")
         else:
-            logger.warning(f"[Bootstrap] Nessuna cache valida trovata su GitHub ({r.status_code})")
+            logger.warning(f"[Bootstrap] Nessuna cache valida trovata su GitHub (HTTP {r.status_code})")
     except Exception as e:
         logger.exception("[Bootstrap] ❌ Errore download cache: %s", e)
 
 
+# ---------------------------------------------------------
+# Costruzione feed da cache
+# ---------------------------------------------------------
 def _items_from_cache_sorted():
     cache = load_cache() or {}
     items = list((cache.get("items") or {}).values())
+    if not items:
+        return []
     from dateutil import parser as _p
 
     def _to_dt(s):
@@ -69,20 +77,24 @@ def _items_from_cache_sorted():
 
 def _rebuild_feed_from_disk_cache():
     items = _items_from_cache_sorted()
+    if not items:
+        logger.warning("[Feed] Nessun articolo trovato nella cache.")
     xml_bytes, headers = build_rss(items, META)
     FEED_CACHE["xml"] = xml_bytes
     FEED_CACHE["headers"] = headers
     FEED_CACHE["last_build"] = datetime.utcnow().replace(tzinfo=timezone.utc)
-    logger.info("Feed ricostruito da cache: %d articoli", len(items))
+    logger.info("[Feed] Ricostruito da cache: %d articoli", len(items))
 
 
+# ---------------------------------------------------------
+# Worker di aggiornamento (in background)
+# ---------------------------------------------------------
 def background_updater():
-    """Thread che aggiorna la cache ogni minuto"""
     logger.info("[Worker] 🔁 Thread di aggiornamento avviato.")
     while True:
         try:
-            new = generate_items(force=False)
-            logger.info(f"[Worker] ✅ {new} nuovi articoli elaborati.")
+            new_count = generate_items(force=False)
+            logger.info(f"[Worker] ✅ {new_count} articoli aggiornati o verificati.")
             _rebuild_feed_from_disk_cache()
         except Exception as e:
             logger.exception("[Worker] ❌ Errore durante aggiornamento: %s", e)
@@ -91,13 +103,16 @@ def background_updater():
 
 @app.before_request
 def ensure_background_thread():
-    """Garantisce che il thread di aggiornamento sia sempre attivo"""
+    """Avvia il thread background una sola volta anche su Render"""
     if not getattr(app, "_worker_started", False):
         app._worker_started = True
         threading.Thread(target=background_updater, daemon=True).start()
         logger.info("[Main] 🚀 Thread background avviato automaticamente.")
 
 
+# ---------------------------------------------------------
+# Endpoint Flask
+# ---------------------------------------------------------
 @app.get("/rss")
 def rss():
     if FEED_CACHE["xml"] is None:
@@ -135,7 +150,9 @@ def healthz():
     })
 
 
-# ⚙️ Parte anche su Render (non solo in __main__)
+# ---------------------------------------------------------
+# Avvio immediato su Render
+# ---------------------------------------------------------
 bootstrap_cache()
 _rebuild_feed_from_disk_cache()
 threading.Thread(target=background_updater, daemon=True).start()
