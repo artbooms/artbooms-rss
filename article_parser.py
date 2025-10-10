@@ -32,6 +32,7 @@ def _parse_date(s):
     try:
         dt = dateparser.parse(s)
         if dt and dt.tzinfo is None:
+            # assumo UTC quando timezone non presente
             from datetime import timezone
             dt = dt.replace(tzinfo=timezone.utc)
         return dt
@@ -39,10 +40,7 @@ def _parse_date(s):
         return None
 
 def _first_meta(soup, attrs_list):
-    """
-    attrs_list: lista di dict come {"property":"og:image"} o {"name":"description"} o {"itemprop":"datePublished"}
-    ritorna il primo valore 'content' non vuoto
-    """
+    """Ritorna il primo meta content non vuoto trovato."""
     for attrs in attrs_list:
         tag = soup.find("meta", attrs=attrs)
         if tag:
@@ -52,48 +50,19 @@ def _first_meta(soup, attrs_list):
     return None
 
 def extract_article_links_from_archive_html(html: str, base_url: str):
-    """
-    Data la HTML di archivio, ritorna lista ordinata di link assoluti (senza duplicati),
-    nell'ordine in cui appaiono nella pagina.
-    Filtra solo i link dell'archivio principale, evitando gallerie, footer, header e blocchi correlati.
-    """
+    """Estrae i link assoluti agli articoli dalla pagina archivio."""
     soup = BeautifulSoup(html, "lxml")
-
-    # tenta di individuare la sezione archivio (Squarespace: .archive, .collection-content, ecc.)
-    archive_section = soup.find(class_=re.compile(r"archive|collection-content|list-section|blog-list", re.I)) or soup
-
-    anchors = archive_section.find_all("a", href=True)
-    urls = []
-    seen = set()
-
+    anchors = soup.find_all("a", href=True)
+    urls, seen = [], set()
     for a in anchors:
         href = a["href"].strip()
-        # ignoro link a mail, javascript, ancore interne
-        if href.startswith(("javascript:", "mailto:", "#")):
+        if href.startswith("javascript:") or href.startswith("mailto:"):
             continue
-
         abs_url = urljoin(base_url, href)
-        parsed = urlparse(abs_url)
-
-        # solo stesso dominio
-        if not parsed.netloc.endswith(urlparse(base_url).netloc):
-            continue
-
-        path = parsed.path.lower()
-
-        # escludo gallerie, categorie, tag, asset e home
-        if any(x in path for x in ["/gallery", "/galleria", "/tag/", "/category/", "/search", "/feed", "/about", "/contact", "/page/"]):
-            continue
-
-        # accetto solo link che sembrano articoli (blog o archivio)
-        if not any(x in path for x in ["/blog/", "/archivio/", "/articolo/"]):
-            continue
-
-        if abs_url not in seen:
-            seen.add(abs_url)
-            urls.append(abs_url)
-
-    logger.info(f"[Parser] {len(urls)} link articolo validi trovati nell'archivio.")
+        if urlparse(abs_url).netloc.endswith(urlparse(base_url).netloc):
+            if abs_url not in seen:
+                seen.add(abs_url)
+                urls.append(abs_url)
     return urls
 
 def fetch_html(url, session=None, timeout=15):
@@ -104,11 +73,7 @@ def fetch_html(url, session=None, timeout=15):
     return r.text
 
 def parse_article(url, html=None, session=None):
-    """
-    Restituisce dict con chiavi:
-    url, title, description, author, published (ISO), modified (ISO),
-    content_text, image
-    """
+    """Estrae i campi principali dall’articolo: titolo, descrizione, autore, date, immagine."""
     try:
         if html is None:
             html = fetch_html(url, session=session)
@@ -124,6 +89,9 @@ def parse_article(url, html=None, session=None):
     if not title:
         ttag = soup.find("title")
         title = ttag.get_text(strip=True) if ttag else None
+    # 🔧 Rimuove “— ARTBOOMS” dal titolo
+    if title:
+        title = title.replace("— ARTBOOMS", "").replace(" — ARTBOOMS", "").strip()
 
     # description
     description = _first_meta(soup, [
@@ -164,6 +132,9 @@ def parse_article(url, html=None, session=None):
         link_img = soup.find("link", rel="image_src")
         if link_img and link_img.get("href"):
             image_url = link_img.get("href")
+    # 🔒 Forza HTTPS per sicurezza
+    if image_url and image_url.startswith("http://"):
+        image_url = image_url.replace("http://", "https://")
 
     return {
         "url": url,
