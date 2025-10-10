@@ -19,7 +19,7 @@ def load_cache():
     try:
         with open(CACHE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
-        # 🔧 FIX: garantisce che la cache sia un dizionario con chiave 'items'
+        # Garantisce che la cache sia sempre un dizionario corretto
         if isinstance(data, list):
             data = {"items": data}
         elif not isinstance(data, dict):
@@ -39,12 +39,28 @@ def save_cache(data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
+def filter_valid_links(links):
+    """
+    Mantiene solo i link che puntano a veri articoli del blog.
+    Evita home, categorie o pagine statiche come /arte, /design, /about, ecc.
+    """
+    valid = []
+    for link in links:
+        if "/blog/" not in link:
+            continue
+        if any(x in link for x in ["/tag/", "?month=", "#", "/category/"]):
+            continue
+        valid.append(link)
+    return valid
+
+
 def generate_items():
     """Scarica articoli dall’archivio e aggiorna la cache locale."""
     try:
         html = fetch_html(ARCHIVE_URL)
         all_links = extract_article_links_from_archive_html(html, ARCHIVE_URL)
-        logger.info("[Parser] %s link articolo validi trovati nell'archivio.", len(all_links))
+        valid_links = filter_valid_links(all_links)
+        logger.info("[Parser] %s link articolo validi trovati nell'archivio.", len(valid_links))
     except Exception as e:
         logger.error("Errore scaricando l'archivio: %s", e)
         return
@@ -54,7 +70,7 @@ def generate_items():
     new_articles = []
 
     # Scarica MAX_BATCH articoli nuovi
-    for link in all_links:
+    for link in valid_links:
         if link not in cached_urls:
             art = parse_article(link)
             if art and art.get("title"):
@@ -68,4 +84,5 @@ def generate_items():
 
     cache["items"].extend(new_articles)
     save_cache(cache)
-    logger.info("[Processor] Aggiunti %s nuovi articoli alla cache (totale: %s).", len(new_articles), len(cache["items"]))
+    logger.info("[Processor] Aggiunti %s nuovi articoli alla cache (totale: %s).",
+                len(new_articles), len(cache["items"]))
