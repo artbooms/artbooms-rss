@@ -172,7 +172,7 @@ rebuild_feed()
 if not any(t.name == "BackgroundPopulator" for t in threading.enumerate()):
     t = threading.Thread(target=background_populator, daemon=True, name="BackgroundPopulator")
     t.start()
-    logging.info("Thread di popolamento avviato.")
+    logging.info("Thread di popolamento avviato nel processo PID %s", os.getpid())
 
 # Se eseguito localmente, avvia Flask normalmente
 if __name__ == "__main__":
