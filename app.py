@@ -13,7 +13,11 @@ from rss_generator import build_rss
 # ============================================================
 CACHE_PATH = "cache/articles_cache.json"
 RAW_CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/123.0.0.0 Safari/537.36"
+)
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -38,13 +42,17 @@ def bootstrap_cache():
                 f.write(r.text)
             logging.info("Cache scaricata da GitHub (%s bytes).", len(r.text))
         else:
-            logging.warning("Cache remota vuota o inesistente. Creo una nuova cache locale.")
-            with open(CACHE_PATH, "w", encoding="utf-8") as f:
-                json.dump({"items": []}, f)
+            if not os.path.exists(CACHE_PATH) or os.path.getsize(CACHE_PATH) < 10:
+                logging.warning("Cache remota vuota — nessuna cache locale trovata, ne creo una nuova.")
+                with open(CACHE_PATH, "w", encoding="utf-8") as f:
+                    json.dump({"items": []}, f)
+            else:
+                logging.warning("Cache remota vuota — mantengo la cache locale esistente.")
     except Exception as e:
         logging.error("Errore nel bootstrap della cache: %s", e)
-        with open(CACHE_PATH, "w", encoding="utf-8") as f:
-            json.dump({"items": []}, f)
+        if not os.path.exists(CACHE_PATH):
+            with open(CACHE_PATH, "w", encoding="utf-8") as f:
+                json.dump({"items": []}, f)
 
 
 # ============================================================
@@ -77,11 +85,23 @@ def rebuild_feed():
     try:
         # Compatibile con build_rss(items) o build_rss(items, meta)
         try:
-            rss_xml = build_rss(items, meta)
+            result = build_rss(items, meta)
         except TypeError:
-            rss_xml = build_rss(items)
+            result = build_rss(items)
+
+        # Se build_rss() restituisce una tupla, prendi solo l'XML
+        if isinstance(result, tuple):
+            rss_xml = result[0]
+        else:
+            rss_xml = result
+
+        # Se è stringa, convertila in bytes
+        if isinstance(rss_xml, str):
+            rss_xml = rss_xml.encode("utf-8")
+
         with open("feed.xml", "wb") as f:
             f.write(rss_xml)
+
         logging.info("Feed rigenerato con %s articoli.", len(items))
     except Exception as e:
         logging.error("Errore durante la generazione del feed: %s", e)
@@ -94,7 +114,7 @@ def background_populator():
     """Aggiorna periodicamente la cache e il feed RSS."""
     while True:
         try:
-            generate_items()   # batch di 3 articoli per ciclo
+            generate_items()  # batch di 3 articoli per ciclo
             rebuild_feed()
         except Exception as e:
             logging.error("Errore nel popolatore: %s", e)
