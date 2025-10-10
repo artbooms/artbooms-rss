@@ -63,14 +63,21 @@ def rebuild_feed():
         "language": "it-IT"
     })
 
+    # 🔹 Se la cache è vuota, genera feed vuoto ma valido (niente 500)
     if not items:
-        logging.info("Cache vuota — feed iniziale verrà popolato nei prossimi cicli.")
+        logging.warning("Cache vuota — nessun articolo da pubblicare nel feed.")
+        empty_feed = b"<?xml version='1.0' encoding='UTF-8'?><rss><channel></channel></rss>"
+        with open("feed.xml", "wb") as f:
+            f.write(empty_feed)
         return
 
     try:
         rss_xml = build_rss(items, meta)
     except Exception as e:
         logging.error("Errore durante la generazione del feed RSS: %s", e)
+        empty_feed = b"<?xml version='1.0' encoding='UTF-8'?><rss><channel></channel></rss>"
+        with open("feed.xml", "wb") as f:
+            f.write(empty_feed)
         return
 
     with open("feed.xml", "wb") as f:
