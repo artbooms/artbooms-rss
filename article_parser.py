@@ -7,7 +7,6 @@ import logging
 
 logger = logging.getLogger("article_parser")
 
-# mappa mesi italiani -> inglese per parser robusto su date in italiano
 MONTHS_IT = {
     "gennaio":"January","febbraio":"February","marzo":"March","aprile":"April",
     "maggio":"May","giugno":"June","luglio":"July","agosto":"August",
@@ -20,7 +19,6 @@ def _normalizza_date_str(s: str):
     if not s:
         return s
     s = s.strip()
-    # sostituisco mesi IT con EN per date tipo "1 gennaio 2015"
     for it, en in MONTHS_IT.items():
         s = re.sub(r'\b' + re.escape(it) + r'\b', en, s, flags=re.IGNORECASE)
     return s
@@ -32,7 +30,6 @@ def _parse_date(s):
     try:
         dt = dateparser.parse(s)
         if dt and dt.tzinfo is None:
-            # assumo UTC quando timezone non presente
             from datetime import timezone
             dt = dt.replace(tzinfo=timezone.utc)
         return dt
@@ -40,7 +37,6 @@ def _parse_date(s):
         return None
 
 def _first_meta(soup, attrs_list):
-    """Ritorna il primo meta content non vuoto trovato."""
     for attrs in attrs_list:
         tag = soup.find("meta", attrs=attrs)
         if tag:
@@ -50,30 +46,46 @@ def _first_meta(soup, attrs_list):
     return None
 
 def extract_article_links_from_archive_html(html: str, base_url: str):
-    """Estrae i link assoluti agli articoli dalla pagina archivio."""
+    """Estrae SOLO i link di articoli /blog/... (nessuna pagina, tag, month, ecc.)."""
     soup = BeautifulSoup(html, "lxml")
     anchors = soup.find_all("a", href=True)
     urls, seen = [], set()
     for a in anchors:
         href = a["href"].strip()
-        if href.startswith("javascript:") or href.startswith("mailto:"):
+        if not href or href.startswith(("javascript:", "mailto:")):
             continue
         abs_url = urljoin(base_url, href)
-        if urlparse(abs_url).netloc.endswith(urlparse(base_url).netloc):
-            if abs_url not in seen:
-                seen.add(abs_url)
-                urls.append(abs_url)
+        u = urlparse(abs_url)
+        if not u.netloc.endswith(urlparse(base_url).netloc):
+            continue
+        path = u.path or "/"
+        # 🔒 accetta solo veri articoli
+        if not path.startswith("/blog/"):
+            continue
+        if any(x in abs_url for x in ["/tag/", "/category/", "?month=", "#", "?"]):
+            continue
+        if abs_url not in seen:
+            seen.add(abs_url)
+            urls.append(abs_url)
+    logger.info("[Parser] %s link articolo validi trovati nell'archivio.", len(urls))
     return urls
 
 def fetch_html(url, session=None, timeout=15):
     s = session or requests.Session()
-    headers = {"User-Agent": "artbooms-rss-bot/1.0 (+https://www.artbooms.com)"}
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/123.0.0.0 Safari/537.36"
+        ),
+        "Accept-Language": "it-IT,it;q=0.9,en;q=0.8",
+    }
     r = s.get(url, headers=headers, timeout=timeout)
     r.raise_for_status()
     return r.text
 
 def parse_article(url, html=None, session=None):
-    """Estrae i campi principali dall’articolo: titolo, descrizione, autore, date, immagine."""
+    """Estrae titolo, descrizione, autore, date e immagine dall’articolo."""
     try:
         if html is None:
             html = fetch_html(url, session=session)
@@ -84,22 +96,18 @@ def parse_article(url, html=None, session=None):
 
     soup = BeautifulSoup(html, "lxml")
 
-    # title
     title = _first_meta(soup, [{"property":"og:title"}, {"name":"title"}, {"name":"twitter:title"}])
     if not title:
         ttag = soup.find("title")
         title = ttag.get_text(strip=True) if ttag else None
-    # 🔧 Rimuove “— ARTBOOMS” dal titolo
     if title:
         title = title.replace("— ARTBOOMS", "").replace(" — ARTBOOMS", "").strip()
 
-    # description
     description = _first_meta(soup, [
         {"property":"og:description"}, {"name":"description"}, {"name":"twitter:description"},
         {"itemprop":"description"}
     ])
 
-    # author
     author = _first_meta(soup, [
         {"name":"author"}, {"property":"article:author"}, {"name":"article:author"},
         {"itemprop":"author"}
@@ -109,7 +117,6 @@ def parse_article(url, html=None, session=None):
         if a:
             author = a.get_text(strip=True)
 
-    # published / modified
     pub = _first_meta(soup, [{"property":"article:published_time"}, {"name":"pubdate"},
                              {"itemprop":"datePublished"}, {"name":"date"}])
     mod = _first_meta(soup, [{"property":"article:modified_time"}, {"itemprop":"dateModified"}, {"name":"last-modified"}])
@@ -122,17 +129,14 @@ def parse_article(url, html=None, session=None):
     pub_dt = _parse_date(pub)
     mod_dt = _parse_date(mod) or pub_dt
 
-    # content text (fallback)
     main = soup.find("article") or soup.find("main") or soup.find(class_=re.compile(r"post|entry|article|content|sqs-block-content", re.I))
     content_text = main.get_text(" ", strip=True) if main else soup.get_text(" ", strip=True)
 
-    # image
     image_url = _first_meta(soup, [{"property":"og:image"}, {"name":"twitter:image"}, {"itemprop":"image"}])
     if not image_url:
         link_img = soup.find("link", rel="image_src")
         if link_img and link_img.get("href"):
             image_url = link_img.get("href")
-    # 🔒 Forza HTTPS per sicurezza
     if image_url and image_url.startswith("http://"):
         image_url = image_url.replace("http://", "https://")
 
