@@ -67,7 +67,18 @@ def rebuild_feed():
         logging.error("Errore caricando la cache: %s", e)
         data = {"items": []}
 
+    # 🔒 usa SOLO articoli veri (url /blog/...), ed elimina eventuali residui sbagliati
     items = data.get("items", [])
+    items = [i for i in items if isinstance(i, dict) and "/blog/" in (i.get("url") or "")]
+    data["items"] = items  # normalizza
+    try:
+        # salva subito la versione ripulita (evita che il feed ripeschi voci sbagliate)
+        os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
+        with open(CACHE_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logging.warning("Impossibile salvare la cache ripulita: %s", e)
+
     meta = data.get("meta", {
         "title": "Artbooms RSS Feed",
         "link": "https://www.artbooms.com",
@@ -89,9 +100,7 @@ def rebuild_feed():
         except TypeError:
             result = build_rss(items)
 
-        logging.info("build_rss() ha restituito tipo: %s", type(result))
-
-        # 🔧 Estrai il vero XML da qualunque formato
+        # 🔧 Estrai l'XML da qualsiasi formato
         if isinstance(result, tuple):
             rss_xml = result[0]
         elif isinstance(result, (bytes, str)):
@@ -99,7 +108,6 @@ def rebuild_feed():
         else:
             rss_xml = str(result)
 
-        # 🔧 Converte in bytes se serve
         if isinstance(rss_xml, str):
             rss_xml = rss_xml.encode("utf-8")
 
@@ -144,7 +152,7 @@ def debug_cache():
     try:
         with open(CACHE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
-        count = len(data.get("items", []))
+        count = len([i for i in data.get("items", []) if isinstance(i, dict) and "/blog/" in (i.get("url") or "")])
     except Exception:
         count = 0
     return jsonify({"articles_in_cache": count})
