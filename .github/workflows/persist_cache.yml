@@ -11,35 +11,31 @@ permissions:
 jobs:
   persist:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: false  # disabilita credenziali automatiche errate
 
       - name: Download cache from Render
         run: |
           mkdir -p cache
           curl -fsSL https://artbooms-rss.onrender.com/cache/download -o cache/articles_cache.json
-          if [ ! -s cache/articles_cache.json ]; then
-            echo "⚠️ Cache vuota, skip del commit"
-            exit 0
-          fi
+          test -s cache/articles_cache.json || (echo "Cache vuota, skip" && exit 0)
 
-      - name: Commit & push updated cache
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Commit & push if changed
         run: |
           git config user.name "rss-bot"
           git config user.email "rss-bot@users.noreply.github.com"
-          git pull --rebase origin main || true
-          git add cache/articles_cache.json
-          if git diff --cached --quiet; then
-            echo "✅ Nessuna modifica nella cache, niente commit."
-          else
+
+          git fetch origin main
+          git stash || true
+          git pull --rebase --autostash
+          git stash pop || true
+
+          if ! git diff --quiet -- cache/articles_cache.json; then
+            git add cache/articles_cache.json
             git commit -m "Persist cache $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-            git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }} HEAD:main
-            echo "✅ Cache aggiornata e salvata su GitHub."
+            git push origin main --force-with-lease
+          else
+            echo "Nessuna modifica nella cache"
           fi
