@@ -59,7 +59,7 @@ def bootstrap_cache():
 # 📰 FEED RSS
 # ============================================================
 def rebuild_feed():
-    """Rigenera il feed RSS a partire dalla cache locale, ordinando dal più nuovo al più vecchio."""
+    """Rigenera il feed RSS a partire dalla cache locale, ordinando i contenuti dal più nuovo al più vecchio."""
     try:
         with open(CACHE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -71,14 +71,14 @@ def rebuild_feed():
     items = [i for i in data.get("items", []) if isinstance(i, dict) and "/blog/" in (i.get("url") or "")]
     data["items"] = items
 
-    # 🔢 Ordina in modo cronologico inverso (nuovo → vecchio)
+    # 🔢 Ordina dal più recente al più vecchio (IMPORTANTE per Google News)
     items_sorted = sorted(
         items,
         key=lambda x: (x.get("modified") or x.get("published") or ""),
         reverse=True
     )
 
-    # Deduplica
+    # Rimuovi duplicati accidentali per sicurezza (chiave = URL)
     unique = {}
     for art in items_sorted:
         url = art.get("url")
@@ -86,6 +86,7 @@ def rebuild_feed():
             unique[url] = art
     items_sorted = list(unique.values())
 
+    # Meta di default
     meta = data.get("meta", {
         "title": "Artbooms RSS Feed",
         "link": "https://www.artbooms.com",
@@ -101,6 +102,7 @@ def rebuild_feed():
         return
 
     try:
+        # Compatibile con build_rss(items) o build_rss(items, meta)
         try:
             result = build_rss(items_sorted, meta)
         except TypeError:
@@ -151,39 +153,13 @@ def debug_cache():
     try:
         with open(CACHE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
-        count = len([i for i in data.get("items", []) if isinstance(i, dict) and "/blog/" in (i.get("url") or "")])
+        items = [i for i in data.get("items", []) if isinstance(i, dict) and "/blog/" in (i.get("url") or "")]
+        # Mostra conteggio reale dopo deduplicazione
+        unique_urls = {i["url"] for i in items if i.get("url")}
+        count = len(unique_urls)
     except Exception:
         count = 0
     return jsonify({"articles_in_cache": count})
-
-
-# ============================================================
-# 🧩 ENDPOINT DIAGNOSTICO TEMPORANEO
-# ============================================================
-@app.route("/debug/urls")
-def debug_urls():
-    """Mostra conteggio e duplicati effettivi nella cache."""
-    try:
-        with open(CACHE_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        urls = [i.get("url") for i in data.get("items", []) if i.get("url")]
-        total = len(urls)
-        unique = len(set(urls))
-        duplicates = total - unique
-        sample_dupes = []
-        for u in set(urls):
-            if urls.count(u) > 1:
-                sample_dupes.append(u)
-            if len(sample_dupes) >= 10:
-                break
-        return jsonify({
-            "total_items": total,
-            "unique_urls": unique,
-            "duplicates": duplicates,
-            "sample_duplicate_urls": sample_dupes
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)})
 
 
 @app.route("/cache/download")
@@ -204,10 +180,12 @@ def healthz():
 bootstrap_cache()
 rebuild_feed()
 
+# Avvia il thread di popolamento anche con Gunicorn
 if not any(t.name == "BackgroundPopulator" for t in threading.enumerate()):
     t = threading.Thread(target=background_populator, daemon=True, name="BackgroundPopulator")
     t.start()
     logging.info("Thread di popolamento avviato nel processo PID %s", os.getpid())
 
+# Se eseguito localmente, avvia Flask normalmente
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))
