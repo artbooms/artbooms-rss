@@ -75,15 +75,19 @@ def generate_items():
         html = fetch_html(ARCHIVE_URL)
         all_links = extract_article_links_from_archive_html(html, ARCHIVE_URL)
 
-        # ✅ Filtro migliorato: esclude pagine d’archivio mensili (es. /febbraio-2016)
+        # ✅ Filtro migliorato: esclude pagine d’archivio mensili (es. /february-2016, /marzo-2016, ecc.)
         blog_links = [
             l for l in all_links
             if "/blog/" in l
             and "?" not in l
             and "/tag/" not in l
             and not any(month in l.lower() for month in [
+                # mesi italiani
                 "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
-                "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"
+                "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre",
+                # mesi inglesi (Squarespace li usa negli slug)
+                "january", "february", "march", "april", "may", "june",
+                "july", "august", "september", "october", "november", "december"
             ])
         ]
 
