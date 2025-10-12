@@ -1,4 +1,4 @@
-import os
+  import os
 import json
 import threading
 import time
@@ -59,7 +59,7 @@ def bootstrap_cache():
 # 📰 FEED RSS
 # ============================================================
 def rebuild_feed():
-    """Rigenera il feed RSS a partire dalla cache locale."""
+    """Rigenera il feed RSS a partire dalla cache locale, ordinando i contenuti dal più vecchio al più recente."""
     try:
         with open(CACHE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -67,18 +67,17 @@ def rebuild_feed():
         logging.error("Errore caricando la cache: %s", e)
         data = {"items": []}
 
-    # 🔒 usa SOLO articoli veri (url /blog/...), ed elimina eventuali residui sbagliati
-    items = data.get("items", [])
-    items = [i for i in items if isinstance(i, dict) and "/blog/" in (i.get("url") or "")]
-    data["items"] = items  # normalizza
-    try:
-        # salva subito la versione ripulita (evita che il feed ripeschi voci sbagliate)
-        os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
-        with open(CACHE_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-    except Exception as e:
-        logging.warning("Impossibile salvare la cache ripulita: %s", e)
+    # Usa solo articoli veri del blog
+    items = [i for i in data.get("items", []) if isinstance(i, dict) and "/blog/" in (i.get("url") or "")]
+    data["items"] = items
 
+    # 🔢 Ordina in modo cronologico crescente (dal più vecchio al più nuovo)
+    items_sorted = sorted(
+        items,
+        key=lambda x: (x.get("published") or x.get("modified") or "")
+    )
+
+    # Meta di default
     meta = data.get("meta", {
         "title": "Artbooms RSS Feed",
         "link": "https://www.artbooms.com",
@@ -86,7 +85,7 @@ def rebuild_feed():
         "language": "it-IT"
     })
 
-    if not items:
+    if not items_sorted:
         logging.warning("Cache vuota — genero feed vuoto temporaneo.")
         empty_feed = b"<?xml version='1.0' encoding='UTF-8'?><rss><channel><title>Artbooms RSS Feed</title></channel></rss>"
         with open("feed.xml", "wb") as f:
@@ -94,27 +93,20 @@ def rebuild_feed():
         return
 
     try:
-        logging.info("Chiamo build_rss() con %s articoli.", len(items))
+        # Compatibile con build_rss(items) o build_rss(items, meta)
         try:
-            result = build_rss(items, meta)
+            result = build_rss(items_sorted, meta)
         except TypeError:
-            result = build_rss(items)
+            result = build_rss(items_sorted)
 
-        # 🔧 Estrai l'XML da qualsiasi formato
-        if isinstance(result, tuple):
-            rss_xml = result[0]
-        elif isinstance(result, (bytes, str)):
-            rss_xml = result
-        else:
-            rss_xml = str(result)
-
+        rss_xml = result[0] if isinstance(result, tuple) else result
         if isinstance(rss_xml, str):
             rss_xml = rss_xml.encode("utf-8")
 
         with open("feed.xml", "wb") as f:
             f.write(rss_xml)
 
-        logging.info("Feed rigenerato con %s articoli.", len(items))
+        logging.info("Feed rigenerato con %s articoli (ordinati dal più vecchio al più nuovo).", len(items_sorted))
     except Exception as e:
         logging.error("Errore durante la generazione del feed: %s", e)
 
