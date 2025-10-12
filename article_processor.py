@@ -1,4 +1,4 @@
-import json
+iiimport json
 import os
 import logging
 from article_parser import fetch_html, extract_article_links_from_archive_html, parse_article
@@ -29,14 +29,22 @@ def load_cache():
 
 
 def save_cache(data):
-    """Salva la cache su disco ordinata per data di pubblicazione e modifica."""
+    """Salva la cache su disco, ordinata e senza duplicati."""
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
     items = data.get("items", [])
 
+    # 🔒 Rimuovi duplicati per URL
+    unique = {}
+    for art in items:
+        url = art.get("url")
+        if url and url not in unique:
+            unique[url] = art
+    items = list(unique.values())
+
+    # 🧭 Ordina prima per pubblicazione, poi per modifica
     def sort_key(x):
         pub = x.get("published") or ""
         mod = x.get("modified") or pub
-        # ordina per data di pubblicazione, ma tiene conto della data di modifica
         return (pub, mod)
 
     items.sort(key=sort_key)
@@ -45,7 +53,7 @@ def save_cache(data):
     with open(CACHE_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-    logger.info("[Cache] Salvata cache ordinata (%s articoli).", len(items))
+    logger.info("[Cache] Salvata cache ordinata e deduplicata (%s articoli).", len(items))
 
 
 def fetch_article_dates(links):
@@ -58,6 +66,7 @@ def fetch_article_dates(links):
             if pub:
                 results.append((link, pub))
             else:
+                # fallback se non c'è data
                 results.append((link, "9999-12-31T00:00:00Z"))
         except Exception as e:
             logger.warning("Errore leggendo data per %s: %s", link, e)
@@ -66,12 +75,13 @@ def fetch_article_dates(links):
 
 
 def generate_items():
-    """Scarica articoli e aggiorna la cache con controllo 'modified'."""
+    """Scarica articoli e aggiorna la cache con controllo su modifiche e duplicati."""
     try:
         logger.info("[Processor] Scarico archivio da %s", ARCHIVE_URL)
         html = fetch_html(ARCHIVE_URL)
         all_links = extract_article_links_from_archive_html(html, ARCHIVE_URL)
         blog_links = [l for l in all_links if "/blog/" in l and "?" not in l and "/tag/" not in l]
+        blog_links = list(set(blog_links))  # rimuove eventuali duplicati di scraping
         logger.info("[Parser] %s link articolo validi trovati.", len(blog_links))
     except Exception as e:
         logger.error("Errore scaricando archivio: %s", e)
@@ -90,28 +100,30 @@ def generate_items():
 
         cached_art = cached.get(link)
         if not cached_art:
+            # ✅ Nuovo articolo
             logger.info("[Processor] NUOVO articolo: %s", link)
+            cached[link] = art
             new_articles.append(art)
+
         else:
+            # ✅ Articolo già noto — verifica se modificato
             old_mod = cached_art.get("modified")
             new_mod = art.get("modified")
+
             if new_mod and old_mod and new_mod != old_mod:
-                logger.info("[Processor] Articolo AGGIORNATO: %s (modified)", link)
+                logger.info("[Processor] Articolo AGGIORNATO: %s (modified %s → %s)", link, old_mod, new_mod)
                 cached[link] = art
                 new_articles.append(art)
-                logger.info("[Processor] Articolo aggiornato spostato alla fine della lista: %s", link)
 
+        # 🔁 Limita batch per ciclo
         if len(new_articles) >= MAX_BATCH:
             break
 
     if not new_articles:
-        logger.info("Nessun nuovo o aggiornato articolo trovato.")
+        logger.info("[Processor] Nessun nuovo o aggiornato articolo trovato.")
         return
 
-    # Aggiorna cache
-    for art in new_articles:
-        cached[art["url"]] = art
-
+    # ✅ Aggiorna e salva la cache ordinata e deduplicata
     cache["items"] = list(cached.values())
     save_cache(cache)
 
