@@ -29,14 +29,23 @@ def load_cache():
 
 
 def save_cache(data):
-    """Salva la cache su disco ordinata per data di pubblicazione."""
+    """Salva la cache su disco ordinata per data di pubblicazione e modifica."""
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
     items = data.get("items", [])
-    # ordina per data di pubblicazione crescente (più vecchi prima)
-    items.sort(key=lambda x: x.get("published") or "")
+
+    def sort_key(x):
+        pub = x.get("published") or ""
+        mod = x.get("modified") or pub
+        # ordina per data di pubblicazione, ma tiene conto della data di modifica
+        return (pub, mod)
+
+    items.sort(key=sort_key)
     data["items"] = items
+
     with open(CACHE_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+
+    logger.info("[Cache] Salvata cache ordinata (%s articoli).", len(items))
 
 
 def fetch_article_dates(links):
@@ -88,9 +97,9 @@ def generate_items():
             new_mod = art.get("modified")
             if new_mod and old_mod and new_mod != old_mod:
                 logger.info("[Processor] Articolo AGGIORNATO: %s (modified)", link)
-                # aggiorna i dati nella cache
                 cached[link] = art
                 new_articles.append(art)
+                logger.info("[Processor] Articolo aggiornato spostato alla fine della lista: %s", link)
 
         if len(new_articles) >= MAX_BATCH:
             break
