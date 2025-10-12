@@ -33,10 +33,10 @@ def save_cache(data):
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
     items = data.get("items", [])
 
-    # 🧩 FIX: deduplica per URL (impedisce crescita infinita della cache)
+    # 🔒 Deduplica per URL
     items = list({a.get("url"): a for a in items if a.get("url")}.values())
 
-    # 🧭 Ordina prima per pubblicazione, poi per modifica
+    # 🧭 Ordina prima per data di pubblicazione, poi per modifica
     def sort_key(x):
         pub = x.get("published") or ""
         mod = x.get("modified") or pub
@@ -74,7 +74,19 @@ def generate_items():
         logger.info("[Processor] Scarico archivio da %s", ARCHIVE_URL)
         html = fetch_html(ARCHIVE_URL)
         all_links = extract_article_links_from_archive_html(html, ARCHIVE_URL)
-        blog_links = [l for l in all_links if "/blog/" in l and "?" not in l and "/tag/" not in l]
+
+        # ✅ Filtro migliorato: esclude pagine d’archivio mensili (es. /febbraio-2016)
+        blog_links = [
+            l for l in all_links
+            if "/blog/" in l
+            and "?" not in l
+            and "/tag/" not in l
+            and not any(month in l.lower() for month in [
+                "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
+                "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"
+            ])
+        ]
+
         logger.info("[Parser] %s link articolo validi trovati.", len(blog_links))
     except Exception as e:
         logger.error("Errore scaricando archivio: %s", e)
@@ -120,4 +132,3 @@ def generate_items():
 
     logger.info("[Processor] Aggiunti/aggiornati %s articoli (totale %s).",
                 len(new_articles), len(cache["items"]))
-
