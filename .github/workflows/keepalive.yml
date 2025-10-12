@@ -1,0 +1,25 @@
+name: ♻️ Keep GitHub Actions alive
+
+on:
+  schedule:
+    - cron: "0 8 * * 1"  # ogni lunedì alle 8:00 UTC
+  workflow_dispatch:      # permette anche l'avvio manuale opzionale
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update timestamp to keep repo active
+        run: |
+          mkdir -p .github
+          echo "Last keepalive: $(date -u)" > .github/last_keepalive.txt
+          git config user.name "keepalive-bot"
+          git config user.email "keepalive@users.noreply.github.com"
+          git add .github/last_keepalive.txt
+          git commit -m "keepalive $(date -u)" || echo "No changes"
+          git push || echo "Push skipped"
