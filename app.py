@@ -1,4 +1,4 @@
-  import os
+import os
 import json
 import threading
 import time
@@ -177,3 +177,4 @@ if not any(t.name == "BackgroundPopulator" for t in threading.enumerate()):
 # Se eseguito localmente, avvia Flask normalmente
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))
+
