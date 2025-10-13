@@ -108,3 +108,4 @@ def generate_items():
 
     logger.info("[Processor] Aggiunti/aggiornati %s articoli (totale %s).",
                 len(new_articles), len(cache["items"]))
+ 
