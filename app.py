@@ -7,6 +7,8 @@ import requests
 from flask import Flask, Response, jsonify, send_file
 from article_processor import generate_items
 from rss_generator import build_rss
+from datetime import datetime
+from dateutil import parser as dateparser
 
 # ============================================================
 # ⚙️ CONFIGURAZIONE
@@ -58,8 +60,18 @@ def bootstrap_cache():
 # ============================================================
 # 📰 FEED RSS
 # ============================================================
+def parse_date_safe(d):
+    """Parsa la data in modo sicuro, anche con formati diversi."""
+    if not d:
+        return datetime.min
+    try:
+        return dateparser.parse(d)
+    except Exception:
+        return datetime.min
+
+
 def rebuild_feed():
-    """Rigenera il feed RSS a partire dalla cache locale, ordinando i contenuti dal più nuovo al più vecchio."""
+    """Rigenera il feed RSS a partire dalla cache locale, ordinando i contenuti dal più vecchio al più recente."""
     try:
         with open(CACHE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -71,20 +83,11 @@ def rebuild_feed():
     items = [i for i in data.get("items", []) if isinstance(i, dict) and "/blog/" in (i.get("url") or "")]
     data["items"] = items
 
-    # 🔢 Ordina dal più recente al più vecchio (IMPORTANTE per Google News)
+    # 🔢 Ordina in modo cronologico crescente (dal più vecchio al più nuovo)
     items_sorted = sorted(
         items,
-        key=lambda x: (x.get("modified") or x.get("published") or ""),
-        reverse=True
+        key=lambda x: parse_date_safe(x.get("published") or x.get("modified"))
     )
-
-    # Rimuovi duplicati accidentali per sicurezza (chiave = URL)
-    unique = {}
-    for art in items_sorted:
-        url = art.get("url")
-        if url and url not in unique:
-            unique[url] = art
-    items_sorted = list(unique.values())
 
     # Meta di default
     meta = data.get("meta", {
@@ -115,7 +118,7 @@ def rebuild_feed():
         with open("feed.xml", "wb") as f:
             f.write(rss_xml)
 
-        logging.info("Feed rigenerato con %s articoli (ordinati dal più nuovo al più vecchio).", len(items_sorted))
+        logging.info("Feed rigenerato con %s articoli (ordinati dal più vecchio al più nuovo).", len(items_sorted))
     except Exception as e:
         logging.error("Errore durante la generazione del feed: %s", e)
 
@@ -153,10 +156,7 @@ def debug_cache():
     try:
         with open(CACHE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
-        items = [i for i in data.get("items", []) if isinstance(i, dict) and "/blog/" in (i.get("url") or "")]
-        # Mostra conteggio reale dopo deduplicazione
-        unique_urls = {i["url"] for i in items if i.get("url")}
-        count = len(unique_urls)
+        count = len([i for i in data.get("items", []) if isinstance(i, dict) and "/blog/" in (i.get("url") or "")])
     except Exception:
         count = 0
     return jsonify({"articles_in_cache": count})
