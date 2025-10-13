@@ -1,17 +1,18 @@
 import json
 import os
 import logging
-from datetime import datetime
 from article_parser import fetch_html, extract_article_links_from_archive_html, parse_article
-
-ARCHIVE_URL = "https://www.artbooms.com/archivio-completo"
-CACHE_PATH = "article_cache/data.json"
-MAX_BATCH = 3
+from datetime import datetime
 
 logger = logging.getLogger("article_processor")
 
+CACHE_PATH = "cache/articles_cache.json"
+ARCHIVE_URL = "https://www.artbooms.com/archivio-completo"
+MAX_BATCH = 3
+
 
 def load_cache():
+    """Carica la cache locale."""
     if not os.path.exists(CACHE_PATH):
         return {"items": []}
     try:
@@ -19,53 +20,62 @@ def load_cache():
             data = json.load(f)
         if isinstance(data, list):
             data = {"items": data}
-        elif not isinstance(data, dict):
-            data = {"items": []}
         if "items" not in data:
             data["items"] = []
         return data
-    except Exception:
+    except Exception as e:
+        logger.error("Errore caricando la cache: %s", e)
         return {"items": []}
 
 
 def save_cache(data):
+    """Salva la cache su disco ordinata per data di pubblicazione."""
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
     items = data.get("items", [])
-    # Ordina dal più nuovo al più vecchio
-    items.sort(key=lambda x: x.get("published") or "", reverse=True)
+    # ordina per data di pubblicazione crescente (più vecchi prima)
+    items.sort(key=lambda x: x.get("published") or "")
     data["items"] = items
     with open(CACHE_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def filter_and_sort_links(links):
-    """Filtra i link del blog e li ordina in modo corretto (nuovi prima)."""
-    valid = []
+def fetch_article_dates(links):
+    """Restituisce lista di link con data (ordinati per pubblicazione)."""
+    results = []
     for link in links:
-        l = link.lower().strip()
-        if "/blog/" not in l:
-            continue
-        if any(bad in l for bad in ["?", "/tag/", "feed", "favicon", ".jpg", ".png", ".gif", ".jpeg"]):
-            continue
-        # Escludi i link dei mesi (es: /march-2016/)
-        if l.count("/") <= 5 and any(y in l for y in ["-2016", "-2017", "-2018", "-2019", "-2020", "-2021", "-2022", "-2023", "-2024", "-2025"]):
-            continue
-        valid.append(link)
-
-    # Deduplica mantenendo ordine
-    seen = set()
-    ordered = [l for l in valid if not (l in seen or seen.add(l))]
-    # Ordina dal più nuovo al più vecchio (inverso)
-    return list(reversed(ordered))
+        try:
+            art = parse_article(link)
+            pub = art.get("published")
+            if pub:
+                results.append((link, pub))
+            else:
+                results.append((link, "9999-12-31T00:00:00Z"))
+        except Exception as e:
+            logger.warning("Errore leggendo data per %s: %s", link, e)
+    results.sort(key=lambda x: x[1])
+    return [r[0] for r in results]
 
 
 def generate_items():
+    """Scarica articoli e aggiorna la cache con controllo 'modified'."""
     try:
         logger.info("[Processor] Scarico archivio da %s", ARCHIVE_URL)
         html = fetch_html(ARCHIVE_URL)
         all_links = extract_article_links_from_archive_html(html, ARCHIVE_URL)
-        sorted_links = filter_and_sort_links(all_links)
-        logger.info("[Parser] %s link articolo validi trovati.", len(sorted_links))
+
+        # ✅ filtro migliorato: escludi link ai mesi o archivi
+        blog_links = [
+            l for l in all_links
+            if "/blog/" in l
+            and "?" not in l
+            and "/tag/" not in l
+            and not any(y in l for y in [
+                "-2016", "-2017", "-2018", "-2019", "-2020", "-2021",
+                "-2022", "-2023", "-2024", "-2025"
+            ])
+        ]
+
+        logger.info("[Parser] %s link articolo validi trovati.", len(blog_links))
     except Exception as e:
         logger.error("Errore scaricando archivio: %s", e)
         return
@@ -74,7 +84,9 @@ def generate_items():
     cached = {a["url"]: a for a in cache.get("items", [])}
     new_articles = []
 
-    for link in sorted_links:
+    ordered_links = fetch_article_dates(blog_links)
+
+    for link in ordered_links:
         art = parse_article(link)
         if not art or not art.get("title"):
             continue
@@ -98,10 +110,12 @@ def generate_items():
         logger.info("Nessun nuovo o aggiornato articolo trovato.")
         return
 
+    # Aggiorna cache
     for art in new_articles:
         cached[art["url"]] = art
 
     cache["items"] = list(cached.values())
     save_cache(cache)
-    logger.info("[Cache] Salvata cache ordinata e deduplicata (%s articoli).", len(cache["items"]))
-    logger.info("[Processor] Aggiunti/aggiornati %s articoli (totale %s).", len(new_articles), len(cache["items"]))
+
+    logger.info("[Processor] Aggiunti/aggiornati %s articoli (totale %s).",
+                len(new_articles), len(cache["items"]))
