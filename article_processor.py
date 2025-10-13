@@ -1,6 +1,7 @@
 import json
 import os
 import logging
+import re
 from article_parser import fetch_html, extract_article_links_from_archive_html, parse_article
 from datetime import datetime
 
@@ -32,7 +33,6 @@ def save_cache(data):
     """Salva la cache su disco ordinata per data di pubblicazione."""
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
     items = data.get("items", [])
-    # ordina per data di pubblicazione crescente (più vecchi prima)
     items.sort(key=lambda x: x.get("published") or "")
     data["items"] = items
     with open(CACHE_PATH, "w", encoding="utf-8") as f:
@@ -56,6 +56,11 @@ def fetch_article_dates(links):
     return [r[0] for r in results]
 
 
+def is_month_archive(url):
+    """Rileva se un link è un archivio mensile tipo /march-2016/"""
+    return bool(re.search(r"/(january|february|march|april|may|june|july|august|september|october|november|december)-\d{4}/?$", url.lower()))
+
+
 def generate_items():
     """Scarica articoli e aggiorna la cache con controllo 'modified'."""
     try:
@@ -63,16 +68,13 @@ def generate_items():
         html = fetch_html(ARCHIVE_URL)
         all_links = extract_article_links_from_archive_html(html, ARCHIVE_URL)
 
-        # ✅ filtro migliorato: escludi link ai mesi o archivi
+        # ✅ Filtro definitivo: esclude solo gli archivi mensili
         blog_links = [
             l for l in all_links
             if "/blog/" in l
             and "?" not in l
             and "/tag/" not in l
-            and not any(y in l for y in [
-                "-2016", "-2017", "-2018", "-2019", "-2020", "-2021",
-                "-2022", "-2023", "-2024", "-2025"
-            ])
+            and not is_month_archive(l)
         ]
 
         logger.info("[Parser] %s link articolo validi trovati.", len(blog_links))
@@ -110,7 +112,6 @@ def generate_items():
         logger.info("Nessun nuovo o aggiornato articolo trovato.")
         return
 
-    # Aggiorna cache
     for art in new_articles:
         cached[art["url"]] = art
 
