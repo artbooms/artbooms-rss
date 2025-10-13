@@ -1,8 +1,8 @@
 import json
 import os
 import logging
-from article_parser import fetch_html, extract_article_links_from_archive_html, parse_article
 from datetime import datetime
+from article_parser import fetch_html, extract_article_links_from_archive_html, parse_article
 
 logger = logging.getLogger("article_processor")
 
@@ -29,12 +29,44 @@ def load_cache():
 
 
 def save_cache(data):
-    """Salva la cache su disco ordinata per data di pubblicazione."""
+    """Salva la cache su disco, ordinata e ripulita."""
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
     items = data.get("items", [])
-    # ordina per data di pubblicazione crescente (più vecchi prima)
-    items.sort(key=lambda x: x.get("published") or "")
-    data["items"] = items
+
+    # 🔹 Filtra solo articoli veri
+    filtered = []
+    seen = set()
+    for art in items:
+        url = art.get("url", "")
+        if not url or "/blog/" not in url:
+            continue
+        if any(x in url for x in ["?month=", "/tag/", "favicon", ".ico", ".jpg", ".png"]):
+            continue
+        # normalizza URL relativi
+        if url.startswith("/"):
+            url = f"https://www.artbooms.com{url}"
+            art["url"] = url
+        # evita duplicati
+        if url in seen:
+            continue
+        seen.add(url)
+        filtered.append(art)
+
+    # 🔹 Deduplica mantenendo il più recente
+    deduped = {}
+    for art in filtered:
+        url = art["url"]
+        mod = art.get("modified") or ""
+        if url not in deduped or mod > (deduped[url].get("modified") or ""):
+            deduped[url] = art
+
+    # 🔹 Ordina cronologicamente (più vecchi prima)
+    ordered = sorted(
+        deduped.values(),
+        key=lambda x: x.get("published") or x.get("modified") or ""
+    )
+
+    data["items"] = ordered
     with open(CACHE_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
@@ -62,7 +94,11 @@ def generate_items():
         logger.info("[Processor] Scarico archivio da %s", ARCHIVE_URL)
         html = fetch_html(ARCHIVE_URL)
         all_links = extract_article_links_from_archive_html(html, ARCHIVE_URL)
-        blog_links = [l for l in all_links if "/blog/" in l and "?" not in l and "/tag/" not in l]
+        # Filtra solo i link veri del blog
+        blog_links = [
+            l for l in all_links
+            if "/blog/" in l and "?month=" not in l and "/tag/" not in l and "favicon" not in l
+        ]
         logger.info("[Parser] %s link articolo validi trovati.", len(blog_links))
     except Exception as e:
         logger.error("Errore scaricando archivio: %s", e)
@@ -88,7 +124,6 @@ def generate_items():
             new_mod = art.get("modified")
             if new_mod and old_mod and new_mod != old_mod:
                 logger.info("[Processor] Articolo AGGIORNATO: %s (modified)", link)
-                # aggiorna i dati nella cache
                 cached[link] = art
                 new_articles.append(art)
 
@@ -108,4 +143,3 @@ def generate_items():
 
     logger.info("[Processor] Aggiunti/aggiornati %s articoli (totale %s).",
                 len(new_articles), len(cache["items"]))
- 
