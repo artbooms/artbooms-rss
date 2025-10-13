@@ -1,9 +1,9 @@
 import json
 import os
 import logging
-import re
 from article_parser import fetch_html, extract_article_links_from_archive_html, parse_article
 from datetime import datetime
+import time
 
 logger = logging.getLogger("article_processor")
 
@@ -30,7 +30,7 @@ def load_cache():
 
 
 def save_cache(data):
-    """Salva la cache su disco ordinata per data di pubblicazione."""
+    """Salva la cache su disco ordinata per data di pubblicazione crescente (più vecchi prima)."""
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
     items = data.get("items", [])
     items.sort(key=lambda x: x.get("published") or "")
@@ -56,28 +56,37 @@ def fetch_article_dates(links):
     return [r[0] for r in results]
 
 
-def is_month_archive(url):
-    """Rileva se un link è un archivio mensile tipo /march-2016/"""
-    return bool(re.search(r"/(january|february|march|april|may|june|july|august|september|october|november|december)-\d{4}/?$", url.lower()))
+def extract_all_articles():
+    """Estrae i link di TUTTI gli articoli entrando nei link mese."""
+    html = fetch_html(ARCHIVE_URL)
+    month_links = [
+        l for l in extract_article_links_from_archive_html(html, ARCHIVE_URL)
+        if "?month=" in l
+    ]
+    logger.info("[Parser] %s link mese trovati.", len(month_links))
+
+    all_articles = set()
+    for mlink in month_links:
+        try:
+            mhtml = fetch_html(mlink)
+            articles = [
+                l for l in extract_article_links_from_archive_html(mhtml, mlink)
+                if "/blog/" in l and "?" not in l and "/tag/" not in l
+            ]
+            all_articles.update(articles)
+            logger.info("[Parser] %s articoli trovati in %s", len(articles), mlink)
+            time.sleep(1)  # per non stressare il server
+        except Exception as e:
+            logger.warning("Errore estraendo articoli da %s: %s", mlink, e)
+    return list(all_articles)
 
 
 def generate_items():
     """Scarica articoli e aggiorna la cache con controllo 'modified'."""
     try:
         logger.info("[Processor] Scarico archivio da %s", ARCHIVE_URL)
-        html = fetch_html(ARCHIVE_URL)
-        all_links = extract_article_links_from_archive_html(html, ARCHIVE_URL)
-
-        # ✅ Filtro definitivo: esclude solo gli archivi mensili
-        blog_links = [
-            l for l in all_links
-            if "/blog/" in l
-            and "?" not in l
-            and "/tag/" not in l
-            and not is_month_archive(l)
-        ]
-
-        logger.info("[Parser] %s link articolo validi trovati.", len(blog_links))
+        all_links = extract_all_articles()
+        logger.info("[Parser] %s link articolo validi trovati in totale.", len(all_links))
     except Exception as e:
         logger.error("Errore scaricando archivio: %s", e)
         return
@@ -86,7 +95,7 @@ def generate_items():
     cached = {a["url"]: a for a in cache.get("items", [])}
     new_articles = []
 
-    ordered_links = fetch_article_dates(blog_links)
+    ordered_links = fetch_article_dates(all_links)
 
     for link in ordered_links:
         art = parse_article(link)
