@@ -13,7 +13,7 @@ MAX_BATCH = 3
 
 
 def parse_date_safe(value):
-    """Prova a convertire qualunque stringa di data in datetime."""
+    """Prova a interpretare qualunque formato di data."""
     if not value:
         return datetime.min
     try:
@@ -23,7 +23,6 @@ def parse_date_safe(value):
 
 
 def load_cache():
-    """Carica la cache locale."""
     if not os.path.exists(CACHE_PATH):
         return {"items": []}
     try:
@@ -45,13 +44,12 @@ def save_cache(data):
     items = data.get("items", [])
     items.sort(key=lambda x: parse_date_safe(x.get("published") or x.get("modified")))
     data["items"] = items
-
     with open(CACHE_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 def fetch_article_dates(links):
-    """Ordina i link secondo la data di pubblicazione."""
+    """Restituisce i link ordinati per data (più vecchi prima)."""
     results = []
     for link in links:
         try:
@@ -60,13 +58,12 @@ def fetch_article_dates(links):
             results.append((link, parse_date_safe(pub)))
         except Exception as e:
             logger.warning("Errore leggendo data per %s: %s", link, e)
-    # Ordine crescente
     results.sort(key=lambda x: x[1])
     return [r[0] for r in results]
 
 
 def generate_items():
-    """Scarica articoli e aggiorna la cache con controllo 'modified'."""
+    """Scarica articoli e aggiorna la cache in batch."""
     try:
         logger.info("[Processor] Scarico archivio da %s", ARCHIVE_URL)
         html = fetch_html(ARCHIVE_URL)
@@ -96,7 +93,7 @@ def generate_items():
             old_mod = cached_art.get("modified")
             new_mod = art.get("modified")
             if new_mod and old_mod and new_mod != old_mod:
-                logger.info("[Processor] Articolo AGGIORNATO: %s", link)
+                logger.info("[Processor] Articolo AGGIORNATO: %s (modified)", link)
                 cached[link] = art
                 new_articles.append(art)
 
@@ -115,3 +112,4 @@ def generate_items():
 
     logger.info("[Processor] Aggiunti/aggiornati %s articoli (totale %s).",
                 len(new_articles), len(cache["items"]))
+
