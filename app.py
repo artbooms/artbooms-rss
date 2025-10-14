@@ -71,7 +71,7 @@ def parse_date_safe(d):
 
 
 def rebuild_feed():
-    """Rigenera il feed RSS a partire dalla cache locale, ordinando i contenuti dal più vecchio al più recente."""
+    """Rigenera il feed RSS a partire dalla cache locale, ordinando i contenuti dal più recente al più vecchio."""
     try:
         with open(CACHE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -83,10 +83,11 @@ def rebuild_feed():
     items = [i for i in data.get("items", []) if isinstance(i, dict) and "/blog/" in (i.get("url") or "")]
     data["items"] = items
 
-    # 🔢 Ordina in modo cronologico crescente (dal più vecchio al più nuovo)
+    # 🔢 Ordina dal più recente al più vecchio
     items_sorted = sorted(
         items,
-        key=lambda x: parse_date_safe(x.get("published") or x.get("modified"))
+        key=lambda x: parse_date_safe(x.get("published") or x.get("modified")),
+        reverse=True
     )
 
     # Meta di default
@@ -118,7 +119,7 @@ def rebuild_feed():
         with open("feed.xml", "wb") as f:
             f.write(rss_xml)
 
-        logging.info("Feed rigenerato con %s articoli (ordinati dal più vecchio al più nuovo).", len(items_sorted))
+        logging.info("Feed rigenerato con %s articoli (ordinati dal più recente al più vecchio).", len(items_sorted))
     except Exception as e:
         logging.error("Errore durante la generazione del feed: %s", e)
 
