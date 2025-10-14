@@ -12,6 +12,16 @@ ARCHIVE_URL = "https://www.artbooms.com/archivio-completo"
 MAX_BATCH = 3
 
 
+def parse_date_safe(value):
+    """Prova a convertire qualunque stringa di data in datetime."""
+    if not value:
+        return datetime.min
+    try:
+        return parser.parse(value)
+    except Exception:
+        return datetime.min
+
+
 def load_cache():
     """Carica la cache locale."""
     if not os.path.exists(CACHE_PATH):
@@ -30,22 +40,10 @@ def load_cache():
 
 
 def save_cache(data):
-    """Salva la cache su disco ordinata per data cronologica (più vecchi prima)."""
+    """Salva la cache ordinata per data crescente (vecchi → nuovi)."""
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
     items = data.get("items", [])
-
-    def safe_date(item):
-        for field in ("published", "modified"):
-            val = item.get(field)
-            if val:
-                try:
-                    return parser.parse(val)
-                except Exception:
-                    pass
-        return datetime.min
-
-    # 🔧 Ordina in modo cronologico crescente (vecchi → nuovi)
-    items.sort(key=safe_date)
+    items.sort(key=lambda x: parse_date_safe(x.get("published") or x.get("modified")))
     data["items"] = items
 
     with open(CACHE_PATH, "w", encoding="utf-8") as f:
@@ -53,18 +51,16 @@ def save_cache(data):
 
 
 def fetch_article_dates(links):
-    """Restituisce lista di link con data ordinata per pubblicazione."""
+    """Ordina i link secondo la data di pubblicazione."""
     results = []
     for link in links:
         try:
             art = parse_article(link)
-            pub = art.get("published")
-            if pub:
-                results.append((link, pub))
-            else:
-                results.append((link, "9999-12-31T00:00:00Z"))
+            pub = art.get("published") or art.get("modified")
+            results.append((link, parse_date_safe(pub)))
         except Exception as e:
             logger.warning("Errore leggendo data per %s: %s", link, e)
+    # Ordine crescente
     results.sort(key=lambda x: x[1])
     return [r[0] for r in results]
 
@@ -100,7 +96,7 @@ def generate_items():
             old_mod = cached_art.get("modified")
             new_mod = art.get("modified")
             if new_mod and old_mod and new_mod != old_mod:
-                logger.info("[Processor] Articolo AGGIORNATO: %s (modified)", link)
+                logger.info("[Processor] Articolo AGGIORNATO: %s", link)
                 cached[link] = art
                 new_articles.append(art)
 
