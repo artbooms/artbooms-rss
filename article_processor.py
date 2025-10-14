@@ -10,6 +10,9 @@ ARCHIVE_URL = "https://www.artbooms.com/archivio-completo"
 MAX_BATCH = 3
 
 
+# ----------------------------
+# Utilità
+# ----------------------------
 def normalize_url(url: str) -> str:
     """Forza https, rimuove spazi e slash finale."""
     if not url:
@@ -22,8 +25,11 @@ def normalize_url(url: str) -> str:
     return url
 
 
+# ----------------------------
+# Cache
+# ----------------------------
 def load_cache():
-    """Carica la cache locale e normalizza gli URL."""
+    """Carica la cache locale e normalizza gli URL già presenti."""
     if not os.path.exists(CACHE_PATH):
         return {"items": []}
     try:
@@ -31,7 +37,7 @@ def load_cache():
             data = json.load(f)
         if isinstance(data, list):
             data = {"items": data}
-        if "items" not in data:
+        if "items" not in data or not isinstance(data["items"], list):
             data["items"] = []
         for a in data["items"]:
             if isinstance(a, dict) and "url" in a:
@@ -46,6 +52,7 @@ def save_cache(data):
     """Salva la cache in ordine cronologico crescente per 'published'."""
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
     items = data.get("items", [])
+    # Ordina (vecchi → nuovi). Se manca 'published' resta in coda ai più vecchi.
     items.sort(key=lambda x: x.get("published") or "")
     data["items"] = items
     with open(CACHE_PATH, "w", encoding="utf-8") as f:
@@ -53,43 +60,66 @@ def save_cache(data):
     logger.info("[Cache] Salvata cache (%s articoli).", len(items))
 
 
+# ----------------------------
+# Core
+# ----------------------------
 def generate_items():
-    """Processa 3 articoli per ciclo: dal più vecchio al più nuovo. Considera anche 'modified'."""
+    """
+    Scarica articoli dall’archivio e aggiorna la cache:
+    - elabora SEMPRE dal più vecchio al più nuovo (usando l’ordine della pagina HTML invertito),
+    - esclude link mese (?month=...), /tag/ e qualunque query,
+    - normalizza URL (https, niente slash finale) per evitare duplicati http/https,
+    - batch di MAX_BATCH=3 per ciclo,
+    - se un articolo in cache ha 'modified' diversa -> lo aggiorna e lo include nel batch.
+    """
+    # 1) Estrai i link in ordine di pagina (Squarespace: newest→oldest)
     try:
         logger.info("[Processor] Scarico archivio da %s", ARCHIVE_URL)
         html = fetch_html(ARCHIVE_URL)
         all_links = extract_article_links_from_archive_html(html, ARCHIVE_URL)
-
-        # Filtra solo articoli veri; esclude link mese, tag e qualsiasi query
-        raw_links = []
-        seen = set()
-        for l in all_links:
-            if "/blog/" not in l:
-                continue
-            if "?month=" in l or "/tag/" in l or "?" in l:
-                continue
-            u = normalize_url(l)
-            if u not in seen:
-                seen.add(u)
-                raw_links.append(u)
-
-        # L'archivio è newest→oldest: inverti per processare oldest→newest
-        blog_links = list(reversed(raw_links))
-        logger.info("[Parser] %s link articolo validi (oldest→newest).", len(blog_links))
     except Exception as e:
-        logger.error("Errore scaricando archivio: %s", e)
+        logger.error("Errore scaricando l'archivio: %s", e)
         return
 
+    # 2) Filtra SOLO articoli veri e normalizza URL
+    #    (niente /tag/, niente ?month=, niente altre query)
+    seen = set()
+    page_links = []
+    for l in all_links:
+        if "/blog/" not in l:
+            continue
+        if "/tag/" in l:
+            continue
+        if "?month=" in l:
+            continue
+        if "?" in l:
+            continue
+        u = normalize_url(l)
+        if u not in seen:
+            seen.add(u)
+            page_links.append(u)
+
+    # 3) Inverti per processare oldest→newest (2016 → … → oggi)
+    blog_links = list(reversed(page_links))
+    logger.info("[Parser] %s link articolo validi (oldest→newest).", len(blog_links))
+
+    # 4) Carica cache esistente
     cache = load_cache()
     cached_by_url = {normalize_url(a.get("url")): a for a in cache.get("items", [])}
+
+    # 5) Scorri i link in ordine (oldest→newest) e prepara batch
     batch = []
 
     for link in blog_links:
         cached_art = cached_by_url.get(link)
 
         if not cached_art:
-            # Nuovo articolo
-            art = parse_article(link)
+            # Nuovo articolo → parse e aggiungi
+            try:
+                art = parse_article(link)
+            except Exception as e:
+                logger.warning("parse_article fallita per %s: %s", link, e)
+                continue
             if not art or not art.get("title"):
                 continue
             art["url"] = normalize_url(art.get("url") or link)
@@ -97,12 +127,13 @@ def generate_items():
             logger.info("[Processor] NUOVO articolo: %s", link)
 
         else:
-            # Articolo già noto: se 'modified' cambia, reinseriscilo
-            fresh = None
+            # Articolo già noto → controlla 'modified'
             try:
                 fresh = parse_article(link)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("parse_article fallita (update) per %s: %s", link, e)
+                fresh = None
+
             if fresh:
                 old_mod = (cached_art.get("modified") or "").strip()
                 new_mod = (fresh.get("modified") or "").strip()
@@ -119,11 +150,14 @@ def generate_items():
         logger.info("Nessun nuovo o aggiornato articolo trovato.")
         return
 
-    # Aggiorna cache (sovrascrive gli aggiornati; aggiunge i nuovi)
+    # 6) Applica batch in cache (sovrascrive aggiornati; aggiunge nuovi)
     for art in batch:
         cached_by_url[normalize_url(art["url"])] = art
 
     cache["items"] = list(cached_by_url.values())
     save_cache(cache)
-    logger.info("[Processor] Aggiunti/aggiornati %s articoli (totale %s).",
-                len(batch), len(cache["items"]))
+
+    logger.info(
+        "[Processor] Aggiunti/aggiornati %s articoli (totale %s).",
+        len(batch), len(cache["items"])
+    )
