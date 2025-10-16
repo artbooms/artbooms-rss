@@ -61,7 +61,6 @@ def rebuild_feed():
         logging.error("Errore caricando la cache: %s", e)
         data = {"items": []}
 
-    # Usa solo articoli reali del blog
     items = [
         i for i in data.get("items", [])
         if isinstance(i, dict) and "/blog/" in (i.get("url") or "")
@@ -104,7 +103,6 @@ def rebuild_feed():
         if isinstance(rss_xml, str):
             rss_xml = rss_xml.encode("utf-8")
 
-        # ✂️ Rimuove eventuale commento <!--last_build-->
         rss_xml = rss_xml.replace(b"<!--last_build:", b"<!--removed:")
 
         with open("feed.xml", "wb") as f:
@@ -122,11 +120,18 @@ def background_populator():
     last_rebuild = 0
     while True:
         try:
+            # ✅ Scarica e aggiorna la cache
             generate_items()
+
+            # 🔥 Rigenera SEMPRE il feed subito dopo ogni batch
+            rebuild_feed()
+
+            # 🔄 E ogni 15 minuti forza un rebuild completo
             now = time.time()
             if now - last_rebuild > FORCE_REBUILD_AFTER:
                 rebuild_feed()
                 last_rebuild = now
+
         except Exception as e:
             logging.error("Errore nel popolatore: %s", e)
         time.sleep(POPULATE_INTERVAL)
@@ -174,3 +179,4 @@ if not any(t.name == "BackgroundPopulator" for t in threading.enumerate()):
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))
+
