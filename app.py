@@ -1,4 +1,4 @@
-import os
+iimport os
 import json
 import threading
 import time
@@ -16,8 +16,8 @@ USER_AGENT = (
     "Chrome/123.0.0.0 Safari/537.36"
 )
 
-# 🧩 Controllo frequenza rigenerazione (in secondi)
-POPULATE_INTERVAL = 120  # ogni 2 minuti
+# 🧩 Frequenza aggiornamenti
+POPULATE_INTERVAL = 120   # ogni 2 minuti
 FORCE_REBUILD_AFTER = 900  # forza rigenerazione feed ogni 15 minuti
 
 app = Flask(__name__)
@@ -54,6 +54,9 @@ def bootstrap_cache():
 # ============================================================
 def rebuild_feed():
     """Rigenera il feed RSS ordinando dal più nuovo al più vecchio."""
+    os.makedirs("static", exist_ok=True)
+    feed_path = os.path.join("static", "feed.xml")
+
     try:
         with open(CACHE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -92,7 +95,7 @@ def rebuild_feed():
     if not items_sorted:
         logging.warning("Cache vuota — genero feed vuoto temporaneo.")
         empty_feed = b"<?xml version='1.0' encoding='UTF-8'?><rss><channel><title>Artbooms RSS Feed</title></channel></rss>"
-        with open("feed.xml", "wb") as f:
+        with open(feed_path, "wb") as f:
             f.write(empty_feed)
         return
 
@@ -105,7 +108,7 @@ def rebuild_feed():
 
         rss_xml = rss_xml.replace(b"<!--last_build:", b"<!--removed:")
 
-        with open("feed.xml", "wb") as f:
+        with open(feed_path, "wb") as f:
             f.write(rss_xml)
 
         logging.info("Feed rigenerato con %s articoli (dal più nuovo al più vecchio).", len(items_sorted))
@@ -113,25 +116,19 @@ def rebuild_feed():
         logging.error("Errore durante la generazione del feed: %s", e)
 
 # ============================================================
-# 🔁 THREAD DI AGGIORNAMENTO (patch anti-sleep)
+# 🔁 THREAD DI AGGIORNAMENTO
 # ============================================================
 def background_populator():
     """Aggiorna periodicamente la cache e il feed RSS."""
     last_rebuild = 0
     while True:
         try:
-            # ✅ Scarica e aggiorna la cache
             generate_items()
-
-            # 🔥 Rigenera SEMPRE il feed subito dopo ogni batch
-            rebuild_feed()
-
-            # 🔄 E ogni 15 minuti forza un rebuild completo
+            rebuild_feed()  # 🔥 genera subito il feed dopo ogni batch
             now = time.time()
             if now - last_rebuild > FORCE_REBUILD_AFTER:
                 rebuild_feed()
                 last_rebuild = now
-
         except Exception as e:
             logging.error("Errore nel popolatore: %s", e)
         time.sleep(POPULATE_INTERVAL)
@@ -141,10 +138,13 @@ def background_populator():
 # ============================================================
 @app.route("/rss")
 def rss():
-    if not os.path.exists("feed.xml") or os.path.getsize("feed.xml") < 100:
+    feed_path = os.path.join("static", "feed.xml")
+    if not os.path.exists(feed_path) or os.path.getsize(feed_path) < 100:
         rebuild_feed()
-    with open("feed.xml", "rb") as f:
-        return Response(f.read(), mimetype="application/rss+xml")
+    if os.path.exists(feed_path):
+        with open(feed_path, "rb") as f:
+            return Response(f.read(), mimetype="application/rss+xml")
+    return Response("RSS feed non disponibile", status=404, mimetype="text/plain")
 
 @app.route("/debug/cache")
 def debug_cache():
@@ -179,4 +179,3 @@ if not any(t.name == "BackgroundPopulator" for t in threading.enumerate()):
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))
-
