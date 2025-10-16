@@ -1,181 +1,85 @@
-import re
-import logging
-import requests
-from urllib.parse import urljoin
-from bs4 import BeautifulSoup
+import os
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
-from dateutil import parser as dateparser
 
-logger = logging.getLogger("article_parser")
+# Registra namespace Dublin Core (per <dc:creator>)
+ET.register_namespace("dc", "http://purl.org/dc/elements/1.1/")
+ET.register_namespace("media", "http://search.yahoo.com/mrss/")
 
-BASE_URL = "https://www.artbooms.com"
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/125.0.0.0 Safari/537.36"
-    ),
-    "Accept-Language": "it-IT,it;q=0.9,en;q=0.8",
-}
-
-# ------------------------------------------------------------------------
-# Utility
-# ------------------------------------------------------------------------
-
-def fetch_html(url, session=None, timeout=25):
-    """Scarica HTML con headers e https normalizzato."""
-    if url.startswith("http://"):
-        url = url.replace("http://", "https://")
-    s = session or requests.Session()
-    r = s.get(url, headers=HEADERS, timeout=timeout)
-    r.raise_for_status()
-    return r.text
-
-
-def _parse_date_any(value):
-    """Converte una stringa di data (tipo 'Feb 10, 2016') in datetime."""
-    if not value:
-        return None
-    try:
-        dt = dateparser.parse(value)
-        if dt and dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt
-    except Exception:
-        return None
-
-
-def _norm_url(href):
-    """Normalizza URL e filtra solo articoli validi."""
-    if not href:
-        return None
-    if href.startswith("/"):
-        href = urljoin(BASE_URL, href)
-    if not href.startswith("https://"):
-        return None
-    if "/blog/" not in href:
-        return None
-    if "/tag/" in href or "?month=" in href:
-        return None
-    return href.rstrip("/")
-
-# ------------------------------------------------------------------------
-# Estrazione link archivio (con date e ordine cronologico)
-# ------------------------------------------------------------------------
-
-def extract_article_links_from_archive_html(html, base_url=BASE_URL):
+def build_rss_feed(articles, site_url="https://www.artbooms.com", feed_title="Artbooms RSS"):
     """
-    Estrae i link degli articoli dall'archivio completo di Artbooms,
-    riconoscendo le date 'Mon DD, YYYY' e associandole all'articolo successivo.
-    Scarta i titoli di mese/anno tipo 'August 2017'.
-    Restituisce i link ordinati dal più vecchio al più nuovo.
+    Genera il feed RSS 2.0 con compatibilità Google News.
+    Gli articoli devono essere ordinati dal più vecchio al più nuovo.
+    I più recenti vengono visualizzati per primi nel feed.
     """
-    soup = BeautifulSoup(html, "html.parser")
 
-    # Tutti i paragrafi o blocchi di testo che potrebbero contenere date
-    possible_dates = soup.find_all(
-        string=re.compile(r"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}\b")
+    # Root element
+    rss = ET.Element(
+        "rss",
+        version="2.0",
+        attrib={
+            "xmlns:dc": "http://purl.org/dc/elements/1.1/",
+            "xmlns:media": "http://search.yahoo.com/mrss/",
+        },
     )
 
-    items = []
-    seen = set()
-
-    for date_text in possible_dates:
-        date_str = date_text.strip()
-        if re.match(r"^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}$", date_str):
-            continue  # tipo "August 2017", non una data di articolo
-
-        dt = _parse_date_any(date_str)
-        if not dt:
-            continue
-
-        # cerca il link /blog/ più vicino dopo la data
-        parent = date_text.find_parent()
-        next_link = None
-
-        for sib in parent.find_all_next("a", href=True):
-            href = _norm_url(sib["href"])
-            if href:
-                next_link = href
-                break
-
-        if next_link and next_link not in seen:
-            seen.add(next_link)
-            items.append({"date": dt, "url": next_link})
-            logger.info("[DEBUG] Trovata data %s → %s", date_str, next_link)
-
-    items.sort(key=lambda x: x["date"])
-    ordered_links = [i["url"] for i in items]
-    logger.info("[Parser] %d articoli trovati e ordinati cronologicamente.", len(ordered_links))
-    return ordered_links
-
-
-# ------------------------------------------------------------------------
-# Estrazione dati da un singolo articolo
-# ------------------------------------------------------------------------
-
-def parse_article(url, html=None, session=None):
-    """
-    Estrae solo i meta SEO Squarespace:
-      - titolo, descrizione, autore, date, immagine
-    Esclude qualsiasi blocco corpo o contenuti social.
-    """
-    try:
-        if html is None:
-            html = fetch_html(url, session=session)
-    except Exception as e:
-        logger.exception("fetch_html failed for %s: %s", url, e)
-        return {
-            "url": url, "title": None, "description": None, "author": None,
-            "published": None, "modified": None, "content_text": "", "image": None
-        }
-
-    soup = BeautifulSoup(html, "lxml")
-
-    def meta(name=None, prop=None, item=None):
-        if name:
-            tag = soup.find("meta", attrs={"name": name})
-        elif prop:
-            tag = soup.find("meta", attrs={"property": prop})
-        elif item:
-            tag = soup.find("meta", attrs={"itemprop": item})
-        else:
-            tag = None
-        return tag.get("content").strip() if tag and tag.get("content") else None
-
-    title = meta(item="headline") or meta(prop="og:title")
-    if title:
-        title = title.replace("— ARTBOOMS", "").replace("—ARTBOOMS", "").strip()
-
-    description = meta(prop="og:description") or meta(item="description")
-    author = meta(item="author")
-
-    published = meta(item="datePublished")
-    modified = meta(item="dateModified")
-
-    pub_dt = _parse_date_any(published)
-    mod_dt = _parse_date_any(modified) or pub_dt
-
-    image = (
-        meta(prop="og:image")
-        or meta(item="image")
-        or meta(item="thumbnailUrl")
-        or meta(prop="og:image:url")
+    # Channel
+    channel = ET.SubElement(rss, "channel")
+    ET.SubElement(channel, "title").text = feed_title
+    ET.SubElement(channel, "link").text = site_url
+    ET.SubElement(channel, "description").text = (
+        "Ultimi articoli e notizie d'arte da Artbooms.com — feed aggiornato automaticamente."
     )
-    if image and image.startswith("http://"):
-        image = image.replace("http://", "https://")
+    ET.SubElement(channel, "language").text = "it-IT"
+    ET.SubElement(channel, "generator").text = "Artbooms RSS Generator"
+    ET.SubElement(channel, "lastBuildDate").text = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S %z")
 
-    canonical = meta(prop="og:url") or meta(item="url") or url
-    if canonical.startswith("http://"):
-        canonical = canonical.replace("http://", "https://")
+    # Icona (puoi cambiarla in futuro con un logo vero)
+    image = ET.SubElement(channel, "image")
+    ET.SubElement(image, "url").text = "https://www.artbooms.com/assets/artbooms-logo.png"
+    ET.SubElement(image, "title").text = feed_title
+    ET.SubElement(image, "link").text = site_url
 
-    return {
-        "url": canonical,
-        "title": title or url,
-        "description": description,
-        "author": author,
-        "published": pub_dt.isoformat() if pub_dt else None,
-        "modified": mod_dt.isoformat() if mod_dt else None,
-        "content_text": "",
-        "image": image,
-    }
+    # Costruisci gli item del feed
+    # Mostra per primi i più recenti (ordine inverso)
+    for art in reversed(articles):
+        item = ET.SubElement(channel, "item")
+
+        # Titolo e link
+        ET.SubElement(item, "title").text = art.get("title") or "Articolo senza titolo"
+        ET.SubElement(item, "link").text = art.get("url")
+
+        # Descrizione (usa CDATA per sicurezza)
+        description = art.get("description") or ""
+        desc_elem = ET.SubElement(item, "description")
+        desc_elem.text = f"<![CDATA[{description}]]>"
+
+        # Date
+        if art.get("published"):
+            pub_date = datetime.fromisoformat(art["published"].replace("Z", "+00:00"))
+            ET.SubElement(item, "pubDate").text = pub_date.strftime("%a, %d %b %Y %H:%M:%S %z")
+
+        # Autore (Google News -> <dc:creator>)
+        if art.get("author"):
+            creator = ET.SubElement(item, "{http://purl.org/dc/elements/1.1/}creator")
+            creator.text = art["author"]
+
+        # Immagine principale
+        if art.get("image"):
+            media_thumb = ET.SubElement(item, "{http://search.yahoo.com/mrss/}thumbnail")
+            media_thumb.set("url", art["image"])
+
+        # GUID (identificatore univoco)
+        guid = ET.SubElement(item, "guid")
+        guid.set("isPermaLink", "true")
+        guid.text = art.get("url")
+
+    return ET.ElementTree(rss)
+
+
+def save_rss_feed(articles, output_path="feed.xml"):
+    """Salva il feed RSS su file XML leggibile."""
+    tree = build_rss_feed(articles)
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    tree.write(output_path, encoding="utf-8", xml_declaration=True)
+    print(f"Feed RSS salvato: {output_path}")
