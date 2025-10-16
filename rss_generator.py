@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 
 logger = logging.getLogger("rss_generator")
 
+
 # ---------------------------------------------------------
 # Utility per conversione date
 # ---------------------------------------------------------
@@ -29,8 +30,8 @@ def _as_dt(s):
 # ---------------------------------------------------------
 def build_rss(items: list, meta: dict):
     """
-    Crea un feed RSS 2.0 con namespace media, atom e dcterms,
-    compatibile con Google News e lettori RSS.
+    Crea un feed RSS 2.0 con namespace media, atom e dc/dcterms,
+    compatibile con Google News e lettori RSS moderni.
     """
     ET.register_namespace("media", "http://search.yahoo.com/mrss/")
     ET.register_namespace("atom", "http://www.w3.org/2005/Atom")
@@ -71,50 +72,54 @@ def build_rss(items: list, meta: dict):
     # Articoli (items)
     # -----------------------------
     for it in items:
-        item = ET.SubElement(channel, "item")
-        title = it.get("title") or ""
-        url = it.get("url") or ""
-        desc = it.get("description") or ""
-        author = it.get("author") or None
-        pub = _as_dt(it.get("published"))
-        mod = _as_dt(it.get("modified"))
-        image = it.get("image")
+        try:
+            item = ET.SubElement(channel, "item")
+            title = it.get("title") or "Senza titolo"
+            url = it.get("url") or ""
+            desc = it.get("description") or ""
+            author = it.get("author") or it.get("creator") or it.get("dc_creator")
+            pub = _as_dt(it.get("published"))
+            mod = _as_dt(it.get("modified"))
+            image = it.get("image")
 
-        ET.SubElement(item, "title").text = title
-        ET.SubElement(item, "link").text = url
+            ET.SubElement(item, "title").text = str(title)
+            ET.SubElement(item, "link").text = str(url)
 
-        guid = ET.SubElement(item, "guid")
-        guid.text = url
-        guid.set("isPermaLink", "true")
+            guid = ET.SubElement(item, "guid")
+            guid.text = str(url)
+            guid.set("isPermaLink", "true")
 
-        # Se manca description, creiamo un estratto automatico
-        if not desc:
-            desc = _make_excerpt(title or url)
-        ET.SubElement(item, "description").text = desc
+            # Se manca description, crea un estratto automatico
+            if not desc:
+                desc = _make_excerpt(title or url)
+            ET.SubElement(item, "description").text = str(desc)
 
-        # ✅ Autore giornalistico corretto
-        if author:
-            ET.SubElement(item, "{http://purl.org/dc/elements/1.1/}creator").text = author
+            # ✅ Autore giornalistico corretto (<dc:creator>)
+            if author:
+                ET.SubElement(item, "{http://purl.org/dc/elements/1.1/}creator").text = str(author)
 
-        if pub:
-            ET.SubElement(item, "pubDate").text = format_datetime(pub)
+            if pub:
+                ET.SubElement(item, "pubDate").text = format_datetime(pub)
 
-        if mod:
-            ET.SubElement(item, "{http://purl.org/dc/terms/}modified").text = mod.astimezone(timezone.utc).isoformat()
-            if (last_modified is None) or (mod > last_modified):
-                last_modified = mod
+            if mod:
+                ET.SubElement(item, "{http://purl.org/dc/terms/}modified").text = mod.astimezone(timezone.utc).isoformat()
+                if (last_modified is None) or (mod > last_modified):
+                    last_modified = mod
 
-        if image:
-            thumb = ET.SubElement(item, "{http://search.yahoo.com/mrss/}thumbnail")
-            thumb.set("url", image)
+            if image:
+                thumb = ET.SubElement(item, "{http://search.yahoo.com/mrss/}thumbnail")
+                thumb.set("url", str(image))
 
-        # 📎 Fonte editoriale (Google News)
-        source = ET.SubElement(item, "source")
-        source.set("url", "https://www.artbooms.com")
-        source.text = "ARTBOOMS"
+            # 📎 Fonte editoriale (Google News)
+            source = ET.SubElement(item, "source")
+            source.set("url", "https://www.artbooms.com")
+            source.text = "ARTBOOMS"
 
-        # 🕒 Commento invisibile per debug/monitoraggio
-        item.append(ET.Comment(f"last_build: {datetime.utcnow().isoformat()}"))
+            # 🕒 Commento invisibile per debug
+            item.append(ET.Comment(f"last_build: {datetime.utcnow().isoformat()}"))
+
+        except Exception as e:
+            logger.warning(f"Errore generando item RSS: {e}")
 
     # -----------------------------
     # Ultima modifica globale
@@ -123,7 +128,7 @@ def build_rss(items: list, meta: dict):
     ET.SubElement(channel, "lastBuildDate").text = format_datetime(last_modified or build_time)
 
     # -----------------------------
-    # Conversione XML e header HTTP
+    # Conversione XML + intestazioni
     # -----------------------------
     xml_bytes = ET.tostring(rss, encoding="utf-8", xml_declaration=True)
     etag = hashlib.sha256(xml_bytes).hexdigest()
@@ -141,10 +146,8 @@ def build_rss(items: list, meta: dict):
 # Helper per generare un estratto breve
 # ---------------------------------------------------------
 def _make_excerpt(text, length=200):
-    """
-    Crea un breve riassunto (excerpt) da testo o titolo se manca la descrizione.
-    """
-    clean = text.replace("\n", " ").replace("\r", " ").strip()
+    """Crea un breve riassunto se manca la descrizione."""
+    clean = (text or "").replace("\n", " ").replace("\r", " ").strip()
     if len(clean) > length:
         clean = clean[:length].rsplit(" ", 1)[0] + "…"
     return clean
