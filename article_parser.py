@@ -1,86 +1,138 @@
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
+from urllib.parse import urljoin
 import logging
 
 logger = logging.getLogger("article_parser")
 
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/124.0.0.0 Safari/537.36"
-    )
-}
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/123.0.0.0 Safari/537.36"
+)
+
+HEADERS = {"User-Agent": USER_AGENT}
 
 
+# ---------------------------------------------------------
+# Scarica una pagina HTML con gestione errori
+# ---------------------------------------------------------
 def fetch_html(url):
-    """Scarica l'HTML di una pagina."""
+    """Scarica HTML di una pagina e ritorna il testo."""
     try:
-        r = requests.get(url, headers=HEADERS, timeout=20)
+        r = requests.get(url, headers=HEADERS, timeout=15)
         r.raise_for_status()
         return r.text
     except Exception as e:
-        logger.error(f"[Parser] Errore fetch {url}: {e}")
+        logger.error("Errore fetch %s: %s", url, e)
         return ""
 
 
+# ---------------------------------------------------------
+# Estrae link validi dagli archivi di Squarespace
+# ---------------------------------------------------------
 def extract_article_links_from_archive_html(html, base_url):
-    """Estrae tutti i link /blog/... dall'archivio, escludendo tag e month."""
+    """
+    Estrae tutti i link a singoli articoli dal codice HTML dell'archivio.
+    Corregge il dominio per evitare percorsi come /archivio-completo/blog/...
+    """
     soup = BeautifulSoup(html, "html.parser")
-    links = []
+    links = set()
+
     for a in soup.find_all("a", href=True):
-        href = a["href"]
-        if "/blog/" in href and "?month" not in href and "/tag/" not in href:
-            if href.startswith("/"):
-                href = base_url.rstrip("/") + href
-            if href not in links:
-                links.append(href)
-    return links
+        href = a["href"].strip()
+        # Escludiamo categorie, tag e query (?month)
+        if "/blog/" in href and not any(x in href for x in ["?month", "/tag/", "/category", "feed"]):
+            # ✅ Correzione: forza dominio principale
+            links.add(urljoin("https://www.artbooms.com", href.split("?")[0]))
+
+    return sorted(links)
 
 
+# ---------------------------------------------------------
+# Parsing di un singolo articolo Squarespace
+# ---------------------------------------------------------
 def parse_article(url):
-    """Estrae i meta tag principali da un articolo Squarespace."""
+    """
+    Estrae i metadati principali da un articolo Squarespace:
+    titolo, descrizione, autore, date, immagine.
+    """
     html = fetch_html(url)
     if not html:
         return {}
 
     soup = BeautifulSoup(html, "html.parser")
-    meta = {}
 
-    def get_meta(*names):
-        for n in names:
-            tag = soup.find("meta", attrs={"property": n}) or soup.find("meta", attrs={"itemprop": n})
+    meta = {
+        "url": url,
+        "title": None,
+        "description": None,
+        "author": None,
+        "published": None,
+        "modified": None,
+        "image": None,
+    }
+
+    def _get(name=None, prop=None, itemprop=None):
+        sel = []
+        if name:
+            sel += soup.find_all("meta", attrs={"name": name})
+        if prop:
+            sel += soup.find_all("meta", attrs={"property": prop})
+        if itemprop:
+            sel += soup.find_all("meta", attrs={"itemprop": itemprop})
+        for tag in sel:
             if tag and tag.get("content"):
                 return tag["content"].strip()
         return None
 
-    meta["url"] = url
+    # Titolo
     meta["title"] = (
-        get_meta("og:title", "itemprop", "headline")
-        or (soup.title.string.strip() if soup.title else "")
+        _get("og:title")
+        or _get("twitter:title")
+        or _get(itemprop="headline")
+        or (soup.title.string.strip() if soup.title else None)
     )
-    meta["description"] = get_meta("og:description", "itemprop", "description") or ""
-    meta["image"] = get_meta("og:image", "itemprop", "image") or ""
-    meta["author"] = get_meta("itemprop", "author") or ""
-    meta["published"] = get_meta("itemprop", "datePublished") or ""
-    meta["modified"] = get_meta("itemprop", "dateModified") or ""
 
-    # Normalizza date ISO
-    for key in ("published", "modified"):
-        val = meta.get(key)
-        if val:
-            try:
-                meta[key] = datetime.fromisoformat(val.replace("Z", "+00:00")).isoformat()
-            except Exception:
-                pass
+    # Descrizione
+    meta["description"] = (
+        _get("og:description")
+        or _get("description")
+        or _get(itemprop="description")
+    )
 
-    logger.info(f"[Parser] Estratto meta per {url}: {meta['title']}")
+    # Autore (Squarespace usa itemprop)
+    meta["author"] = (
+        _get(itemprop="author")
+        or _get("author")
+        or _get(prop="article:author")
+    )
+
+    # Date (ISO8601 preferite)
+    meta["published"] = (
+        _get(itemprop="datePublished")
+        or _get(prop="article:published_time")
+    )
+    meta["modified"] = (
+        _get(itemprop="dateModified")
+        or _get(prop="article:modified_time")
+    )
+
+    # Immagine principale
+    meta["image"] = (
+        _get("og:image")
+        or _get("twitter:image")
+        or _get(itemprop="image")
+    )
+
+    # Fallback: titolo e descrizione dal corpo
+    if not meta["title"]:
+        h1 = soup.find("h1")
+        if h1:
+            meta["title"] = h1.get_text(strip=True)
+    if not meta["description"]:
+        p = soup.find("p")
+        if p:
+            meta["description"] = p.get_text(strip=True)[:200] + "…"
+
     return meta
-
-
-if __name__ == "__main__":
-    test = "https://www.artbooms.com/blog/vivian-suter-palais-tokyo-parigi"
-    print(parse_article(test))
-
-   
