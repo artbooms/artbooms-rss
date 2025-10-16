@@ -23,6 +23,7 @@ def parse_date_safe(value):
 
 
 def load_cache():
+    """Carica la cache locale (se esiste)."""
     if not os.path.exists(CACHE_PATH):
         return {"items": []}
     try:
@@ -88,12 +89,16 @@ def generate_items():
         cached_art = cached.get(link)
         if not cached_art:
             logger.info("[Processor] NUOVO articolo: %s", link)
+            pub_date = art.get("published") or art.get("modified")
+            logger.info("   ↳ %s — %s", art.get("title", "Senza titolo"), pub_date)
             new_articles.append(art)
         else:
             old_mod = cached_art.get("modified")
             new_mod = art.get("modified")
             if new_mod and old_mod and new_mod != old_mod:
                 logger.info("[Processor] Articolo AGGIORNATO: %s (modified)", link)
+                pub_date = art.get("published") or art.get("modified")
+                logger.info("   ↳ %s — %s", art.get("title", "Senza titolo"), pub_date)
                 cached[link] = art
                 new_articles.append(art)
 
@@ -104,12 +109,26 @@ def generate_items():
         logger.info("Nessun nuovo o aggiornato articolo trovato.")
         return
 
+    # Aggiorna la cache locale
     for art in new_articles:
         cached[art["url"]] = art
 
     cache["items"] = list(cached.values())
+
+    # Ordina i nuovi articoli per data crescente (vecchi → nuovi)
     save_cache(cache)
 
-    logger.info("[Processor] Aggiunti/aggiornati %s articoli (totale %s).",
-                len(new_articles), len(cache["items"]))
+    # Riordina per il feed RSS (nuovi → vecchi)
+    cache["items"].sort(
+        key=lambda x: parse_date_safe(x.get("published") or x.get("modified")),
+        reverse=True
+    )
 
+    logger.info(
+        "[Processor] Aggiunti/aggiornati %s articoli (totale %s).",
+        len(new_articles), len(cache["items"])
+    )
+    logger.info(
+        "Feed rigenerato con %s articoli (dal più nuovo al più vecchio).",
+        len(cache["items"])
+    )
