@@ -13,7 +13,6 @@ MAX_BATCH = 3
 
 
 def parse_date_safe(value):
-    """Prova a interpretare qualunque formato di data."""
     if not value:
         return datetime.min
     try:
@@ -22,8 +21,21 @@ def parse_date_safe(value):
         return datetime.min
 
 
+def get_batch_size():
+    """Usa batch 30 se la cache è vuota (bootstrap)."""
+    if not os.path.exists(CACHE_PATH):
+        return 30
+    try:
+        with open(CACHE_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if not data.get("items"):
+            return 30
+    except Exception:
+        pass
+    return MAX_BATCH
+
+
 def load_cache():
-    """Carica la cache locale (se esiste)."""
     if not os.path.exists(CACHE_PATH):
         return {"items": []}
     try:
@@ -40,27 +52,12 @@ def load_cache():
 
 
 def save_cache(data):
-    """Salva la cache ordinata per data crescente (vecchi → nuovi)."""
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
     items = data.get("items", [])
     items.sort(key=lambda x: parse_date_safe(x.get("published") or x.get("modified")))
     data["items"] = items
     with open(CACHE_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-
-
-def fetch_article_dates(links):
-    """Restituisce i link ordinati per data (più vecchi prima)."""
-    results = []
-    for link in links:
-        try:
-            art = parse_article(link)
-            pub = art.get("published") or art.get("modified")
-            results.append((link, parse_date_safe(pub)))
-        except Exception as e:
-            logger.warning("Errore leggendo data per %s: %s", link, e)
-    results.sort(key=lambda x: x[1])
-    return [r[0] for r in results]
 
 
 def generate_items():
@@ -78,10 +75,9 @@ def generate_items():
     cache = load_cache()
     cached = {a["url"]: a for a in cache.get("items", [])}
     new_articles = []
+    batch_size = get_batch_size()
 
-    ordered_links = fetch_article_dates(blog_links)
-
-    for link in ordered_links:
+    for link in blog_links:
         art = parse_article(link)
         if not art or not art.get("title"):
             continue
@@ -89,46 +85,28 @@ def generate_items():
         cached_art = cached.get(link)
         if not cached_art:
             logger.info("[Processor] NUOVO articolo: %s", link)
-            pub_date = art.get("published") or art.get("modified")
-            logger.info("   ↳ %s — %s", art.get("title", "Senza titolo"), pub_date)
             new_articles.append(art)
         else:
             old_mod = cached_art.get("modified")
             new_mod = art.get("modified")
             if new_mod and old_mod and new_mod != old_mod:
                 logger.info("[Processor] Articolo AGGIORNATO: %s (modified)", link)
-                pub_date = art.get("published") or art.get("modified")
-                logger.info("   ↳ %s — %s", art.get("title", "Senza titolo"), pub_date)
                 cached[link] = art
                 new_articles.append(art)
 
-        if len(new_articles) >= MAX_BATCH:
+        if len(new_articles) >= batch_size:
             break
 
     if not new_articles:
         logger.info("Nessun nuovo o aggiornato articolo trovato.")
         return
 
-    # Aggiorna la cache locale
     for art in new_articles:
         cached[art["url"]] = art
 
     cache["items"] = list(cached.values())
-
-    # Ordina i nuovi articoli per data crescente (vecchi → nuovi)
     save_cache(cache)
 
-    # Riordina per il feed RSS (nuovi → vecchi)
-    cache["items"].sort(
-        key=lambda x: parse_date_safe(x.get("published") or x.get("modified")),
-        reverse=True
-    )
+    logger.info("[Processor] Aggiunti/aggiornati %s articoli (totale %s).",
+                len(new_articles), len(cache["items"]))
 
-    logger.info(
-        "[Processor] Aggiunti/aggiornati %s articoli (totale %s).",
-        len(new_articles), len(cache["items"])
-    )
-    logger.info(
-        "Feed rigenerato con %s articoli (dal più nuovo al più vecchio).",
-        len(cache["items"])
-    )
