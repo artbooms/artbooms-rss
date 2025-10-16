@@ -2,7 +2,9 @@ import json
 import os
 import logging
 from datetime import datetime
-from dateutil import parser
+from dateutil import parser as dtparser
+from urllib.parse import urlparse, urlunparse
+
 from article_parser import fetch_html, extract_article_links_from_archive_html, parse_article
 
 logger = logging.getLogger("article_processor")
@@ -16,26 +18,21 @@ def parse_date_safe(value):
     if not value:
         return datetime.min
     try:
-        return parser.parse(value)
+        return dtparser.parse(value)
     except Exception:
         return datetime.min
 
 
-def get_batch_size():
-    """Usa batch 30 se la cache è vuota (bootstrap)."""
-    if not os.path.exists(CACHE_PATH):
-        return 30
-    try:
-        with open(CACHE_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        if not data.get("items"):
-            return 30
-    except Exception:
-        pass
-    return MAX_BATCH
+def canonicalize(url: str) -> str:
+    """Forza https://www.artbooms.com/blog/... e rimuove /archivio-completo dal path."""
+    if not url:
+        return url
+    p = urlparse(url)
+    path = (p.path or "").replace("/archivio-completo", "").replace("//", "/")
+    return urlunparse(("https", "www.artbooms.com", path, "", "", ""))
 
 
-def load_cache():
+def load_cache() -> dict:
     if not os.path.exists(CACHE_PATH):
         return {"items": []}
     try:
@@ -51,56 +48,97 @@ def load_cache():
         return {"items": []}
 
 
-def save_cache(data):
+def save_cache(data: dict):
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
     items = data.get("items", [])
+    # ordina in modo crescente (vecchi → nuovi) per coerenza interna
     items.sort(key=lambda x: parse_date_safe(x.get("published") or x.get("modified")))
     data["items"] = items
     with open(CACHE_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
+def sanitize_cache(data: dict) -> dict:
+    """Rimuove o corregge elementi con URL non canonici (es. /archivio-completo nel path)."""
+    clean = []
+    seen = set()
+    for it in data.get("items", []):
+        if not isinstance(it, dict):
+            continue
+        url = canonicalize(it.get("url", ""))
+        if ("/blog/" not in url) or any(seg in url for seg in ["/tag/", "/category"]):
+            continue
+        it["url"] = url
+        key = url
+        if key in seen:
+            continue
+        seen.add(key)
+        clean.append(it)
+    data["items"] = clean
+    return data
+
+
 def generate_items():
-    """Scarica articoli e aggiorna la cache in batch."""
+    """Scarica articoli e aggiorna la cache in batch da MAX_BATCH, lavorando solo su URL canonici."""
+    # 1) Carica e sanifica cache (una volta) così non ereditiamo URL rotti
+    cache = load_cache()
+    cache = sanitize_cache(cache)
+    save_cache(cache)
+
+    # 2) Scarica lista link dall’archivio e rendili canonici/deduplicati
     try:
         logger.info("[Processor] Scarico archivio da %s", ARCHIVE_URL)
         html = fetch_html(ARCHIVE_URL)
         all_links = extract_article_links_from_archive_html(html, ARCHIVE_URL)
-        blog_links = [l for l in all_links if "/blog/" in l and "?" not in l and "/tag/" not in l]
+        blog_links = [canonicalize(l) for l in all_links if "/blog/" in l]
+        # dedup
+        blog_links = list(dict.fromkeys(blog_links))
         logger.info("[Parser] %s link articolo validi trovati.", len(blog_links))
     except Exception as e:
         logger.error("Errore scaricando archivio: %s", e)
         return
 
-    cache = load_cache()
-    cached = {a["url"]: a for a in cache.get("items", [])}
+    # 3) Mappa URL → articolo in cache
+    cached = {canonicalize(a.get("url")): a for a in cache.get("items", [])}
     new_articles = []
-    batch_size = get_batch_size()
 
+    # 4) Scorri in ordine “URL” (il feed poi ordina per data); interrompi dopo MAX_BATCH nuovi/aggiornati
     for link in blog_links:
-        art = parse_article(link)
+        link = canonicalize(link)
+
+        # se già presente e non aggiornato → salta
+        cached_art = cached.get(link)
+        try:
+            art = parse_article(link)
+        except Exception as e:
+            logger.warning("Errore parse %s: %s", link, e)
+            continue
+
         if not art or not art.get("title"):
             continue
 
-        cached_art = cached.get(link)
+        art["url"] = canonicalize(art.get("url"))
+
         if not cached_art:
             logger.info("[Processor] NUOVO articolo: %s", link)
             new_articles.append(art)
         else:
             old_mod = cached_art.get("modified")
             new_mod = art.get("modified")
+            # aggiorna solo se modified è realmente cambiata
             if new_mod and old_mod and new_mod != old_mod:
                 logger.info("[Processor] Articolo AGGIORNATO: %s (modified)", link)
                 cached[link] = art
                 new_articles.append(art)
 
-        if len(new_articles) >= batch_size:
+        if len(new_articles) >= MAX_BATCH:
             break
 
     if not new_articles:
         logger.info("Nessun nuovo o aggiornato articolo trovato.")
         return
 
+    # 5) Aggiorna cache con i nuovi/aggiornati
     for art in new_articles:
         cached[art["url"]] = art
 
@@ -109,4 +147,3 @@ def generate_items():
 
     logger.info("[Processor] Aggiunti/aggiornati %s articoli (totale %s).",
                 len(new_articles), len(cache["items"]))
-
