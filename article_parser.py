@@ -1,21 +1,12 @@
 import re
 import logging
 import requests
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from datetime import datetime, timezone
 from dateutil import parser as dateparser
 
 logger = logging.getLogger("article_parser")
-
-# 🔤 Mesi italiani → inglesi per conversione date
-MONTHS_IT = {
-    "gennaio": "January", "febbraio": "February", "marzo": "March", "aprile": "April",
-    "maggio": "May", "giugno": "June", "luglio": "July", "agosto": "August",
-    "settembre": "September", "ottobre": "October", "novembre": "November", "dicembre": "December",
-    "gen": "Jan", "feb": "Feb", "mar": "Mar", "apr": "Apr", "mag": "May", "giu": "Jun",
-    "lug": "Jul", "ago": "Aug", "set": "Sep", "ott": "Oct", "nov": "Nov", "dic": "Dec"
-}
 
 BASE_URL = "https://www.artbooms.com"
 HEADERS = {
@@ -31,7 +22,7 @@ HEADERS = {
 # Utility
 # ------------------------------------------------------------------------
 
-def fetch_html(url, session=None, timeout=20):
+def fetch_html(url, session=None, timeout=25):
     """Scarica HTML con headers e https normalizzato."""
     if url.startswith("http://"):
         url = url.replace("http://", "https://")
@@ -42,14 +33,11 @@ def fetch_html(url, session=None, timeout=20):
 
 
 def _parse_date_any(value):
-    """Converte una stringa di data in datetime (con supporto mesi italiani)."""
+    """Converte una stringa di data (tipo 'Feb 10, 2016') in datetime."""
     if not value:
         return None
-    s = value.strip()
-    for it, en in MONTHS_IT.items():
-        s = re.sub(rf"\b{re.escape(it)}\b", en, s, flags=re.IGNORECASE)
     try:
-        dt = dateparser.parse(s)
+        dt = dateparser.parse(value)
         if dt and dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
         return dt
@@ -71,24 +59,55 @@ def _norm_url(href):
         return None
     return href.rstrip("/")
 
-
 # ------------------------------------------------------------------------
-# Estrazione link archivio
+# Estrazione link archivio (con date e ordine cronologico)
 # ------------------------------------------------------------------------
 
 def extract_article_links_from_archive_html(html, base_url=BASE_URL):
-    """Estrae tutti i link /blog/... validi dalla pagina archivio."""
+    """
+    Estrae i link degli articoli dall'archivio completo di Artbooms,
+    riconoscendo le date 'Mon DD, YYYY' e associandole all'articolo successivo.
+    Scarta i titoli di mese/anno tipo 'August 2017'.
+    Restituisce i link ordinati dal più vecchio al più nuovo.
+    """
     soup = BeautifulSoup(html, "html.parser")
-    seen, urls = set(), []
-    for a in soup.find_all("a", href=True):
-        link = _norm_url(a["href"])
-        if not link:
+
+    # Tutti i paragrafi o blocchi di testo che potrebbero contenere date
+    possible_dates = soup.find_all(
+        string=re.compile(r"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}\b")
+    )
+
+    items = []
+    seen = set()
+
+    for date_text in possible_dates:
+        date_str = date_text.strip()
+        if re.match(r"^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}$", date_str):
+            continue  # tipo "August 2017", non una data di articolo
+
+        dt = _parse_date_any(date_str)
+        if not dt:
             continue
-        if link not in seen:
-            seen.add(link)
-            urls.append(link)
-    logger.info("[Parser] %s link articolo validi trovati nell'archivio.", len(urls))
-    return urls
+
+        # cerca il link /blog/ più vicino dopo la data
+        parent = date_text.find_parent()
+        next_link = None
+
+        for sib in parent.find_all_next("a", href=True):
+            href = _norm_url(sib["href"])
+            if href:
+                next_link = href
+                break
+
+        if next_link and next_link not in seen:
+            seen.add(next_link)
+            items.append({"date": dt, "url": next_link})
+            logger.info("[DEBUG] Trovata data %s → %s", date_str, next_link)
+
+    items.sort(key=lambda x: x["date"])
+    ordered_links = [i["url"] for i in items]
+    logger.info("[Parser] %d articoli trovati e ordinati cronologicamente.", len(ordered_links))
+    return ordered_links
 
 
 # ------------------------------------------------------------------------
@@ -124,25 +143,19 @@ def parse_article(url, html=None, session=None):
             tag = None
         return tag.get("content").strip() if tag and tag.get("content") else None
 
-    # Titolo (preferisce meta itemprop=headline)
     title = meta(item="headline") or meta(prop="og:title")
     if title:
         title = title.replace("— ARTBOOMS", "").replace("—ARTBOOMS", "").strip()
 
-    # Descrizione (solo meta SEO ufficiali)
     description = meta(prop="og:description") or meta(item="description")
-
-    # Autore
     author = meta(item="author")
 
-    # Date (pubblicazione e modifica)
     published = meta(item="datePublished")
     modified = meta(item="dateModified")
 
     pub_dt = _parse_date_any(published)
     mod_dt = _parse_date_any(modified) or pub_dt
 
-    # Immagine principale
     image = (
         meta(prop="og:image")
         or meta(item="image")
@@ -152,13 +165,9 @@ def parse_article(url, html=None, session=None):
     if image and image.startswith("http://"):
         image = image.replace("http://", "https://")
 
-    # Canonical (per sicurezza)
     canonical = meta(prop="og:url") or meta(item="url") or url
     if canonical.startswith("http://"):
         canonical = canonical.replace("http://", "https://")
-
-    # Nessun corpo: Squarespace già fornisce le meta complete
-    content_text = ""
 
     return {
         "url": canonical,
@@ -167,7 +176,6 @@ def parse_article(url, html=None, session=None):
         "author": author,
         "published": pub_dt.isoformat() if pub_dt else None,
         "modified": mod_dt.isoformat() if mod_dt else None,
-        "content_text": content_text,
+        "content_text": "",
         "image": image,
     }
-
