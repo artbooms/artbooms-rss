@@ -39,6 +39,7 @@ def bootstrap_cache():
 
 
 def rebuild_feed():
+    """Rigenera il feed RSS ordinando gli articoli dal più nuovo al più vecchio."""
     try:
         with open(CACHE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -57,14 +58,22 @@ def rebuild_feed():
         "description": "Ultimi articoli da Artbooms",
         "language": "it-IT"
     })
+
+    # 🧩 FIX: se build_rss restituisce una tupla, prendi solo il primo elemento
+    if isinstance(rss_xml, tuple):
+        rss_xml = rss_xml[0]
+
     if isinstance(rss_xml, str):
         rss_xml = rss_xml.encode("utf-8")
+
     with open("feed.xml", "wb") as f:
         f.write(rss_xml)
-    logging.info("Feed rigenerato con %s articoli.", len(items))
+
+    logging.info("Feed rigenerato con %s articoli (dal più nuovo al più vecchio).", len(items))
 
 
 def background_populator():
+    """Aggiorna periodicamente la cache e rigenera il feed."""
     last_rebuild = 0
     while True:
         try:
@@ -97,16 +106,25 @@ def debug_cache():
     return jsonify({"articles_in_cache": count})
 
 
+@app.route("/cache/download")
+def cache_download():
+    return send_file(CACHE_PATH, mimetype="application/json")
+
+
 @app.route("/healthz")
 def healthz():
     return jsonify({"ok": True, "service": "artbooms-rss"})
 
 
+# ============================================================
+# 🚀 AVVIO
+# ============================================================
 bootstrap_cache()
 rebuild_feed()
 
 
 def delayed_start():
+    """Avvia il popolatore con un ritardo di 60 secondi per evitare timeout su Render."""
     time.sleep(60)
     background_populator()
 
