@@ -8,58 +8,80 @@ from flask import Flask, Response, jsonify, send_file
 from article_processor import generate_items
 from rss_generator import build_rss
 
+# ---------------------------------------------------------
+# CONFIGURAZIONE BASE
+# ---------------------------------------------------------
 CACHE_PATH = "cache/articles_cache.json"
 RAW_CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
-POPULATE_INTERVAL = 120
-FORCE_REBUILD_AFTER = 900
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/123.0.0.0 Safari/537.36"
+)
+POPULATE_INTERVAL = 120   # Ogni 2 minuti
+FORCE_REBUILD_AFTER = 900 # Forza rigenerazione ogni 15 minuti
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-
+# ---------------------------------------------------------
+# BOOTSTRAP CACHE
+# ---------------------------------------------------------
 def bootstrap_cache():
+    """Scarica o inizializza la cache locale."""
     os.makedirs("cache", exist_ok=True)
     if os.path.exists(CACHE_PATH) and os.path.getsize(CACHE_PATH) > 10:
         logging.info("Cache locale trovata, salto bootstrap.")
         return
+
     try:
-        r = requests.get(RAW_CACHE_URL, timeout=15)
+        logging.info("Scarico cache persistente da GitHub...")
+        r = requests.get(RAW_CACHE_URL, headers={"User-Agent": USER_AGENT}, timeout=15)
         if r.ok and r.text.strip() not in ("", "{}", "null"):
             with open(CACHE_PATH, "w", encoding="utf-8") as f:
                 f.write(r.text)
-            logging.info("Cache scaricata da GitHub.")
+            logging.info("Cache scaricata da GitHub (%s bytes).", len(r.text))
         else:
+            logging.warning("Cache remota vuota — ne creo una nuova.")
             with open(CACHE_PATH, "w", encoding="utf-8") as f:
                 json.dump({"items": []}, f)
-            logging.warning("Cache remota vuota — nuova cache creata.")
     except Exception as e:
-        logging.error("Errore nel bootstrap cache: %s", e)
-        with open(CACHE_PATH, "w", encoding="utf-8") as f:
-            json.dump({"items": []}, f)
+        logging.error("Errore nel bootstrap della cache: %s", e)
+        if not os.path.exists(CACHE_PATH):
+            with open(CACHE_PATH, "w", encoding="utf-8") as f:
+                json.dump({"items": []}, f)
 
-
+# ---------------------------------------------------------
+# RIGENERAZIONE FEED
+# ---------------------------------------------------------
 def rebuild_feed():
-    """Rigenera il feed RSS ordinando gli articoli dal più nuovo al più vecchio."""
+    """Rigenera il feed RSS ordinando dal più nuovo al più vecchio."""
     try:
         with open(CACHE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
-    except Exception:
+    except Exception as e:
+        logging.error("Errore caricando la cache: %s", e)
         data = {"items": []}
 
+    # Filtra articoli validi
     items = [
         i for i in data.get("items", [])
         if isinstance(i, dict) and "/blog/" in (i.get("url") or "")
     ]
+
+    # Ordina dal più recente al più vecchio
     items.sort(key=lambda x: x.get("modified") or x.get("published") or "", reverse=True)
 
-    rss_xml = build_rss(items, {
+    meta = {
         "title": "Artbooms RSS Feed",
         "link": "https://www.artbooms.com",
         "description": "Ultimi articoli da Artbooms",
-        "language": "it-IT"
-    })
+        "language": "it-IT",
+    }
 
-    # 🧩 FIX: se build_rss restituisce una tupla, prendi solo il primo elemento
+    rss_xml = build_rss(items, meta)
+
+    # 🧩 FIX: build_rss restituisce una tupla (xml_bytes, headers)
     if isinstance(rss_xml, tuple):
         rss_xml = rss_xml[0]
 
@@ -71,9 +93,11 @@ def rebuild_feed():
 
     logging.info("Feed rigenerato con %s articoli (dal più nuovo al più vecchio).", len(items))
 
-
+# ---------------------------------------------------------
+# THREAD DI POPOLAMENTO
+# ---------------------------------------------------------
 def background_populator():
-    """Aggiorna periodicamente la cache e rigenera il feed."""
+    """Aggiorna periodicamente la cache e il feed RSS."""
     last_rebuild = 0
     while True:
         try:
@@ -86,7 +110,9 @@ def background_populator():
             logging.error("Errore nel popolatore: %s", e)
         time.sleep(POPULATE_INTERVAL)
 
-
+# ---------------------------------------------------------
+# ENDPOINTS FLASK
+# ---------------------------------------------------------
 @app.route("/rss")
 def rss():
     if not os.path.exists("feed.xml") or os.path.getsize("feed.xml") < 100:
@@ -94,46 +120,36 @@ def rss():
     with open("feed.xml", "rb") as f:
         return Response(f.read(), mimetype="application/rss+xml")
 
-
 @app.route("/debug/cache")
 def debug_cache():
+    if not os.path.exists(CACHE_PATH):
+        return jsonify({"articles_in_cache": 0})
     try:
         with open(CACHE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
-        count = len(data.get("items", []))
+        count = len([i for i in data.get("items", []) if "/blog/" in (i.get("url") or "")])
     except Exception:
         count = 0
     return jsonify({"articles_in_cache": count})
-
 
 @app.route("/cache/download")
 def cache_download():
     return send_file(CACHE_PATH, mimetype="application/json")
 
-
 @app.route("/healthz")
 def healthz():
     return jsonify({"ok": True, "service": "artbooms-rss"})
 
-
-# ============================================================
-# 🚀 AVVIO
-# ============================================================
+# ---------------------------------------------------------
+# AVVIO
+# ---------------------------------------------------------
 bootstrap_cache()
 rebuild_feed()
 
-
-def delayed_start():
-    """Avvia il popolatore con un ritardo di 60 secondi per evitare timeout su Render."""
-    time.sleep(60)
-    background_populator()
-
-
 if not any(t.name == "BackgroundPopulator" for t in threading.enumerate()):
-    t = threading.Thread(target=delayed_start, daemon=True, name="BackgroundPopulator")
+    t = threading.Thread(target=background_populator, daemon=True, name="BackgroundPopulator")
     t.start()
-    logging.info("Thread di popolamento avviato (ritardato) nel processo PID %s", os.getpid())
-
+    logging.info("Thread di popolamento avviato nel processo PID %s", os.getpid())
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))
