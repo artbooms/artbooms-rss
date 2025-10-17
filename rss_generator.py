@@ -1,4 +1,4 @@
-mport hashlib
+import hashlib
 from datetime import datetime, timezone
 from email.utils import format_datetime
 import logging
@@ -112,3 +112,4 @@ def _make_excerpt(text, length=200):
     if len(clean) > length:
         clean = clean[:length].rsplit(" ", 1)[0] + "…"
     return clean
+
