@@ -1,77 +1,114 @@
-import xml.etree.ElementTree as ET
+mport hashlib
 from datetime import datetime, timezone
 from email.utils import format_datetime
-from dateutil import parser as dateparser
+import logging
+import xml.etree.ElementTree as ET
 
-# helper date
+logger = logging.getLogger("rss_generator")
+
 def _as_dt(s):
     if not s:
         return None
     if isinstance(s, datetime):
         return s
     try:
-        dt = dateparser.parse(s)
+        from dateutil import parser as _p
+        dt = _p.parse(s)
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
         return dt
     except Exception:
         return None
 
-def build_rss(items, meta):
-    """
-    Crea RSS 2.0 con dc:creator e dcterms:modified (compatibile Google News).
-    """
-    ET.register_namespace("dc", "http://purl.org/dc/elements/1.1/")
-    ET.register_namespace("dcterms", "http://purl.org/dc/terms/")
-    ET.register_namespace("atom", "http://www.w3.org/2005/Atom")
+def build_rss(items: list, meta: dict):
+    # Namespace richiesti
     ET.register_namespace("media", "http://search.yahoo.com/mrss/")
+    ET.register_namespace("atom", "http://www.w3.org/2005/Atom")
+    ET.register_namespace("dcterms", "http://purl.org/dc/terms/")
+    ET.register_namespace("dc", "http://purl.org/dc/elements/1.1/")
 
+    # Calcola subito l'ultima modifica (per posizionare lastBuildDate PRIMA degli item)
+    last_modified = None
+    for it in items:
+        dt = _as_dt(it.get("modified")) or _as_dt(it.get("published"))
+        if dt and (last_modified is None or dt > last_modified):
+            last_modified = dt
+    build_time = meta.get("build_time") or datetime.utcnow().replace(tzinfo=timezone.utc)
+    last_build = last_modified or build_time
+
+    # Root e channel
     rss = ET.Element("rss", version="2.0")
     channel = ET.SubElement(rss, "channel")
 
-    ET.SubElement(channel, "title").text = meta.get("title", "Artbooms RSS Feed")
-    ET.SubElement(channel, "link").text = meta.get("link", "https://www.artbooms.com")
-    ET.SubElement(channel, "description").text = meta.get("description", "Ultimi articoli da Artbooms")
-    ET.SubElement(channel, "language").text = meta.get("language", "it-IT")
+    title = meta.get("title", "ARTBOOMS - Archivio completo")
+    self_url = meta.get("self_url", "https://artbooms-rss.onrender.com/rss")
+    desc = meta.get("description", "Tutti gli articoli di Artbooms con aggiornamenti automatici")
+    lang = meta.get("language", "it-IT")
 
-    # self link (opzionale)
-    atom = ET.SubElement(channel, "{http://www.w3.org/2005/Atom}link")
-    atom.set("href", meta.get("self", "https://artbooms-rss.onrender.com/rss"))
-    atom.set("rel", "self")
-    atom.set("type", "application/rss+xml")
+    ET.SubElement(channel, "title").text = title
+    ET.SubElement(channel, "link").text = "https://www.artbooms.com"
+    ET.SubElement(channel, "description").text = desc
+    ET.SubElement(channel, "language").text = lang
 
-    last_mod = None
+    # atom:link self ASSOLUTO
+    atom_link = ET.SubElement(channel, "{http://www.w3.org/2005/Atom}link")
+    atom_link.set("href", self_url)
+    atom_link.set("rel", "self")
+    atom_link.set("type", "application/rss+xml")
+
+    # lastBuildDate PRIMA degli item (elimina "Misplaced Item")
+    ET.SubElement(channel, "lastBuildDate").text = format_datetime(last_build)
+
+    # (Niente <image> di canale: elimina warning "image format/title")
+    # Se un giorno vuoi aggiungerlo, usa un .jpg/.png e metti lo stesso titolo del channel.
 
     for it in items:
         item = ET.SubElement(channel, "item")
-        ET.SubElement(item, "title").text = it.get("title") or ""
-        ET.SubElement(item, "link").text = it.get("url") or ""
-        g = ET.SubElement(item, "guid")
-        g.text = it.get("url") or ""
-        g.set("isPermaLink", "true")
+        title_i = it.get("title") or ""
+        url = it.get("url") or ""
+        desc_i = it.get("description") or ""
+        author = it.get("author") or None
+        pub = _as_dt(it.get("published"))
+        mod = _as_dt(it.get("modified"))
+        image = it.get("image")
 
-        desc = it.get("description") or ""
-        ET.SubElement(item, "description").text = desc
+        ET.SubElement(item, "title").text = title_i
+        ET.SubElement(item, "link").text = url
 
-        # ✅ autore in dc:creator
-        author = it.get("author")
+        guid = ET.SubElement(item, "guid", {"isPermaLink": "true"})
+        guid.text = url
+
+        # se manca description -> excerpt automatico
+        if not desc_i:
+            desc_i = _make_excerpt(title_i or url)
+        ET.SubElement(item, "description").text = desc_i
+
         if author:
             ET.SubElement(item, "{http://purl.org/dc/elements/1.1/}creator").text = author
 
-        pub = _as_dt(it.get("published"))
         if pub:
             ET.SubElement(item, "pubDate").text = format_datetime(pub)
 
-        mod = _as_dt(it.get("modified"))
         if mod:
-            ET.SubElement(item, "{http://purl.org/dc/terms/}modified").text = mod.isoformat()
-            if (last_mod is None) or (mod > last_mod):
-                last_mod = mod
+            ET.SubElement(item, "{http://purl.org/dc/terms/}modified").text = mod.astimezone(timezone.utc).isoformat()
 
-        img = it.get("image")
-        if img:
+        if image:
             thumb = ET.SubElement(item, "{http://search.yahoo.com/mrss/}thumbnail")
-            thumb.set("url", img)
+            thumb.set("url", image)
 
-    ET.SubElement(channel, "lastBuildDate").text = format_datetime(last_mod or datetime.now(timezone.utc))
-    return ET.tostring(rss, encoding="utf-8", xml_declaration=True)
+    # Serializza + header HTTP
+    xml_bytes = ET.tostring(rss, encoding="utf-8", xml_declaration=True)
+    etag = hashlib.sha256(xml_bytes).hexdigest()
+    headers = {
+        "ETag": f'W/"{etag}"',
+        "Last-Modified": format_datetime(last_build),
+        "Cache-Control": "max-age=300",
+        "Content-Type": "application/rss+xml; charset=utf-8",
+    }
+    return xml_bytes, headers
+
+def _make_excerpt(text, length=200):
+    clean = (text or "").replace("\n", " ").replace("\r", " ").strip()
+    if len(clean) > length:
+        clean = clean[:length].rsplit(" ", 1)[0] + "…"
+    return clean
