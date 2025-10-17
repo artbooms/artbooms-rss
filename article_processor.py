@@ -1,32 +1,24 @@
-import json
-import os
-import logging
+import json, os, logging
 from datetime import datetime
 from dateutil import parser as dateparser
 from article_parser import fetch_html, extract_article_links_from_archive_html, parse_article
 
 logger = logging.getLogger("article_processor")
 
-CACHE_PATH = "cache/articles_cache.json"
-ARCHIVE_URL = "https://www.artbooms.com/archivio-completo"
+# ✅ MAX BATCH qui (come da richiesta)
 MAX_BATCH = 3
 
+CACHE_PATH = "cache/articles_cache.json"
+ARCHIVE_URL = "https://www.artbooms.com/archivio-completo"
 
-# ---------------------------------------------------------
-# Utility date
-# ---------------------------------------------------------
-def parse_date_safe(value):
-    if not value:
+def _date_safe(s):
+    if not s:
         return datetime.min
     try:
-        return dateparser.parse(value)
+        return dateparser.parse(s)
     except Exception:
         return datetime.min
 
-
-# ---------------------------------------------------------
-# Cache handling
-# ---------------------------------------------------------
 def load_cache():
     if not os.path.exists(CACHE_PATH):
         return {"items": []}
@@ -35,93 +27,63 @@ def load_cache():
             data = json.load(f)
         if isinstance(data, list):
             data = {"items": data}
-        if "items" not in data:
-            data["items"] = []
         return data
     except Exception as e:
         logger.error("Errore caricando la cache: %s", e)
         return {"items": []}
 
-
 def save_cache(data):
     os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
     items = data.get("items", [])
-    items.sort(key=lambda x: parse_date_safe(x.get("published") or x.get("modified")))
-    data["items"] = items
+    # ordine crescente (vecchi → nuovi) in cache
+    items.sort(key=lambda x: _date_safe(x.get("published") or x.get("modified")))
     with open(CACHE_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+        json.dump({"items": items}, f, ensure_ascii=False, indent=2)
     logger.info("[Processor] Cache salvata (%s articoli).", len(items))
 
-
-# ---------------------------------------------------------
-# Lettura e ordinamento link archivio
-# ---------------------------------------------------------
-def fetch_article_dates(links):
-    """Legge la data di ogni articolo per ordinarli dal più vecchio al più nuovo."""
-    results = []
-    for link in links:
-        try:
-            art = parse_article(link)
-            pub = art.get("published") or art.get("modified")
-            results.append((link, parse_date_safe(pub)))
-        except Exception as e:
-            logger.warning("Errore leggendo data per %s: %s", link, e)
-    results.sort(key=lambda x: x[1])
-    return [r[0] for r in results]
-
-
-# ---------------------------------------------------------
-# Processo principale
-# ---------------------------------------------------------
 def generate_items():
-    try:
-        logger.info("[Processor] Scarico archivio da %s", ARCHIVE_URL)
-        html = fetch_html(ARCHIVE_URL)
-        all_links = extract_article_links_from_archive_html(html, ARCHIVE_URL)
-        blog_links = [l for l in all_links if "/blog/" in l]
-        logger.info("[Parser] %s link articolo validi trovati.", len(blog_links))
-    except Exception as e:
-        logger.error("Errore scaricando archivio: %s", e)
-        return
+    """
+    - Legge l'archivio
+    - Estrae i link *ordinati cronologicamente* (grazie al parser)
+    - Aggiunge al massimo MAX_BATCH articoli nuovi (o aggiornati)
+    """
+    html = fetch_html(ARCHIVE_URL)
+    ordered_links = extract_article_links_from_archive_html(html, ARCHIVE_URL)  # già vecchi → nuovi
 
     cache = load_cache()
-    cached = {a["url"]: a for a in cache.get("items", [])}
-    new_articles = []
+    cached_by_url = {it.get("url"): it for it in cache.get("items", [])}
 
-    ordered_links = fetch_article_dates(blog_links)
-
+    added = 0
     for link in ordered_links:
-        art = parse_article(link)
-        if not art or not art.get("title"):
-            continue
-
-        cached_art = cached.get(link)
-        if not cached_art:
-            logger.info("[Processor] NUOVO articolo: %s", link)
-            new_articles.append(art)
+        if link in cached_by_url:
+            # check aggiornamento via modified
+            try:
+                art = parse_article(link)
+                old_mod = cached_by_url[link].get("modified")
+                new_mod = art.get("modified")
+                if new_mod and old_mod and new_mod != old_mod:
+                    logger.info("[Processor] AGGIORNATO: %s", link)
+                    cached_by_url[link] = art
+                    added += 1
+            except Exception as e:
+                logger.warning("Skip aggiornamento %s: %s", link, e)
         else:
-            old_mod = cached_art.get("modified")
-            new_mod = art.get("modified")
-            if new_mod and old_mod and new_mod != old_mod:
-                logger.info("[Processor] Articolo AGGIORNATO: %s", link)
-                cached[link] = art
-                new_articles.append(art)
+            # nuovo
+            try:
+                art = parse_article(link)
+                if art and art.get("title"):
+                    logger.info("[Processor] NUOVO: %s — %s", art["url"], art.get("published") or art.get("modified"))
+                    cached_by_url[link] = art
+                    added += 1
+            except Exception as e:
+                logger.warning("Skip nuovo %s: %s", link, e)
 
-        if len(new_articles) >= MAX_BATCH:
+        if added >= MAX_BATCH:
             break
 
-    if not new_articles:
-        logger.info("Nessun nuovo articolo da aggiungere.")
+    if added == 0:
+        logger.info("[Processor] Nessun nuovo/aggiornato articolo (batch=%s).", MAX_BATCH)
         return
 
-    for art in new_articles:
-        cached[art["url"]] = art
-
-    cache["items"] = list(cached.values())
+    cache["items"] = list(cached_by_url.values())
     save_cache(cache)
-
-    logger.info(
-        "[Processor] Aggiunti/aggiornati %s articoli (totale %s).",
-        len(new_articles),
-        len(cache["items"])
-    )
