@@ -1,126 +1,165 @@
 import os
-import logging
+import json
 import threading
 import time
-from flask import Flask, jsonify, make_response
-from datetime import datetime, timezone
-
-from article_processor import generate_items, load_cache
+import logging
+import requests
+from flask import Flask, Response, jsonify, send_file
+from article_processor import generate_items
 from rss_generator import build_rss
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("artbooms-rss")
+CACHE_PATH = "cache/articles_cache.json"
+RAW_CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/123.0.0.0 Safari/537.36"
+)
+
+# Frequenze e limiti
+POPULATE_INTERVAL = 120      # ogni 2 minuti
+FORCE_REBUILD_AFTER = 900    # rigenera feed ogni 15 minuti
+MAX_BATCH = 3                # numero massimo articoli caricati per ciclo
 
 app = Flask(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-FEED_CACHE = {"xml": None, "headers": None, "last_build": None}
-META = {
-    "title": "ARTBOOMS - Archivio completo",
-    "description": "Tutti gli articoli di Artbooms con aggiornamenti automatici",
-    "language": "it-IT",
-    "self_url": "https://artbooms-rss.onrender.com/rss",
-}
+FEED_SELF_URL = "https://artbooms-rss.onrender.com/rss"  # URL canonico del feed
 
-
-def _items_from_cache_sorted():
-    cache = load_cache() or {}
-    items = list((cache.get("items") or {}).values())
-
-    from dateutil import parser as _p
-    def _to_dt(s):
-        try:
-            if not s:
-                return datetime(1970, 1, 1, tzinfo=timezone.utc)
-            dt = _p.parse(s)
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
-            return dt
-        except Exception:
-            return datetime(1970, 1, 1, tzinfo=timezone.utc)
-
-    items.sort(key=lambda x: max(_to_dt(x.get("modified")), _to_dt(x.get("published"))), reverse=True)
-    return items
-
-
-def _rebuild_feed_from_disk_cache():
-    items = _items_from_cache_sorted()
-    xml_bytes, headers = build_rss(items, META)
-    FEED_CACHE["xml"] = xml_bytes
-    FEED_CACHE["headers"] = headers
-    FEED_CACHE["last_build"] = datetime.utcnow().replace(tzinfo=timezone.utc)
-    logger.info("Feed ricostruito da cache: %d articoli", len(items))
-
-
-@app.get("/rss")
-def rss():
-    if FEED_CACHE["xml"] is None:
-        _rebuild_feed_from_disk_cache()
-    resp = make_response(FEED_CACHE["xml"])
-    for h in ("ETag", "Last-Modified", "Cache-Control", "Content-Type"):
-        if FEED_CACHE["headers"] and FEED_CACHE["headers"].get(h):
-            resp.headers[h] = FEED_CACHE["headers"][h]
-    resp.headers.setdefault("Content-Type", "application/rss+xml; charset=utf-8")
-    return resp
-
-
-@app.get("/refresh")
-def refresh():
+# ============================================================
+# Cache persistente
+# ============================================================
+def bootstrap_cache():
+    """Scarica o inizializza la cache locale."""
+    os.makedirs("cache", exist_ok=True)
+    if os.path.exists(CACHE_PATH) and os.path.getsize(CACHE_PATH) > 10:
+        logging.info("Cache locale trovata, salto bootstrap.")
+        return
     try:
-        generate_items(force=False)
-        _rebuild_feed_from_disk_cache()
-        return jsonify({"status": "ok", "last_build": FEED_CACHE["last_build"].isoformat()})
+        logging.info("Scarico cache persistente da GitHub...")
+        r = requests.get(RAW_CACHE_URL, headers={"User-Agent": USER_AGENT}, timeout=15)
+        if r.ok and r.text.strip() not in ("", "{}", "null"):
+            with open(CACHE_PATH, "w", encoding="utf-8") as f:
+                f.write(r.text)
+            logging.info("Cache scaricata da GitHub (%s bytes).", len(r.text))
+        else:
+            with open(CACHE_PATH, "w", encoding="utf-8") as f:
+                json.dump({"items": []}, f)
     except Exception as e:
-        logger.exception("Errore refresh")
-        return jsonify({"status": "error", "detail": str(e)}), 500
+        logging.error("Errore bootstrap cache: %s", e)
+        if not os.path.exists(CACHE_PATH):
+            with open(CACHE_PATH, "w", encoding="utf-8") as f:
+                json.dump({"items": []}, f)
 
+# ============================================================
+# Feed RSS
+# ============================================================
+def rebuild_feed():
+    """Ricostruisce il feed RSS dal contenuto della cache."""
+    try:
+        with open(CACHE_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        logging.error("Errore caricando la cache: %s", e)
+        data = {"items": []}
 
-@app.get("/debug/cache")
-def debug_cache():
-    cache = load_cache() or {}
-    return jsonify({
-        "items_count": len((cache.get("items") or {}).keys()),
-        "cursor": cache.get("cursor", 0),
-        "last_scan": cache.get("last_scan"),
-        "feed_last_build": FEED_CACHE["last_build"].isoformat() if FEED_CACHE["last_build"] else None,
-    })
+    items = [
+        i for i in data.get("items", [])
+        if isinstance(i, dict) and "/blog/" in (i.get("url") or "")
+    ]
 
+    if not items:
+        logging.warning("Cache vuota: feed vuoto.")
+        return
 
+    # Ordina articoli per data più recente
+    def sort_key(a):
+        return a.get("modified") or a.get("published") or ""
+    items_sorted = sorted(items, key=sort_key, reverse=True)
+
+    meta = {
+        "title": "Artbooms RSS Feed",
+        "link": "https://www.artbooms.com",
+        "description": "Ultimi articoli da Artbooms",
+        "language": "it-IT",
+        "self": FEED_SELF_URL
+    }
+
+    try:
+        rss_xml = build_rss(items_sorted, meta)
+        if isinstance(rss_xml, tuple):
+            rss_xml = rss_xml[0]
+        if isinstance(rss_xml, str):
+            rss_xml = rss_xml.encode("utf-8")
+        with open("feed.xml", "wb") as f:
+            f.write(rss_xml)
+        logging.info("Feed ricostruito da cache: %s articoli", len(items_sorted))
+    except Exception as e:
+        logging.error("Errore generazione feed: %s", e)
+
+# ============================================================
+# Thread di aggiornamento automatico
+# ============================================================
 def background_populator():
-    """Thread che aggiorna la cache ogni minuto senza bloccare Flask"""
+    """Aggiorna periodicamente la cache e il feed RSS."""
+    last_rebuild = 0
     while True:
         try:
-            generate_items(force=False)
-            _rebuild_feed_from_disk_cache()
-            logger.info("Cache aggiornata automaticamente")
+            generate_items()
+            now = time.time()
+            if now - last_rebuild > FORCE_REBUILD_AFTER:
+                rebuild_feed()
+                last_rebuild = now
         except Exception as e:
-            logger.exception("Errore background_populator: %s", e)
-        time.sleep(60)
+            logging.error("Errore popolatore: %s", e)
+        time.sleep(POPULATE_INTERVAL)
 
+# ============================================================
+# Endpoint Flask
+# ============================================================
+@app.route("/rss")
+@app.route("/rss.xml")
+def rss():
+    """Serve il feed RSS XML."""
+    feed_path = os.path.join(os.getcwd(), "feed.xml")
+    if not os.path.exists(feed_path) or os.path.getsize(feed_path) < 100:
+        rebuild_feed()
+    if not os.path.exists(feed_path):
+        return jsonify({"error": "feed.xml non trovato"}), 404
+    with open(feed_path, "rb") as f:
+        return Response(f.read(), mimetype="application/rss+xml")
 
-def start_background_thread_once():
-    """Evita più thread se Flask/Gunicorn crea più processi"""
-    if not getattr(app, "_thread_started", False):
-        app._thread_started = True
-        t = threading.Thread(target=background_populator, daemon=True)
-        t.start()
-        logger.info("Thread di popolamento automatico avviato in background")
+@app.route("/debug/cache")
+def debug_cache():
+    """Mostra quanti articoli sono presenti in cache."""
+    if not os.path.exists(CACHE_PATH):
+        return jsonify({"articles_in_cache": 0})
+    try:
+        with open(CACHE_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        count = len([i for i in data.get("items", []) if "/blog/" in (i.get("url") or "")])
+    except Exception:
+        count = 0
+    return jsonify({"articles_in_cache": count})
 
+@app.route("/cache/download")
+def cache_download():
+    return send_file(CACHE_PATH, mimetype="application/json")
 
-@app.before_request
-def ensure_background_thread():
-    """Avvia il thread al primo accesso, se non già attivo"""
-    start_background_thread_once()
-
-
-@app.get("/healthz")
+@app.route("/healthz")
 def healthz():
-    return jsonify({
-        "ok": True,
-        "last_build": FEED_CACHE["last_build"].isoformat() if FEED_CACHE["last_build"] else None
-    })
+    return jsonify({"ok": True, "service": "artbooms-rss"})
 
+# ============================================================
+# Avvio
+# ============================================================
+bootstrap_cache()
+rebuild_feed()
+
+if not any(t.name == "BackgroundPopulator" for t in threading.enumerate()):
+    t = threading.Thread(target=background_populator, daemon=True, name="BackgroundPopulator")
+    t.start()
+    logging.info("Thread di popolamento avviato nel processo PID %s", os.getpid())
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", "5000"))
-    start_background_thread_once()
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))
