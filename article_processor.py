@@ -16,7 +16,7 @@ logger = logging.getLogger("article_processor")
 ARCHIVE_URL = os.environ.get("ARCHIVE_URL", "https://www.artbooms.com/archivio-completo")
 BASE_URL = os.environ.get("BASE_URL", "https://www.artbooms.com")
 CACHE_PATH = os.environ.get("CACHE_PATH", "articles_cache.json")
-MAX_BATCH = int(os.environ.get("MAX_BATCH", "1"))   # quanti link processare per run (default 1 = uno per volta)
+MAX_BATCH = int(os.environ.get("MAX_BATCH", "3"))   # quanti link processare per run (default 3 = più rapido)
 REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY", "0.8"))  # delay tra richieste per non sovraccaricare
 
 def _now_iso():
@@ -92,10 +92,9 @@ def generate_items(force=False):
     """
     Main: ritorna (items_list, meta)
     - se force=True -> processa tutta la lista di link (slow) (usalo una tantum per popolare cache)
-    - altrimenti processa il prossimo batch partendo dal cursor (default MAX_BATCH=1)
+    - altrimenti processa il prossimo batch partendo dal cursor (default MAX_BATCH=3)
     """
     cache = _load_cache()
-
     session = requests.Session()
     links = _scan_archive(session=session)
     links_hash = _hash_links(links)
@@ -104,41 +103,41 @@ def generate_items(force=False):
     if cache.get("links_hash") != links_hash:
         cache["links_hash"] = links_hash
         cache["last_scan"] = _now_iso()
-        # se era la prima volta, assicurati cursor a 0
-        if "cursor" not in cache:
-            cache["cursor"] = 0
+        cache["cursor"] = 0  # reset cursore per sicurezza
 
     # decide ordine: preferisco processare dal più vecchio al più nuovo.
-    # Se l'archivio è ordinato newest->oldest, invertiamo.
-    # Heuristics: se il primo link ha data già in cache e la prima data è più recente della ultima,
-    # supponiamo che la pagina sia newest-first -> invertire.
     try:
         if links:
             first = cache.get("items", {}).get(links[0])
             last = cache.get("items", {}).get(links[-1])
-            # se abbiamo date nel cache possiamo inferire l'ordine
             if first and last and first.get("published") and last.get("published"):
-                # se first published > last published -> archive lists newest first -> invertiamo
                 from dateutil import parser as _p
                 fdt = _p.parse(first["published"])
                 ldt = _p.parse(last["published"])
                 if fdt > ldt:
                     links = list(reversed(links))
-            else:
-                # fallback: invertiamo solo se n>50 (presuppongo archivio most recent first)
-                if len(links) > 50:
-                    links = list(reversed(links))
+            elif len(links) > 50:
+                links = list(reversed(links))
     except Exception:
         pass
 
-    # selezione batch
-    if force:
-        batch = links[:]  # processa tutto (attenzione: slow)
-        cache["cursor"] = 0
+    # patch: forza un batch se il cursore non avanza mai
+    cursor = cache.get("cursor", 0) or 0
+    if force or not cache.get("items"):
+        batch = links[:MAX_BATCH]
+        cache["cursor"] = len(batch)
     else:
-        batch = _select_batch(links, cache)
+        end = min(cursor + MAX_BATCH, len(links))
+        batch = links[cursor:end]
+        cache["cursor"] = end % len(links)
 
-    # process sequentialmente per non sovraccaricare
+    if not batch:
+        logger.info("Nessun nuovo articolo da processare (cursor=%d)", cache["cursor"])
+        _save_cache(cache)
+        return list(cache.get("items", {}).values()), {}
+
+    logger.info("Elaboro batch di %d articoli (cursor=%d)", len(batch), cache["cursor"])
+
     for url in batch:
         existing = cache.get("items", {}).get(url)
         try:
@@ -149,16 +148,9 @@ def generate_items(force=False):
         if new_item:
             cache.setdefault("items", {})[url] = new_item
             logger.info("Processed %s (changed=%s)", url, changed)
-        # delay prudenziale
         time.sleep(REQUEST_DELAY)
 
-    # aggiorno cursor
-    if links:
-        cursor = cache.get("cursor", 0) or 0
-        cursor = (cursor + len(batch)) % max(1, len(links))
-        cache["cursor"] = cursor
-
-    # salva cache
+    # salva e aggiorna cursor
     _save_cache(cache)
 
     # prepara items_list ordinata (più nuova prima)
@@ -169,7 +161,7 @@ def generate_items(force=False):
                 return datetime(1970,1,1, tzinfo=timezone.utc)
             dt = _p.parse(s)
             if dt.tzinfo is None:
-                return dt.replace(tzinfo=timezone.utc)
+                dt = dt.replace(tzinfo=timezone.utc)
             return dt
         except Exception:
             return datetime(1970,1,1, tzinfo=timezone.utc)
@@ -185,6 +177,8 @@ def generate_items(force=False):
         "build_time": datetime.utcnow().replace(tzinfo=timezone.utc)
     }
 
+    logger.info("Feed ricostruito da cache: %d articoli", len(items_list))
+    logger.info("✅ Cache aggiornata, totale %d articoli", len(items_list))
     return items_list, meta
 
 def load_cache():
