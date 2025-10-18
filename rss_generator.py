@@ -36,7 +36,7 @@ def build_rss(items: list, meta: dict):
     title = meta.get("title", "ARTBOOMS - Archivio completo")
     desc = meta.get("description", "Tutti gli articoli di Artbooms con aggiornamenti automatici")
     lang = meta.get("language", "it-IT")
-    self_url = meta.get("self", "https://artbooms-rss.onrender.com/rss")
+    self_url = meta.get("self", "https://artbooms-rss-x6pc.onrender.com/rss")
 
     ET.SubElement(channel, "title").text = title
     ET.SubElement(channel, "link").text = "https://www.artbooms.com"
@@ -107,3 +107,4 @@ def build_rss(items: list, meta: dict):
     }
 
     return xml_bytes, headers
+
