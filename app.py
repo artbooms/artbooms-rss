@@ -24,7 +24,7 @@ MAX_BATCH = 3                # numero massimo articoli caricati per ciclo
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-FEED_SELF_URL = "https://artbooms-rss.onrender.com/rss"  # URL canonico del feed
+FEED_SELF_URL = "https://artbooms-rss-x6pc.onrender.com/"  # URL canonico del feed
 
 # ============================================================
 # Cache persistente
@@ -163,3 +163,4 @@ if not any(t.name == "BackgroundPopulator" for t in threading.enumerate()):
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))
+
