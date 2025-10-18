@@ -9,7 +9,7 @@ from article_processor import generate_items
 from rss_generator import build_rss
 
 CACHE_PATH = "cache/articles_cache.json"
-RAW_CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
+RAW_CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss-v2/main/cache/articles_cache.json"
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -24,7 +24,8 @@ MAX_BATCH = 3                # numero massimo articoli caricati per ciclo
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-FEED_SELF_URL = "https://artbooms-rss-x6pc.onrender.com/"  # URL canonico del feed
+# 🔹 URL effettivo su Render
+FEED_SELF_URL = "https://artbooms-rss-x6pc.onrender.com/rss"
 
 # ============================================================
 # Cache persistente
@@ -150,6 +151,15 @@ def cache_download():
 def healthz():
     return jsonify({"ok": True, "service": "artbooms-rss"})
 
+@app.route("/")
+def home():
+    """Homepage di test."""
+    return Response(
+        "<h2>✅ Artbooms RSS è attivo</h2>"
+        "<p>Feed: <a href='/rss'>/rss</a> — Debug: <a href='/debug/cache'>/debug/cache</a></p>",
+        mimetype="text/html"
+    )
+
 # ============================================================
 # Avvio
 # ============================================================
@@ -163,4 +173,3 @@ if not any(t.name == "BackgroundPopulator" for t in threading.enumerate()):
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))
-
