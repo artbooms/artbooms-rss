@@ -1,4 +1,4 @@
-import hashlib
+ import hashlib
 from datetime import datetime, timezone
 from email.utils import format_datetime
 import logging
@@ -6,7 +6,9 @@ import xml.etree.ElementTree as ET
 
 logger = logging.getLogger("rss_generator")
 
+
 def _as_dt(s):
+    """Converte stringhe ISO o date in oggetti datetime (UTC)."""
     if not s:
         return None
     if isinstance(s, datetime):
@@ -19,6 +21,7 @@ def _as_dt(s):
         return dt
     except Exception:
         return None
+
 
 def build_rss(items: list, meta: dict):
     """
@@ -75,25 +78,31 @@ def build_rss(items: list, meta: dict):
             desc = title
         ET.SubElement(item, "description").text = desc
 
+        # Autore compatibile con Google News
         if author:
             ET.SubElement(item, "{http://purl.org/dc/elements/1.1/}creator").text = author
 
+        # Date
         if pub:
             ET.SubElement(item, "pubDate").text = format_datetime(pub)
-
         if mod:
             ET.SubElement(item, "{http://purl.org/dc/terms/}modified").text = mod.astimezone(timezone.utc).isoformat()
             if (last_modified is None) or (mod > last_modified):
                 last_modified = mod
+        elif pub and last_modified is None:
+            last_modified = pub
 
+        # Immagine (media:thumbnail)
         if image:
             thumb = ET.SubElement(item, "{http://search.yahoo.com/mrss/}thumbnail")
             thumb.set("url", image)
 
+        # Fonte
         source = ET.SubElement(item, "source")
         source.set("url", "https://www.artbooms.com")
         source.text = "ARTBOOMS"
 
+    # Ultima data di aggiornamento del feed
     build_time = meta.get("build_time") or datetime.utcnow().replace(tzinfo=timezone.utc)
     ET.SubElement(channel, "lastBuildDate").text = format_datetime(last_modified or build_time)
 
@@ -107,4 +116,3 @@ def build_rss(items: list, meta: dict):
     }
 
     return xml_bytes, headers
-
