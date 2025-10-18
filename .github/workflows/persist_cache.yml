@@ -16,17 +16,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 👇 Nuovo step: sveglia Render prima di scaricare la cache
+      # 👇 Corretto solo l'URL doppio
       - name: Wake up Render instance
         run: |
           echo "Ping per riattivare Render..."
-          curl -fsSL https://https://artbooms-rss-x6pc.onrender.com/rss/healthz || true
+          curl -fsSL https://artbooms-rss-x6pc.onrender.com/healthz || true
           sleep 30
 
       - name: Download cache from Render
         run: |
           mkdir -p cache
-          curl -fsSL https://artbooms-rss.onrender.com/cache/download -o cache/articles_cache.json
+          curl -fsSL https://artbooms-rss-x6pc.onrender.com/cache/download -o cache/articles_cache.json
           test -s cache/articles_cache.json || (echo "Cache vuota, skip" && exit 0)
 
       - name: Commit & push if changed
@@ -42,7 +42,7 @@ jobs:
           if ! git diff --quiet -- cache/articles_cache.json; then
             git add cache/articles_cache.json
             git commit -m "Persist cache $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-            git push origin main --force-with-lease
+            git push origin main
           else
-            echo "Nessuna modifica nella cache"
+            echo "Nessun cambiamento nella cache"
           fi
