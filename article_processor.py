@@ -15,7 +15,7 @@ logger = logging.getLogger("article_processor")
 # Configurabili via env
 ARCHIVE_URL = os.environ.get("ARCHIVE_URL", "https://www.artbooms.com/archivio-completo")
 BASE_URL = os.environ.get("BASE_URL", "https://www.artbooms.com")
-CACHE_PATH = os.environ.get("CACHE_PATH", "articles_cache.json")
+CACHE_PATH = os.environ.get("CACHE_PATH", "cache/articles_cache.json")
 MAX_BATCH = int(os.environ.get("MAX_BATCH", "3"))   # quanti link processare per run (default 3 = più rapido)
 REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY", "0.8"))  # delay tra richieste per non sovraccaricare
 
