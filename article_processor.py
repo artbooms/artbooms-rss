@@ -10,10 +10,16 @@ from article_parser import extract_article_links_from_archive_html, parse_articl
 
 logger = logging.getLogger("article_processor")
 
-# Config base
+# ============================================================
+# Config base (✅ percorso coerente con app.py)
+# ============================================================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CACHE_DIR = os.path.join(BASE_DIR, "cache")
+os.makedirs(CACHE_DIR, exist_ok=True)
+
 ARCHIVE_URL = os.environ.get("ARCHIVE_URL", "https://www.artbooms.com/archivio-completo")
 BASE_URL = os.environ.get("BASE_URL", "https://www.artbooms.com")
-CACHE_PATH = os.environ.get("CACHE_PATH", "articles_cache.json")
+CACHE_PATH = os.path.join(CACHE_DIR, "articles_cache.json")  # 👈 ora è lo stesso file usato da app.py
 MAX_BATCH = int(os.environ.get("MAX_BATCH", "3"))
 REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY", "0.8"))
 
