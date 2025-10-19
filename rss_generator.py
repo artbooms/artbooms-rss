@@ -1,112 +1,63 @@
-import hashlib
-from datetime import datetime, timezone
-from email.utils import format_datetime
 import logging
-import xml.etree.ElementTree as ET
+from datetime import datetime, timezone
+from xml.sax.saxutils import escape
 
 logger = logging.getLogger("rss_generator")
 
-def _as_dt(s):
-    if not s:
-        return None
-    if isinstance(s, datetime):
-        return s
-    try:
-        from dateutil import parser as _p
-        dt = _p.parse(s)
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt
-    except Exception:
-        return None
-
 def build_rss(items: list, meta: dict):
-    """
-    Crea un feed RSS 2.0 con namespace media, atom e dcterms,
-    compatibile con Google News e lettori RSS.
-    """
-    ET.register_namespace("media", "http://search.yahoo.com/mrss/")
-    ET.register_namespace("atom", "http://www.w3.org/2005/Atom")
-    ET.register_namespace("dcterms", "http://purl.org/dc/terms/")
-    ET.register_namespace("dc", "http://purl.org/dc/elements/1.1/")
+    """Costruisce il feed RSS 2.0 da una lista di articoli."""
+    try:
+        n = len(items)
+        logger.info("🧩 Costruzione RSS: ricevuti %d articoli.", n)
+        if n == 0:
+            logger.warning("⚠️ Nessun articolo passato a build_rss — feed vuoto.")
+    except Exception as e:
+        logger.exception("Errore conteggio articoli: %s", e)
+        items = []
+        n = 0
 
-    rss = ET.Element("rss", version="2.0")
-    channel = ET.SubElement(rss, "channel")
+    feed_title = escape(meta.get("title", "ARTBOOMS – Archivio completo"))
+    feed_description = escape(meta.get("description", "Tutti gli articoli di Artbooms"))
+    feed_language = meta.get("language", "it-IT")
+    build_time = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
 
-    title = meta.get("title", "ARTBOOMS - Archivio completo")
-    desc = meta.get("description", "Tutti gli articoli di Artbooms con aggiornamenti automatici")
-    lang = meta.get("language", "it-IT")
-    self_url = meta.get("self", "https://artbooms-rss-x6pc.onrender.com/rss")
-
-    ET.SubElement(channel, "title").text = title
-    ET.SubElement(channel, "link").text = "https://www.artbooms.com"
-    ET.SubElement(channel, "description").text = desc
-    ET.SubElement(channel, "language").text = lang
-
-    img = ET.SubElement(channel, "image")
-    ET.SubElement(img, "url").text = "https://www.artbooms.com/favicon.ico"
-    ET.SubElement(img, "title").text = "ARTBOOMS"
-    ET.SubElement(img, "link").text = "https://www.artbooms.com"
-
-    atom_link = ET.SubElement(channel, "{http://www.w3.org/2005/Atom}link")
-    atom_link.set("href", self_url)
-    atom_link.set("rel", "self")
-    atom_link.set("type", "application/rss+xml")
-
-    last_modified = None
-
+    rss_items = []
     for it in items:
+        # se it non è dict lo ignora
         if not isinstance(it, dict):
+            logger.warning("Elemento RSS non valido: %s", type(it))
             continue
+        title = escape(it.get("title") or "")
+        link = escape(it.get("url") or "")
+        desc = escape(it.get("description") or "")
+        author = escape(it.get("author") or "")
+        pub = it.get("published") or build_time
+        guid = link or title
 
-        item = ET.SubElement(channel, "item")
-        title = it.get("title") or ""
-        url = it.get("url") or ""
-        desc = it.get("description") or ""
-        author = it.get("author") or None
-        pub = _as_dt(it.get("published"))
-        mod = _as_dt(it.get("modified"))
-        image = it.get("image")
+        rss_items.append(
+            f"<item>"
+            f"<title>{title}</title>"
+            f"<link>{link}</link>"
+            f"<description>{desc}</description>"
+            f"<dc:creator>{author}</dc:creator>"
+            f"<pubDate>{pub}</pubDate>"
+            f"<guid>{guid}</guid>"
+            f"</item>"
+        )
 
-        ET.SubElement(item, "title").text = title
-        ET.SubElement(item, "link").text = url
-        guid = ET.SubElement(item, "guid")
-        guid.text = url
-        guid.set("isPermaLink", "true")
+    body = "\n".join(rss_items)
+    rss = (
+        f'<?xml version="1.0" encoding="UTF-8"?>\n'
+        f'<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">\n'
+        f'<channel>\n'
+        f'<title>{feed_title}</title>\n'
+        f'<description>{feed_description}</description>\n'
+        f'<language>{feed_language}</language>\n'
+        f'<lastBuildDate>{build_time}</lastBuildDate>\n'
+        f'{body}\n'
+        f'</channel>\n'
+        f'</rss>'
+    )
 
-        if not desc:
-            desc = title
-        ET.SubElement(item, "description").text = desc
-
-        if author:
-            ET.SubElement(item, "{http://purl.org/dc/elements/1.1/}creator").text = author
-
-        if pub:
-            ET.SubElement(item, "pubDate").text = format_datetime(pub)
-
-        if mod:
-            ET.SubElement(item, "{http://purl.org/dc/terms/}modified").text = mod.astimezone(timezone.utc).isoformat()
-            if (last_modified is None) or (mod > last_modified):
-                last_modified = mod
-
-        if image:
-            thumb = ET.SubElement(item, "{http://search.yahoo.com/mrss/}thumbnail")
-            thumb.set("url", image)
-
-        source = ET.SubElement(item, "source")
-        source.set("url", "https://www.artbooms.com")
-        source.text = "ARTBOOMS"
-
-    build_time = meta.get("build_time") or datetime.utcnow().replace(tzinfo=timezone.utc)
-    ET.SubElement(channel, "lastBuildDate").text = format_datetime(last_modified or build_time)
-
-    xml_bytes = ET.tostring(rss, encoding="utf-8", xml_declaration=True)
-    etag = hashlib.sha256(xml_bytes).hexdigest()
-    headers = {
-        "ETag": f'W/"{etag}"',
-        "Last-Modified": format_datetime(last_modified or build_time),
-        "Cache-Control": "max-age=300",
-        "Content-Type": "application/rss+xml; charset=utf-8",
-    }
-
-    return xml_bytes, headers
+    logger.info("✅ RSS costruito con %d elementi effettivi.", len(rss_items))
+    return rss
