@@ -1,5 +1,5 @@
 import re
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 from dateutil import parser as dateparser
 import requests
@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 logger = logging.getLogger("article_parser")
 
 # ---------------------------------------------------------------------
-# Parsing date "Mon DD, YYYY" (anno, mese, giorno) con fallback robusto
+# Parsing date tipo "Jul 29, 2025"  → datetime (UTC)
 # ---------------------------------------------------------------------
 MONTHS_EN_SHORT = {
     "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
@@ -17,11 +17,12 @@ MONTHS_EN_SHORT = {
 }
 
 def _parse_date(s: str):
-    """Parsa 'Jun 24, 2025' o ISO; restituisce datetime con tz UTC, oppure None."""
+    """Parsa 'Jun 24, 2025' o ISO; restituisce datetime UTC, oppure None."""
     if not s:
         return None
     s = s.strip()
-    # 1) prova con dateutil
+
+    # 1️⃣ prova con dateutil
     try:
         dt = dateparser.parse(s)
         if dt:
@@ -30,7 +31,8 @@ def _parse_date(s: str):
             return dt
     except Exception:
         pass
-    # 2) fallback su pattern testuale "Mon DD, YYYY"
+
+    # 2️⃣ fallback su pattern testuale "Mon DD, YYYY"
     m = re.match(r"^([A-Za-z]{3})\s+(\d{1,2}),\s*(\d{4})$", s)
     if m:
         mon, day, year = m.groups()
@@ -43,7 +45,7 @@ def _parse_date(s: str):
     return None
 
 # ---------------------------------------------------------------------
-# Fetch HTML (user-agent “neutro”)
+# Fetch HTML con User-Agent neutro
 # ---------------------------------------------------------------------
 def fetch_html(url, session=None, timeout=20):
     s = session or requests.Session()
@@ -59,7 +61,7 @@ def fetch_html(url, session=None, timeout=20):
     return r.text
 
 # ---------------------------------------------------------------------
-# Helper: primo <meta ... content="..."> che combacia con attrs della lista
+# Helper: trova il primo meta con un dato attributo
 # ---------------------------------------------------------------------
 def _first_meta(soup, attrs_list):
     for attrs in attrs_list:
@@ -75,10 +77,8 @@ def _first_meta(soup, attrs_list):
 # ---------------------------------------------------------------------
 def extract_article_links_from_archive_html(html: str, base_url: str):
     """
-    Dalla pagina archivio, estrae <li class="archive-item archive-item--show-date">
-    e costruisce (data, url) in base al testo data (es. 'Feb 10, 2016').
-    Filtra solo URL '/blog/...', esclude '/tag/' e query '?month='.
-    Ordina per (anno, mese, giorno) crescente: dal più vecchio al più nuovo.
+    Dalla pagina archivio, estrae tutti gli articoli <li class="archive-item archive-item--show-date">.
+    Usa la data testuale ('Jul 29, 2025') per ordinarli dal più vecchio al più nuovo.
     """
     soup = BeautifulSoup(html, "lxml")
     items = soup.select("li.archive-item.archive-item--show-date")
@@ -87,7 +87,6 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
     seen = set()
 
     for item in items:
-        # data: prendi il primo span con classe compatibile
         date_tag = item.find("span", class_=re.compile(r"archive-item-date"))
         link_tag = item.find("a", href=True)
         if not date_tag or not link_tag:
@@ -98,34 +97,27 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
         if not dt:
             continue
 
-        # URL assoluto
         href = link_tag["href"].strip()
         abs_url = urljoin(base_url, href)
 
-        # Filtri: solo /blog/, niente /tag/ e niente query (?...)
-        if "/blog/" not in abs_url:
-            continue
-        if "/tag/" in abs_url:
-            continue
-        if "?" in abs_url:
-            # esclude categorie mensili tipo ?month=...
+        # Filtra solo articoli veri
+        if "/blog/" not in abs_url or "/tag/" in abs_url or "?" in abs_url:
             continue
 
-        # normalizza https, rimuovi trailing slash
         abs_url = abs_url.replace("http://", "https://").rstrip("/")
 
         if abs_url in seen:
             continue
         seen.add(abs_url)
 
-        # opzionale: limita agli anni >= 2016 (come da tuo archivio)
+        # Limita ad anni dal 2016 in poi
         if dt.year < 2016:
             continue
 
         links_with_dates.append((dt, abs_url))
 
-    # Ordina: (anno, mese, giorno) crescente
-    links_with_dates.sort(key=lambda x: x[0])
+    # Ordina: anno → mese → giorno (dal più vecchio al più recente)
+    links_with_dates.sort(key=lambda x: (x[0].year, x[0].month, x[0].day))
     links = [u for _, u in links_with_dates]
 
     logger.info("Trovati %s articoli nell’archivio.", len(links))
@@ -133,18 +125,12 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
         logger.info("Primo articolo: %s — Ultimo: %s", links[0], links[-1])
     else:
         logger.warning("Nessun articolo trovato nell’archivio.")
-
     return links
 
 # ---------------------------------------------------------------------
-# Parsing di ogni articolo (usa SOLO itemprop che hai indicato)
+# Parsing di ogni articolo (solo itemprop indicati)
 # ---------------------------------------------------------------------
 def parse_article(url, html=None, session=None):
-    """
-    Ritorna un dict con chiavi:
-      url, title, description, author, published, modified, content_text, image
-    NB: 'author' sarà emesso come <dc:creator> dal generatore RSS.
-    """
     try:
         if html is None:
             html = fetch_html(url, session=session)
@@ -163,7 +149,6 @@ def parse_article(url, html=None, session=None):
 
     soup = BeautifulSoup(html, "lxml")
 
-    # Metadati strutturati (Squarespace)
     title = _first_meta(soup, [{"itemprop": "name"}])
     description = _first_meta(soup, [{"itemprop": "description"}])
     author = _first_meta(soup, [{"itemprop": "author"}])
@@ -172,15 +157,16 @@ def parse_article(url, html=None, session=None):
     image_url = _first_meta(soup, [{"itemprop": "thumbnailUrl"}])
     canonical = _first_meta(soup, [{"itemprop": "url"}])
 
-    # Fallback minimi
-    if not title:
-        ttag = soup.find("title")
-        title = ttag.get_text(strip=True) if ttag else url
+    # ✅ Fix: se manca itemprop:url, prendi <link rel="canonical">
+    if not canonical:
+        link_tag = soup.find("link", rel="canonical")
+        if link_tag and link_tag.get("href"):
+            canonical = link_tag["href"].strip()
 
     pub_dt = _parse_date(published)
     mod_dt = _parse_date(modified) or pub_dt
 
-    # Testo principale (fallback ragionevole)
+    # Contenuto testuale principale
     main = (
         soup.find("article")
         or soup.find("main")
@@ -188,11 +174,13 @@ def parse_article(url, html=None, session=None):
     )
     content_text = main.get_text(" ", strip=True) if main else soup.get_text(" ", strip=True)
 
+    logger.info("Parsed articolo: %s — titolo: %s", url, title)
+
     return {
         "url": (canonical or url).replace("http://", "https://").rstrip("/"),
         "title": title,
         "description": description or (content_text[:250] if content_text else ""),
-        "author": author,  # ← il feed lo renderà come <dc:creator>
+        "author": author,  # il feed lo trasformerà in <dc:creator>
         "published": pub_dt.isoformat() if pub_dt else None,
         "modified": mod_dt.isoformat() if mod_dt else None,
         "content_text": content_text,
