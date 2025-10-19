@@ -16,21 +16,21 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 👇 Step 1: riattiva l’istanza Render
+      # 1) Sveglia Render (piano free)
       - name: Wake up Render instance
         run: |
           echo "Ping per riattivare Render..."
           curl -fsSL https://artbooms-rss-x6pc.onrender.com/healthz || true
           sleep 30
 
-      # 👇 Step 2: scarica la cache da Render
+      # 2) Scarica la cache dall'istanza online
       - name: Download cache from Render
         run: |
           mkdir -p cache
           curl -fsSL https://artbooms-rss-x6pc.onrender.com/cache/download -o cache/articles_cache.json
           test -s cache/articles_cache.json || (echo "Cache vuota, skip" && exit 0)
 
-      # 👇 Step 3: correggi automaticamente la struttura della cache se serve
+      # 3) FIX: se items è una LISTA, avvolgila in {items:{...}} per evitare l'errore .get()
       - name: Fix cache structure if needed
         run: |
           echo "Controllo struttura cache..."
@@ -38,9 +38,21 @@ jobs:
             echo "Fix: avvolgo lista in oggetto {items: [...]}."
             mv cache/articles_cache.json cache/articles_cache.tmp
             jq '{items: ., cursor: 0, last_scan: null, links_hash: null}' cache/articles_cache.tmp > cache/articles_cache.json
+          elif jq -e '.items | type=="array"' cache/articles_cache.json >/dev/null; then
+            echo "Fix: converto items[] (lista) in dizionario keyed per URL."
+            mv cache/articles_cache.json cache/articles_cache.tmp
+            jq '.
+                | .items = ( .items
+                    | map(select(type=="object" and .url != null))
+                    | map({key: .url, value: .})
+                    | from_entries
+                  )
+              ' cache/articles_cache.tmp > cache/articles_cache.json
+          else
+            echo "Struttura cache OK."
           fi
 
-      # 👇 Step 4: committa e invia le modifiche se la cache è cambiata
+      # 4) Commit & push solo se è cambiata
       - name: Commit & push if changed
         run: |
           git config user.name "rss-bot"
@@ -58,4 +70,3 @@ jobs:
           else
             echo "Nessun cambiamento nella cache"
           fi
-
