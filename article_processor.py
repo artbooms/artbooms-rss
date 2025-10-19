@@ -26,30 +26,7 @@ def _load_cache():
     if os.path.exists(CACHE_PATH):
         try:
             with open(CACHE_PATH, "r", encoding="utf-8") as f:
-                cache = json.load(f)
-
-            # --- PATCH MINIMA: se 'cache' o 'cache["items"]' è una LISTA, converti in dizionario keyed per URL ---
-            if isinstance(cache, list):
-                cache = {
-                    "items": {
-                        it.get("url"): it
-                        for it in cache
-                        if isinstance(it, dict) and it.get("url")
-                    },
-                    "cursor": 0,
-                    "last_scan": None,
-                    "links_hash": None,
-                }
-                logger.warning("Cache globale (list) convertita in oggetto con items-dict.")
-            elif isinstance(cache.get("items"), list):
-                cache["items"] = {
-                    it.get("url"): it
-                    for it in cache["items"]
-                    if isinstance(it, dict) and it.get("url")
-                }
-                logger.warning("Cache 'items' convertita automaticamente da lista a dizionario.")
-
-            return cache
+                return json.load(f)
         except Exception:
             logger.exception("Errore caricamento cache, rigenero")
     # struttura minima cache
@@ -133,24 +110,18 @@ def generate_items(force=False):
 
     # decide ordine: preferisco processare dal più vecchio al più nuovo.
     # Se l'archivio è ordinato newest->oldest, invertiamo.
-    # Heuristics: se il primo link ha data già in cache e la prima data è più recente della ultima,
-    # supponiamo che la pagina sia newest-first -> invertire.
     try:
         if links:
-            first = cache.get("items", {}).get(links[0])
-            last = cache.get("items", {}).get(links[-1])
-            # se abbiamo date nel cache possiamo inferire l'ordine
+            first = cache.get("items", {}).get(links[0]) if isinstance(cache.get("items"), dict) else None
+            last = cache.get("items", {}).get(links[-1]) if isinstance(cache.get("items"), dict) else None
             if first and last and first.get("published") and last.get("published"):
-                # se first published > last published -> archive lists newest first -> invertiamo
                 from dateutil import parser as _p
                 fdt = _p.parse(first["published"])
                 ldt = _p.parse(last["published"])
                 if fdt > ldt:
                     links = list(reversed(links))
-            else:
-                # fallback: invertiamo solo se n>50 (presuppongo archivio most recent first)
-                if len(links) > 50:
-                    links = list(reversed(links))
+            elif len(links) > 50:
+                links = list(reversed(links))
     except Exception:
         pass
 
@@ -160,6 +131,15 @@ def generate_items(force=False):
         cache["cursor"] = 0
     else:
         batch = _select_batch(links, cache)
+
+    # conversione di sicurezza per bug 'list' object has no attribute get
+    if isinstance(cache.get("items"), list):
+        logger.error("⚠️ cache['items'] è una LISTA, la converto in dizionario per sicurezza")
+        cache["items"] = {
+            it.get("url"): it
+            for it in cache["items"]
+            if isinstance(it, dict) and it.get("url")
+        }
 
     # process sequentialmente per non sovraccaricare
     for url in batch:
@@ -192,12 +172,12 @@ def generate_items(force=False):
                 return datetime(1970,1,1, tzinfo=timezone.utc)
             dt = _p.parse(s)
             if dt.tzinfo is None:
-                return dt.replace(tzinfo=timezone.utc)
+                dt = dt.replace(tzinfo=timezone.utc)
             return dt
         except Exception:
             return datetime(1970,1,1, tzinfo=timezone.utc)
 
-    items_list = list(cache.get("items", {}).values())
+    items_list = list(cache.get("items", {}).values()) if isinstance(cache.get("items"), dict) else []
     items_list.sort(key=lambda x: max(_to_dt(x.get("modified")), _to_dt(x.get("published"))), reverse=True)
 
     meta = {
