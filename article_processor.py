@@ -26,21 +26,16 @@ def _load_cache():
     if os.path.exists(CACHE_PATH):
         try:
             with open(CACHE_PATH, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                # 👇 Patch: se items è una lista, converti in dizionario
-                if isinstance(data, dict) and isinstance(data.get("items"), list):
-                    items_dict = {}
-                    for i, entry in enumerate(data["items"]):
-                        if isinstance(entry, dict):
-                            url = entry.get("url") or f"item_{i}"
-                            items_dict[url] = entry
-                    data["items"] = items_dict
-                # Aggiungi campi mancanti
-                if isinstance(data, dict):
-                    data.setdefault("cursor", 0)
-                    data.setdefault("last_scan", None)
-                    data.setdefault("links_hash", None)
-                return data
+                cache = json.load(f)
+            # 👇 Fix automatico se items è una lista (causa errore 'list' object has no attribute get')
+            if isinstance(cache.get("items"), list):
+                cache["items"] = {
+                    it.get("url"): it
+                    for it in cache["items"]
+                    if isinstance(it, dict) and it.get("url")
+                }
+                logger.warning("⚠️ Cache convertita automaticamente da lista a dizionario.")
+            return cache
         except Exception:
             logger.exception("Errore caricamento cache, rigenero")
     # struttura minima cache
@@ -65,6 +60,9 @@ def _scan_archive(session=None):
     return links
 
 def _process_one(url, existing_item=None, session=None):
+    """
+    Scarica e parse l'articolo, ritorna (item_dict, changed_bool)
+    """
     s = session or requests.Session()
     try:
         item = parse_article(url, session=s)
@@ -72,6 +70,7 @@ def _process_one(url, existing_item=None, session=None):
         logger.exception("parse_article failed for %s", url)
         return None, False
 
+    # compute a small content hash per articolo per rilevare modifiche
     content_hash = hashlib.sha256((item.get("content_text","") + (item.get("modified") or "")).encode("utf-8")).hexdigest()
     if existing_item:
         if existing_item.get("_hash") == content_hash:
@@ -81,6 +80,10 @@ def _process_one(url, existing_item=None, session=None):
     return item, True
 
 def _select_batch(links, cache):
+    """
+    Sceglie i prossimi link da processare partendo da cache['cursor'].
+    Default: ritorna fino a MAX_BATCH link (sequenziali), aggiornamento del cursor gestito in generate_items.
+    """
     if not links:
         return []
     cursor = cache.get("cursor", 0) or 0
@@ -89,23 +92,32 @@ def _select_batch(links, cache):
         cursor = 0
     end = min(cursor + MAX_BATCH, n)
     batch = links[cursor:end]
+    # se fine, e batch vuoto, prendi primi elementi
     if not batch and n > 0:
         batch = links[:min(MAX_BATCH, n)]
     return batch
 
 def generate_items(force=False):
+    """
+    Main: ritorna (items_list, meta)
+    - se force=True -> processa tutta la lista di link (slow) (usalo una tantum per popolare cache)
+    - altrimenti processa il prossimo batch partendo dal cursor (default MAX_BATCH=1)
+    """
     cache = _load_cache()
 
     session = requests.Session()
     links = _scan_archive(session=session)
     links_hash = _hash_links(links)
 
+    # aggiorno cache se lista link cambiata (nuovi articoli)
     if cache.get("links_hash") != links_hash:
         cache["links_hash"] = links_hash
         cache["last_scan"] = _now_iso()
+        # se era la prima volta, assicurati cursor a 0
         if "cursor" not in cache:
             cache["cursor"] = 0
 
+    # decide ordine: preferisco processare dal più vecchio al più nuovo.
     try:
         if links:
             first = cache.get("items", {}).get(links[0])
@@ -122,12 +134,14 @@ def generate_items(force=False):
     except Exception:
         pass
 
+    # selezione batch
     if force:
-        batch = links[:]
+        batch = links[:]  # processa tutto (attenzione: slow)
         cache["cursor"] = 0
     else:
         batch = _select_batch(links, cache)
 
+    # process sequentialmente per non sovraccaricare
     for url in batch:
         existing = cache.get("items", {}).get(url)
         try:
@@ -140,13 +154,16 @@ def generate_items(force=False):
             logger.info("Processed %s (changed=%s)", url, changed)
         time.sleep(REQUEST_DELAY)
 
+    # aggiorno cursor
     if links:
         cursor = cache.get("cursor", 0) or 0
         cursor = (cursor + len(batch)) % max(1, len(links))
         cache["cursor"] = cursor
 
+    # salva cache
     _save_cache(cache)
 
+    # prepara items_list ordinata (più nuova prima)
     def _to_dt(s):
         try:
             from dateutil import parser as _p
