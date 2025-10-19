@@ -16,19 +16,31 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 👇 Corretto solo l'URL doppio
+      # 👇 Step 1: riattiva l’istanza Render
       - name: Wake up Render instance
         run: |
           echo "Ping per riattivare Render..."
           curl -fsSL https://artbooms-rss-x6pc.onrender.com/healthz || true
           sleep 30
 
+      # 👇 Step 2: scarica la cache da Render
       - name: Download cache from Render
         run: |
           mkdir -p cache
           curl -fsSL https://artbooms-rss-x6pc.onrender.com/cache/download -o cache/articles_cache.json
           test -s cache/articles_cache.json || (echo "Cache vuota, skip" && exit 0)
 
+      # 👇 Step 3: correggi automaticamente la struttura della cache se serve
+      - name: Fix cache structure if needed
+        run: |
+          echo "Controllo struttura cache..."
+          if jq -e 'type=="array"' cache/articles_cache.json >/dev/null; then
+            echo "Fix: avvolgo lista in oggetto {items: [...]}."
+            mv cache/articles_cache.json cache/articles_cache.tmp
+            jq '{items: ., cursor: 0, last_scan: null, links_hash: null}' cache/articles_cache.tmp > cache/articles_cache.json
+          fi
+
+      # 👇 Step 4: committa e invia le modifiche se la cache è cambiata
       - name: Commit & push if changed
         run: |
           git config user.name "rss-bot"
@@ -46,3 +58,4 @@ jobs:
           else
             echo "Nessun cambiamento nella cache"
           fi
+
