@@ -16,15 +16,13 @@ USER_AGENT = (
     "Chrome/123.0.0.0 Safari/537.36"
 )
 
-# Frequenze e limiti
-POPULATE_INTERVAL = 120      # ogni 2 minuti
-FORCE_REBUILD_AFTER = 900    # rigenera feed ogni 15 minuti
-MAX_BATCH = 3                # numero massimo articoli caricati per ciclo
+POPULATE_INTERVAL = 120
+FORCE_REBUILD_AFTER = 900
+MAX_BATCH = 3
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-# 🔹 URL effettivo su Render
 FEED_SELF_URL = "https://artbooms-rss-x6pc.onrender.com/rss"
 
 # ============================================================
@@ -45,12 +43,12 @@ def bootstrap_cache():
             logging.info("Cache scaricata da GitHub (%s bytes).", len(r.text))
         else:
             with open(CACHE_PATH, "w", encoding="utf-8") as f:
-                json.dump({"items": []}, f)
+                json.dump({"items": {}}, f)
     except Exception as e:
         logging.error("Errore bootstrap cache: %s", e)
         if not os.path.exists(CACHE_PATH):
             with open(CACHE_PATH, "w", encoding="utf-8") as f:
-                json.dump({"items": []}, f)
+                json.dump({"items": {}}, f)
 
 # ============================================================
 # Feed RSS
@@ -62,18 +60,25 @@ def rebuild_feed():
             data = json.load(f)
     except Exception as e:
         logging.error("Errore caricando la cache: %s", e)
-        data = {"items": []}
+        data = {"items": {}}
 
-    items = [
-        i for i in data.get("items", [])
-        if isinstance(i, dict) and "/blog/" in (i.get("url") or "")
-    ]
+    # ✅ Gestione sia lista che dizionario
+    raw_items = data.get("items", [])
+    if isinstance(raw_items, dict):
+        items = list(raw_items.values())
+    elif isinstance(raw_items, list):
+        items = raw_items
+    else:
+        items = []
+
+    # Filtra solo gli articoli validi
+    items = [i for i in items if isinstance(i, dict) and "/blog/" in (i.get("url") or "")]
+    logging.info("Cache letta: %d articoli validi trovati.", len(items))
 
     if not items:
         logging.warning("Cache vuota: feed vuoto.")
         return
 
-    # Ordina articoli per data più recente
     def sort_key(a):
         return a.get("modified") or a.get("published") or ""
     items_sorted = sorted(items, key=sort_key, reverse=True)
@@ -138,7 +143,8 @@ def debug_cache():
     try:
         with open(CACHE_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
-        count = len([i for i in data.get("items", []) if "/blog/" in (i.get("url") or "")])
+        raw_items = data.get("items", [])
+        count = len(raw_items.values()) if isinstance(raw_items, dict) else len(raw_items)
     except Exception:
         count = 0
     return jsonify({"articles_in_cache": count})
@@ -153,7 +159,6 @@ def healthz():
 
 @app.route("/")
 def home():
-    """Homepage di test."""
     return Response(
         "<h2>✅ Artbooms RSS è attivo</h2>"
         "<p>Feed: <a href='/rss'>/rss</a> — Debug: <a href='/debug/cache'>/debug/cache</a></p>",
