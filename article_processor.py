@@ -26,7 +26,30 @@ def _load_cache():
     if os.path.exists(CACHE_PATH):
         try:
             with open(CACHE_PATH, "r", encoding="utf-8") as f:
-                return json.load(f)
+                cache = json.load(f)
+
+            # --- PATCH MINIMA: se 'cache' o 'cache["items"]' è una LISTA, converti in dizionario keyed per URL ---
+            if isinstance(cache, list):
+                cache = {
+                    "items": {
+                        it.get("url"): it
+                        for it in cache
+                        if isinstance(it, dict) and it.get("url")
+                    },
+                    "cursor": 0,
+                    "last_scan": None,
+                    "links_hash": None,
+                }
+                logger.warning("Cache globale (list) convertita in oggetto con items-dict.")
+            elif isinstance(cache.get("items"), list):
+                cache["items"] = {
+                    it.get("url"): it
+                    for it in cache["items"]
+                    if isinstance(it, dict) and it.get("url")
+                }
+                logger.warning("Cache 'items' convertita automaticamente da lista a dizionario.")
+
+            return cache
         except Exception:
             logger.exception("Errore caricamento cache, rigenero")
     # struttura minima cache
