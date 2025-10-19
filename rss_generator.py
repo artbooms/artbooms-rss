@@ -55,16 +55,8 @@ def build_rss(items: list, meta: dict):
 
     last_modified = None
 
-    # ✅ DEBUG: logga tipo degli elementi
-    if not isinstance(items, list):
-        logger.error("❌ 'items' non è una lista ma %s", type(items))
-        return b"", {}
-
     for it in items:
-        logger.info("Tipo di elemento 'it' nel ciclo: %s", type(it))
-
         if not isinstance(it, dict):
-            logger.error("❌ Elemento non valido in items: %r", it)
             continue
 
         item = ET.SubElement(channel, "item")
