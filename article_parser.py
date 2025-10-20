@@ -1,144 +1,182 @@
-import os
-import json
-import time
-import hashlib
+import re
+from urllib.parse import urljoin
+from bs4 import BeautifulSoup
+from dateutil import parser as dateparser
+import requests
 import logging
 from datetime import datetime, timezone
-import requests
 
-from article_parser import extract_article_links_from_archive_html, parse_article, fetch_html
+logger = logging.getLogger("article_parser")
 
-logger = logging.getLogger("article_processor")
+# ---------------------------------------------------------------------
+# Parsing date tipo "Jul 29, 2025" → datetime (UTC)
+# ---------------------------------------------------------------------
+MONTHS_EN_SHORT = {
+    "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
+    "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12
+}
 
-ARCHIVE_URL = os.environ.get("ARCHIVE_URL", "https://www.artbooms.com/archivio-completo")
-BASE_URL = os.environ.get("BASE_URL", "https://www.artbooms.com")
-CACHE_PATH = os.environ.get("CACHE_PATH", "articles_cache.json")
-MAX_BATCH = int(os.environ.get("MAX_BATCH", "3"))
-REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY", "0.8"))
+def _parse_date(s: str):
+    if not s:
+        return None
+    s = s.strip()
+    try:
+        dt = dateparser.parse(s)
+        if dt:
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt
+    except Exception:
+        pass
+    m = re.match(r"^([A-Za-z]{3})\s+(\d{1,2}),\s*(\d{4})$", s)
+    if m:
+        mon, day, year = m.groups()
+        mon_num = MONTHS_EN_SHORT.get(mon.capitalize())
+        if mon_num:
+            try:
+                return datetime(int(year), mon_num, int(day), tzinfo=timezone.utc)
+            except Exception:
+                return None
+    return None
 
-def _now_iso():
-    return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
-
-def _load_cache():
-    if os.path.exists(CACHE_PATH):
-        try:
-            with open(CACHE_PATH, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                if isinstance(data.get("items"), list):
-                    data["items"] = {
-                        it["url"]: it for it in data["items"]
-                        if isinstance(it, dict) and it.get("url")
-                    }
-                if "cursor" not in data:
-                    data["cursor"] = 0
-                return data
-        except Exception:
-            logger.exception("Errore caricando la cache; rigenero struttura vuota.")
-    return {"items": {}, "cursor": 0, "last_scan": None, "links_hash": None}
-
-def _save_cache(cache):
-    tmp = CACHE_PATH + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(cache, f, ensure_ascii=False, indent=2)
-    os.replace(tmp, CACHE_PATH)
-    logger.info("💾 Cache aggiornata: %s articoli totali.", len(cache.get("items", {})))
-
-def _hash_links(links):
-    h = hashlib.sha256()
-    for u in links:
-        h.update(u.encode("utf-8"))
-    return h.hexdigest()
-
-def _scan_archive(session=None):
+# ---------------------------------------------------------------------
+# Fetch HTML
+# ---------------------------------------------------------------------
+def fetch_html(url, session=None, timeout=20):
     s = session or requests.Session()
-    html = fetch_html(ARCHIVE_URL, session=s)
-    links = extract_article_links_from_archive_html(html, BASE_URL)
-    logger.info("Archivio scansionato: %d articoli trovati.", len(links))
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/123.0.0.0 Safari/537.36"
+        )
+    }
+    r = s.get(url, headers=headers, timeout=timeout)
+    r.raise_for_status()
+    return r.text
+
+# ---------------------------------------------------------------------
+# Helper meta
+# ---------------------------------------------------------------------
+def _first_meta(soup, attrs_list):
+    for attrs in attrs_list:
+        tag = soup.find("meta", attrs=attrs)
+        if tag:
+            val = tag.get("content") or tag.get("value")
+            if val:
+                return val.strip()
+    return None
+
+# ---------------------------------------------------------------------
+# Estrazione link ordinati (fix date + before/after)
+# ---------------------------------------------------------------------
+def extract_article_links_from_archive_html(html: str, base_url: str):
+    """
+    Estrae tutti gli articoli dall'archivio, ordinandoli dal più vecchio al più recente.
+    In caso di parità di data, mantiene l'ordine di apparizione nel file HTML.
+    """
+    soup = BeautifulSoup(html, "lxml")
+    items = soup.select("li.archive-item.archive-item--show-date")
+
+    links_with_dates = []
+    seen = set()
+
+    for idx, item in enumerate(items):
+        # Cerca la data anche nei tag "before"/"after"
+        date_tag = (
+            item.find("span", class_=re.compile(r"archive-item-date"))
+            or item.find("span", class_=re.compile(r"archive-item-date-before"))
+            or item.find("span", class_=re.compile(r"archive-item-date-after"))
+        )
+        link_tag = item.find("a", href=True)
+        if not date_tag or not link_tag:
+            continue
+
+        date_text = date_tag.get_text(strip=True)
+        dt = _parse_date(date_text)
+        if not dt:
+            continue
+
+        href = link_tag["href"].strip()
+        abs_url = urljoin(base_url, href)
+        if "/blog/" not in abs_url or "/tag/" in abs_url or "?" in abs_url:
+            continue
+
+        abs_url = abs_url.replace("http://", "https://").rstrip("/")
+        if abs_url in seen:
+            continue
+        seen.add(abs_url)
+
+        if dt.year < 2016:
+            continue
+
+        links_with_dates.append((dt, idx, abs_url))
+
+    # Ordina per data e posizione originale
+    links_with_dates.sort(key=lambda x: (x[0], x[1]))
+    links = [u for _, _, u in links_with_dates]
+
+    if links:
+        logger.info("Trovati %s articoli nell’archivio.", len(links))
+        logger.info("Primo articolo: %s — Ultimo: %s", links[0], links[-1])
+    else:
+        logger.warning("Nessun articolo trovato nell’archivio.")
     return links
 
-def _process_one(url, existing_item=None, session=None):
-    s = session or requests.Session()
+# ---------------------------------------------------------------------
+# Parsing singolo articolo
+# ---------------------------------------------------------------------
+def parse_article(url, html=None, session=None):
     try:
-        item = parse_article(url, session=s)
-    except Exception:
-        logger.exception("Errore parsing articolo: %s", url)
-        return None, False
+        if html is None:
+            html = fetch_html(url, session=session)
+    except Exception as e:
+        logger.exception("fetch_html failed for %s: %s", url, e)
+        return {
+            "url": url,
+            "title": None,
+            "description": None,
+            "author": None,
+            "published": None,
+            "modified": None,
+            "content_text": "",
+            "image": None,
+        }
 
-    content_hash = hashlib.sha256(
-        (item.get("content_text", "") + (item.get("modified") or "")).encode("utf-8")
-    ).hexdigest()
+    soup = BeautifulSoup(html, "lxml")
 
-    if existing_item and existing_item.get("_hash") == content_hash:
-        return existing_item, False
+    title = _first_meta(soup, [{"itemprop": "name"}])
+    description = _first_meta(soup, [{"itemprop": "description"}])
+    author = _first_meta(soup, [{"itemprop": "author"}])
+    published = _first_meta(soup, [{"itemprop": "datePublished"}])
+    modified = _first_meta(soup, [{"itemprop": "dateModified"}])
+    image_url = _first_meta(soup, [{"itemprop": "thumbnailUrl"}])
+    canonical = _first_meta(soup, [{"itemprop": "url"}])
 
-    item["_hash"] = content_hash
-    item["_fetched_at"] = _now_iso()
-    return item, True
+    if not canonical:
+        link_tag = soup.find("link", rel="canonical")
+        if link_tag and link_tag.get("href"):
+            canonical = link_tag["href"].strip()
 
-def generate_items(force=False):
-    """
-    Genera feed aggiornato, poi aggiorna cache e cursor (feed → cache → feed).
-    """
-    cache = _load_cache()
-    session = requests.Session()
-    links = _scan_archive(session=session)
+    pub_dt = _parse_date(published)
+    mod_dt = _parse_date(modified) or pub_dt
 
-    if not links:
-        logger.warning("Nessun link trovato nell’archivio.")
-        return [], {}
+    main = (
+        soup.find("article")
+        or soup.find("main")
+        or soup.find(class_=re.compile(r"(post|entry|article|content|text|sqs-block-content)", re.I))
+    )
+    content_text = main.get_text(" ", strip=True) if main else soup.get_text(" ", strip=True)
 
-    # 🔁 Ordine cronologico: vecchi → nuovi
-    links.sort()
-    links_hash = _hash_links(links)
+    logger.info("Parsed articolo: %s — titolo: %s", url, title)
 
-    # 🔹 Riparte dal punto corretto
-    cursor = cache.get("cursor", 0)
-    if cursor >= len(links):
-        cursor = 0
-
-    start = cursor
-    end = min(start + MAX_BATCH, len(links))
-    batch = links[start:end]
-    logger.info("Elaboro batch %d → %d (totale link %d)", start, end, len(links))
-
-    fresh_items = []
-    changed_count = 0
-
-    for url in batch:
-        existing = cache.get("items", {}).get(url)
-        new_item, changed = _process_one(url, existing_item=existing, session=session)
-        if new_item:
-            fresh_items.append(new_item)
-        if changed:
-            changed_count += 1
-        time.sleep(REQUEST_DELAY)
-
-    # Se non ha trovato nuovi articoli, riusa tutti
-    if not fresh_items:
-        fresh_items = list(cache.get("items", {}).values())
-
-    fresh_items.sort(key=lambda x: (x.get("published") or ""), reverse=False)
-    logger.info("✅ Feed generato: %s articoli totali.", len(fresh_items))
-
-    # ✅ Aggiorna la cache solo dopo aver generato il feed
-    for item in fresh_items:
-        cache.setdefault("items", {})[item["url"]] = item
-
-    cache["cursor"] = end if end < len(links) else 0
-    cache["last_scan"] = _now_iso()
-    cache["links_hash"] = links_hash
-    _save_cache(cache)
-
-    logger.info("🆕 Batch completato, articoli aggiornati: %s", changed_count)
-
-    meta = {
-        "self_url": os.environ.get("SELF_FEED_URL", ""),
-        "title": os.environ.get("FEED_TITLE", "ARTBOOMS - Archivio completo"),
-        "description": os.environ.get("FEED_DESCRIPTION", "Tutti gli articoli di Artbooms"),
-        "language": os.environ.get("FEED_LANGUAGE", "it-IT"),
-        "build_time": datetime.utcnow().replace(tzinfo=timezone.utc)
+    return {
+        "url": (canonical or url).replace("http://", "https://").rstrip("/"),
+        "title": title,
+        "description": description or (content_text[:250] if content_text else ""),
+        "author": author,
+        "published": pub_dt.isoformat() if pub_dt else None,
+        "modified": mod_dt.isoformat() if mod_dt else None,
+        "content_text": content_text,
+        "image": image_url,
     }
-    return fresh_items, meta
-
-def load_cache():
-    return _load_cache()
