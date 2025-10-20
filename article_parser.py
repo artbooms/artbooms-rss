@@ -21,8 +21,6 @@ def _parse_date(s: str):
     if not s:
         return None
     s = s.strip()
-
-    # 1️⃣ prova con dateutil
     try:
         dt = dateparser.parse(s)
         if dt:
@@ -31,8 +29,6 @@ def _parse_date(s: str):
             return dt
     except Exception:
         pass
-
-    # 2️⃣ fallback su pattern testuale "Mon DD, YYYY"
     m = re.match(r"^([A-Za-z]{3})\s+(\d{1,2}),\s*(\d{4})$", s)
     if m:
         mon, day, year = m.groups()
@@ -78,7 +74,8 @@ def _first_meta(soup, attrs_list):
 def extract_article_links_from_archive_html(html: str, base_url: str):
     """
     Dalla pagina archivio, estrae tutti gli articoli <li class="archive-item archive-item--show-date">.
-    Usa la data testuale ('Jul 29, 2025') per ordinarli dal più vecchio al più nuovo.
+    Mantiene l’ordine cronologico (dal più vecchio al più nuovo) e, in caso di date uguali,
+    rispetta l’ordine originale di apparizione nella pagina HTML.
     """
     soup = BeautifulSoup(html, "lxml")
     items = soup.select("li.archive-item.archive-item--show-date")
@@ -86,7 +83,7 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
     links_with_dates = []
     seen = set()
 
-    for item in items:
+    for idx, item in enumerate(items):
         date_tag = item.find("span", class_=re.compile(r"archive-item-date"))
         link_tag = item.find("a", href=True)
         if not date_tag or not link_tag:
@@ -100,28 +97,26 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
         href = link_tag["href"].strip()
         abs_url = urljoin(base_url, href)
 
-        # Filtra solo articoli veri
         if "/blog/" not in abs_url or "/tag/" in abs_url or "?" in abs_url:
             continue
 
         abs_url = abs_url.replace("http://", "https://").rstrip("/")
-
         if abs_url in seen:
             continue
         seen.add(abs_url)
 
-        # Limita ad anni dal 2016 in poi
         if dt.year < 2016:
             continue
 
-        links_with_dates.append((dt, abs_url))
+        # Aggiungiamo anche l'indice di apparizione per stabilità dell'ordine
+        links_with_dates.append((dt, idx, abs_url))
 
-    # Ordina: anno → mese → giorno (dal più vecchio al più recente)
-    links_with_dates.sort(key=lambda x: (x[0].year, x[0].month, x[0].day))
-    links = [u for _, u in links_with_dates]
+    # ✅ Ordina per data, poi per posizione HTML (mantiene coerenza della pagina)
+    links_with_dates.sort(key=lambda x: (x[0], x[1]))
+    links = [u for _, _, u in links_with_dates]
 
-    logger.info("Trovati %s articoli nell’archivio.", len(links))
     if links:
+        logger.info("Trovati %s articoli nell’archivio.", len(links))
         logger.info("Primo articolo: %s — Ultimo: %s", links[0], links[-1])
     else:
         logger.warning("Nessun articolo trovato nell’archivio.")
@@ -157,7 +152,6 @@ def parse_article(url, html=None, session=None):
     image_url = _first_meta(soup, [{"itemprop": "thumbnailUrl"}])
     canonical = _first_meta(soup, [{"itemprop": "url"}])
 
-    # ✅ Fix: se manca itemprop:url, prendi <link rel="canonical">
     if not canonical:
         link_tag = soup.find("link", rel="canonical")
         if link_tag and link_tag.get("href"):
@@ -166,7 +160,6 @@ def parse_article(url, html=None, session=None):
     pub_dt = _parse_date(published)
     mod_dt = _parse_date(modified) or pub_dt
 
-    # Contenuto testuale principale
     main = (
         soup.find("article")
         or soup.find("main")
@@ -180,7 +173,7 @@ def parse_article(url, html=None, session=None):
         "url": (canonical or url).replace("http://", "https://").rstrip("/"),
         "title": title,
         "description": description or (content_text[:250] if content_text else ""),
-        "author": author,  # il feed lo trasformerà in <dc:creator>
+        "author": author,
         "published": pub_dt.isoformat() if pub_dt else None,
         "modified": mod_dt.isoformat() if mod_dt else None,
         "content_text": content_text,
