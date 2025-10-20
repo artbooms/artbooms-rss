@@ -18,10 +18,8 @@ def _parse_date(s: str):
         return None
     s = re.sub(r"[\xa0\u200b]+", " ", s).strip()
     s = re.sub(r"\s+", " ", s)
-
     if re.match(r"^[\d\-_/]+$", s):
         return None
-
     try:
         dt = dateparser.parse(s, fuzzy=True)
         if dt:
@@ -30,7 +28,6 @@ def _parse_date(s: str):
             return dt
     except Exception:
         pass
-
     m = re.match(r"^([A-Za-z]{3})\s+(\d{1,2}),\s*(\d{4})$", s)
     if m:
         mon, day, year = m.groups()
@@ -69,18 +66,19 @@ def _first_meta(soup, attrs_list):
 
 def extract_article_links_from_archive_html(html: str, base_url: str):
     """
-    Estrae articoli in ordine cronologico (vecchi → nuovi).
-    Patch di debug: stampa le prime 5 date viste con parsing.
+    Estrae articoli dall'archivio e li ordina in ordine cronologico crescente
+    (dal più vecchio al più recente). Preferisce la data "after".
     """
     soup = BeautifulSoup(html, "lxml")
-    items = soup.select("li.archive-item")
+
+    # 🔁 Invertiamo la lista per leggere dal basso (vecchi → nuovi)
+    items = list(reversed(soup.select("li.archive-item")))
 
     links_with_dates = []
     seen = set()
     debug_preview = []
 
     for idx, item in enumerate(items):
-        # preferisci sempre "after"
         date_tag = (
             item.find("span", class_=re.compile(r"archive-item-date-after"))
             or item.find("span", class_=re.compile(r"archive-item-date-before"))
@@ -93,7 +91,6 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
         date_text = date_tag.get_text(" ", strip=True)
         dt = _parse_date(date_text)
 
-        # 🧩 Patch di debug
         if len(debug_preview) < 5:
             debug_preview.append(
                 f"[{idx}] raw='{date_text}' → parsed='{dt.isoformat() if dt else None}'"
@@ -115,13 +112,13 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
         if dt.year < 2016:
             continue
 
+        # 🧩 Usa il datetime completo per l'ordinamento, non tuple (anno, mese, giorno)
         links_with_dates.append((dt, idx, abs_url))
 
-    # stampa anteprima delle date effettivamente viste
     if debug_preview:
         logger.info("🧩 DEBUG date estratte (prime 5):\n%s", "\n".join(debug_preview))
 
-    links_with_dates.sort(key=lambda x: (x[0].year, x[0].month, x[0].day, x[1]))
+    links_with_dates.sort(key=lambda x: (x[0], x[1]))
     links = [u for _, _, u in links_with_dates]
 
     if links:
