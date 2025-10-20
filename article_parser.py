@@ -13,19 +13,19 @@ MONTHS_EN_SHORT = {
     "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12
 }
 
+# ---------------------------------------------------------------------
+# Parsing date robusto
+# ---------------------------------------------------------------------
 def _parse_date(s: str):
-    """Parsa 'Feb 10, 2016' o simili, ignorando spazi e caratteri strani."""
+    """Parsa 'Feb 10, 2016' o simili, restituendo datetime UTC."""
     if not s:
         return None
-    # pulizia: rimuove caratteri non stampabili o HTML
     s = re.sub(r"[\xa0\u200b]+", " ", s).strip()
     s = re.sub(r"\s+", " ", s)
 
-    # evita di interpretare numeri tipo 2016210
     if re.match(r"^[\d\-_/]+$", s):
         return None
 
-    # prova diretta con dateutil
     try:
         dt = dateparser.parse(s, fuzzy=True)
         if dt:
@@ -35,7 +35,6 @@ def _parse_date(s: str):
     except Exception:
         pass
 
-    # fallback esplicito "Mon DD, YYYY"
     m = re.match(r"^([A-Za-z]{3})\s+(\d{1,2}),\s*(\d{4})$", s)
     if m:
         mon, day, year = m.groups()
@@ -47,6 +46,9 @@ def _parse_date(s: str):
                 return None
     return None
 
+# ---------------------------------------------------------------------
+# Fetch HTML
+# ---------------------------------------------------------------------
 def fetch_html(url, session=None, timeout=20):
     s = session or requests.Session()
     headers = {
@@ -60,6 +62,9 @@ def fetch_html(url, session=None, timeout=20):
     r.raise_for_status()
     return r.text
 
+# ---------------------------------------------------------------------
+# Helper meta
+# ---------------------------------------------------------------------
 def _first_meta(soup, attrs_list):
     for attrs in attrs_list:
         tag = soup.find("meta", attrs=attrs)
@@ -69,8 +74,15 @@ def _first_meta(soup, attrs_list):
                 return val.strip()
     return None
 
+# ---------------------------------------------------------------------
+# Estrazione link — usa sempre la data "after"
+# ---------------------------------------------------------------------
 def extract_article_links_from_archive_html(html: str, base_url: str):
-    """Estrae articoli in ordine cronologico corretto (vecchi → nuovi)."""
+    """
+    Estrae tutti gli articoli <li class="archive-item..."> e li ordina
+    dal più vecchio al più recente. Usa sempre la data "after" come
+    riferimento cronologico principale.
+    """
     soup = BeautifulSoup(html, "lxml")
     items = soup.select("li.archive-item")
 
@@ -78,10 +90,11 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
     seen = set()
 
     for idx, item in enumerate(items):
+        # preferisci "after" alla "before"
         date_tag = (
-            item.find("span", class_=re.compile(r"archive-item-date"))
+            item.find("span", class_=re.compile(r"archive-item-date-after"))
             or item.find("span", class_=re.compile(r"archive-item-date-before"))
-            or item.find("span", class_=re.compile(r"archive-item-date-after"))
+            or item.find("span", class_=re.compile(r"archive-item-date"))
         )
         link_tag = item.find("a", href=True)
         if not date_tag or not link_tag:
@@ -102,12 +115,14 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
             continue
         seen.add(abs_url)
 
+        # limitiamo a 2016+ per sicurezza
         if dt.year < 2016:
             continue
 
         links_with_dates.append((dt, idx, abs_url))
 
-    links_with_dates.sort(key=lambda x: (x[0], x[1]))
+    # ordinamento cronologico crescente (più vecchio → più nuovo)
+    links_with_dates.sort(key=lambda x: (x[0].year, x[0].month, x[0].day, x[1]))
     links = [u for _, _, u in links_with_dates]
 
     if links:
@@ -117,6 +132,9 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
         logger.warning("Nessun articolo trovato nell’archivio.")
     return links
 
+# ---------------------------------------------------------------------
+# Parsing singolo articolo
+# ---------------------------------------------------------------------
 def parse_article(url, html=None, session=None):
     try:
         if html is None:
