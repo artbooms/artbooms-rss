@@ -17,17 +17,30 @@ MONTHS_EN_SHORT = {
 }
 
 def _parse_date(s: str):
+    """
+    Parsea 'Jun 24, 2025' o formati ISO.
+    Evita di interpretare stringhe numeriche (es. 2016210) come date.
+    """
     if not s:
         return None
     s = s.strip()
+
+    # ❌ evita falsi positivi (numeri, timestamp, ID)
+    if re.match(r"^[\d\-_/]+$", s) or re.match(r"^\d{5,}$", s):
+        return None
+
+    # 1️⃣ prova con dateutil
     try:
-        dt = dateparser.parse(s)
-        if dt:
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
-            return dt
+        if re.search(r"[A-Za-z]", s):
+            dt = dateparser.parse(s, fuzzy=False)
+            if dt:
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                return dt
     except Exception:
         pass
+
+    # 2️⃣ fallback su pattern testuale "Mon DD, YYYY"
     m = re.match(r"^([A-Za-z]{3})\s+(\d{1,2}),\s*(\d{4})$", s)
     if m:
         mon, day, year = m.groups()
@@ -76,13 +89,13 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
     In caso di parità di data, mantiene l'ordine di apparizione nel file HTML.
     """
     soup = BeautifulSoup(html, "lxml")
-    items = soup.select("li.archive-item.archive-item--show-date")
+    # include anche gli articoli senza "--show-date"
+    items = soup.select("li.archive-item")
 
     links_with_dates = []
     seen = set()
 
     for idx, item in enumerate(items):
-        # Cerca la data anche nei tag "before"/"after"
         date_tag = (
             item.find("span", class_=re.compile(r"archive-item-date"))
             or item.find("span", class_=re.compile(r"archive-item-date-before"))
