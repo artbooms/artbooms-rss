@@ -13,11 +13,7 @@ MONTHS_EN_SHORT = {
     "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12
 }
 
-# ---------------------------------------------------------------------
-# Parsing date robusto
-# ---------------------------------------------------------------------
 def _parse_date(s: str):
-    """Parsa 'Feb 10, 2016' o simili, restituendo datetime UTC."""
     if not s:
         return None
     s = re.sub(r"[\xa0\u200b]+", " ", s).strip()
@@ -46,9 +42,7 @@ def _parse_date(s: str):
                 return None
     return None
 
-# ---------------------------------------------------------------------
-# Fetch HTML
-# ---------------------------------------------------------------------
+
 def fetch_html(url, session=None, timeout=20):
     s = session or requests.Session()
     headers = {
@@ -62,9 +56,7 @@ def fetch_html(url, session=None, timeout=20):
     r.raise_for_status()
     return r.text
 
-# ---------------------------------------------------------------------
-# Helper meta
-# ---------------------------------------------------------------------
+
 def _first_meta(soup, attrs_list):
     for attrs in attrs_list:
         tag = soup.find("meta", attrs=attrs)
@@ -74,23 +66,21 @@ def _first_meta(soup, attrs_list):
                 return val.strip()
     return None
 
-# ---------------------------------------------------------------------
-# Estrazione link — usa sempre la data "after"
-# ---------------------------------------------------------------------
+
 def extract_article_links_from_archive_html(html: str, base_url: str):
     """
-    Estrae tutti gli articoli <li class="archive-item..."> e li ordina
-    dal più vecchio al più recente. Usa sempre la data "after" come
-    riferimento cronologico principale.
+    Estrae articoli in ordine cronologico (vecchi → nuovi).
+    Patch di debug: stampa le prime 5 date viste con parsing.
     """
     soup = BeautifulSoup(html, "lxml")
     items = soup.select("li.archive-item")
 
     links_with_dates = []
     seen = set()
+    debug_preview = []
 
     for idx, item in enumerate(items):
-        # preferisci "after" alla "before"
+        # preferisci sempre "after"
         date_tag = (
             item.find("span", class_=re.compile(r"archive-item-date-after"))
             or item.find("span", class_=re.compile(r"archive-item-date-before"))
@@ -102,6 +92,13 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
 
         date_text = date_tag.get_text(" ", strip=True)
         dt = _parse_date(date_text)
+
+        # 🧩 Patch di debug
+        if len(debug_preview) < 5:
+            debug_preview.append(
+                f"[{idx}] raw='{date_text}' → parsed='{dt.isoformat() if dt else None}'"
+            )
+
         if not dt:
             continue
 
@@ -115,13 +112,15 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
             continue
         seen.add(abs_url)
 
-        # limitiamo a 2016+ per sicurezza
         if dt.year < 2016:
             continue
 
         links_with_dates.append((dt, idx, abs_url))
 
-    # ordinamento cronologico crescente (più vecchio → più nuovo)
+    # stampa anteprima delle date effettivamente viste
+    if debug_preview:
+        logger.info("🧩 DEBUG date estratte (prime 5):\n%s", "\n".join(debug_preview))
+
     links_with_dates.sort(key=lambda x: (x[0].year, x[0].month, x[0].day, x[1]))
     links = [u for _, _, u in links_with_dates]
 
@@ -132,9 +131,7 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
         logger.warning("Nessun articolo trovato nell’archivio.")
     return links
 
-# ---------------------------------------------------------------------
-# Parsing singolo articolo
-# ---------------------------------------------------------------------
+
 def parse_article(url, html=None, session=None):
     try:
         if html is None:
