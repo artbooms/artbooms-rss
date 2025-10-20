@@ -8,39 +8,34 @@ from datetime import datetime, timezone
 
 logger = logging.getLogger("article_parser")
 
-# ---------------------------------------------------------------------
-# Parsing date tipo "Jul 29, 2025" → datetime (UTC)
-# ---------------------------------------------------------------------
 MONTHS_EN_SHORT = {
     "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
     "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12
 }
 
 def _parse_date(s: str):
-    """
-    Parsea 'Jun 24, 2025' o formati ISO.
-    Evita di interpretare stringhe numeriche (es. 2016210) come date.
-    """
+    """Parsa 'Feb 10, 2016' o simili, ignorando spazi e caratteri strani."""
     if not s:
         return None
-    s = s.strip()
+    # pulizia: rimuove caratteri non stampabili o HTML
+    s = re.sub(r"[\xa0\u200b]+", " ", s).strip()
+    s = re.sub(r"\s+", " ", s)
 
-    # ❌ evita falsi positivi (numeri, timestamp, ID)
-    if re.match(r"^[\d\-_/]+$", s) or re.match(r"^\d{5,}$", s):
+    # evita di interpretare numeri tipo 2016210
+    if re.match(r"^[\d\-_/]+$", s):
         return None
 
-    # 1️⃣ prova con dateutil
+    # prova diretta con dateutil
     try:
-        if re.search(r"[A-Za-z]", s):
-            dt = dateparser.parse(s, fuzzy=False)
-            if dt:
-                if dt.tzinfo is None:
-                    dt = dt.replace(tzinfo=timezone.utc)
-                return dt
+        dt = dateparser.parse(s, fuzzy=True)
+        if dt:
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt
     except Exception:
         pass
 
-    # 2️⃣ fallback su pattern testuale "Mon DD, YYYY"
+    # fallback esplicito "Mon DD, YYYY"
     m = re.match(r"^([A-Za-z]{3})\s+(\d{1,2}),\s*(\d{4})$", s)
     if m:
         mon, day, year = m.groups()
@@ -52,9 +47,6 @@ def _parse_date(s: str):
                 return None
     return None
 
-# ---------------------------------------------------------------------
-# Fetch HTML
-# ---------------------------------------------------------------------
 def fetch_html(url, session=None, timeout=20):
     s = session or requests.Session()
     headers = {
@@ -68,9 +60,6 @@ def fetch_html(url, session=None, timeout=20):
     r.raise_for_status()
     return r.text
 
-# ---------------------------------------------------------------------
-# Helper meta
-# ---------------------------------------------------------------------
 def _first_meta(soup, attrs_list):
     for attrs in attrs_list:
         tag = soup.find("meta", attrs=attrs)
@@ -80,16 +69,9 @@ def _first_meta(soup, attrs_list):
                 return val.strip()
     return None
 
-# ---------------------------------------------------------------------
-# Estrazione link ordinati (fix date + before/after)
-# ---------------------------------------------------------------------
 def extract_article_links_from_archive_html(html: str, base_url: str):
-    """
-    Estrae tutti gli articoli dall'archivio, ordinandoli dal più vecchio al più recente.
-    In caso di parità di data, mantiene l'ordine di apparizione nel file HTML.
-    """
+    """Estrae articoli in ordine cronologico corretto (vecchi → nuovi)."""
     soup = BeautifulSoup(html, "lxml")
-    # include anche gli articoli senza "--show-date"
     items = soup.select("li.archive-item")
 
     links_with_dates = []
@@ -105,7 +87,7 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
         if not date_tag or not link_tag:
             continue
 
-        date_text = date_tag.get_text(strip=True)
+        date_text = date_tag.get_text(" ", strip=True)
         dt = _parse_date(date_text)
         if not dt:
             continue
@@ -125,7 +107,6 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
 
         links_with_dates.append((dt, idx, abs_url))
 
-    # Ordina per data e posizione originale
     links_with_dates.sort(key=lambda x: (x[0], x[1]))
     links = [u for _, _, u in links_with_dates]
 
@@ -136,9 +117,6 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
         logger.warning("Nessun articolo trovato nell’archivio.")
     return links
 
-# ---------------------------------------------------------------------
-# Parsing singolo articolo
-# ---------------------------------------------------------------------
 def parse_article(url, html=None, session=None):
     try:
         if html is None:
@@ -146,14 +124,9 @@ def parse_article(url, html=None, session=None):
     except Exception as e:
         logger.exception("fetch_html failed for %s: %s", url, e)
         return {
-            "url": url,
-            "title": None,
-            "description": None,
-            "author": None,
-            "published": None,
-            "modified": None,
-            "content_text": "",
-            "image": None,
+            "url": url, "title": None, "description": None,
+            "author": None, "published": None, "modified": None,
+            "content_text": "", "image": None,
         }
 
     soup = BeautifulSoup(html, "lxml")
