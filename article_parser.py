@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 logger = logging.getLogger("article_parser")
 
 # ---------------------------------------------------------------------
-# Parsing date tipo "Jul 29, 2025"  → datetime (UTC)
+# Parsing date tipo "Jul 29, 2025" → datetime (UTC)
 # ---------------------------------------------------------------------
 MONTHS_EN_SHORT = {
     "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
@@ -17,7 +17,6 @@ MONTHS_EN_SHORT = {
 }
 
 def _parse_date(s: str):
-    """Parsa 'Jun 24, 2025' o ISO; restituisce datetime UTC, oppure None."""
     if not s:
         return None
     s = s.strip()
@@ -41,7 +40,7 @@ def _parse_date(s: str):
     return None
 
 # ---------------------------------------------------------------------
-# Fetch HTML con User-Agent neutro
+# Fetch HTML
 # ---------------------------------------------------------------------
 def fetch_html(url, session=None, timeout=20):
     s = session or requests.Session()
@@ -57,7 +56,7 @@ def fetch_html(url, session=None, timeout=20):
     return r.text
 
 # ---------------------------------------------------------------------
-# Helper: trova il primo meta con un dato attributo
+# Helper meta
 # ---------------------------------------------------------------------
 def _first_meta(soup, attrs_list):
     for attrs in attrs_list:
@@ -69,13 +68,12 @@ def _first_meta(soup, attrs_list):
     return None
 
 # ---------------------------------------------------------------------
-# Estrazione link dall’archivio (ordine cronologico: vecchi → nuovi)
+# Estrazione link ordinati (fix date + before/after)
 # ---------------------------------------------------------------------
 def extract_article_links_from_archive_html(html: str, base_url: str):
     """
-    Dalla pagina archivio, estrae tutti gli articoli <li class="archive-item archive-item--show-date">.
-    Mantiene l’ordine cronologico (dal più vecchio al più nuovo) e, in caso di date uguali,
-    rispetta l’ordine originale di apparizione nella pagina HTML.
+    Estrae tutti gli articoli dall'archivio, ordinandoli dal più vecchio al più recente.
+    In caso di parità di data, mantiene l'ordine di apparizione nel file HTML.
     """
     soup = BeautifulSoup(html, "lxml")
     items = soup.select("li.archive-item.archive-item--show-date")
@@ -84,7 +82,12 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
     seen = set()
 
     for idx, item in enumerate(items):
-        date_tag = item.find("span", class_=re.compile(r"archive-item-date"))
+        # Cerca la data anche nei tag "before"/"after"
+        date_tag = (
+            item.find("span", class_=re.compile(r"archive-item-date"))
+            or item.find("span", class_=re.compile(r"archive-item-date-before"))
+            or item.find("span", class_=re.compile(r"archive-item-date-after"))
+        )
         link_tag = item.find("a", href=True)
         if not date_tag or not link_tag:
             continue
@@ -96,7 +99,6 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
 
         href = link_tag["href"].strip()
         abs_url = urljoin(base_url, href)
-
         if "/blog/" not in abs_url or "/tag/" in abs_url or "?" in abs_url:
             continue
 
@@ -108,10 +110,9 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
         if dt.year < 2016:
             continue
 
-        # Aggiungiamo anche l'indice di apparizione per stabilità dell'ordine
         links_with_dates.append((dt, idx, abs_url))
 
-    # ✅ Ordina per data, poi per posizione HTML (mantiene coerenza della pagina)
+    # Ordina per data e posizione originale
     links_with_dates.sort(key=lambda x: (x[0], x[1]))
     links = [u for _, _, u in links_with_dates]
 
@@ -123,7 +124,7 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
     return links
 
 # ---------------------------------------------------------------------
-# Parsing di ogni articolo (solo itemprop indicati)
+# Parsing singolo articolo
 # ---------------------------------------------------------------------
 def parse_article(url, html=None, session=None):
     try:
