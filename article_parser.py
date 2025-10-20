@@ -112,7 +112,7 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
         if dt.year < 2016:
             continue
 
-        # 🧩 Usa il datetime completo per l'ordinamento, non tuple (anno, mese, giorno)
+        # 🧩 Usa il datetime completo per l'ordinamento
         links_with_dates.append((dt, idx, abs_url))
 
     if debug_preview:
@@ -130,6 +130,7 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
 
 
 def parse_article(url, html=None, session=None):
+    """Estrae i meta Squarespace e il contenuto testuale principale."""
     try:
         if html is None:
             html = fetch_html(url, session=session)
@@ -148,7 +149,8 @@ def parse_article(url, html=None, session=None):
     author = _first_meta(soup, [{"itemprop": "author"}])
     published = _first_meta(soup, [{"itemprop": "datePublished"}])
     modified = _first_meta(soup, [{"itemprop": "dateModified"}])
-    image_url = _first_meta(soup, [{"itemprop": "thumbnailUrl"}])
+    # 🔧 supporta anche itemprop="image"
+    image_url = _first_meta(soup, [{"itemprop": "thumbnailUrl"}, {"itemprop": "image"}])
     canonical = _first_meta(soup, [{"itemprop": "url"}])
 
     if not canonical:
@@ -172,6 +174,7 @@ def parse_article(url, html=None, session=None):
         "url": (canonical or url).replace("http://", "https://").rstrip("/"),
         "title": title,
         "description": description or (content_text[:250] if content_text else ""),
+        # ⚠️ nel feed XML questo 'author' verrà reso come <dc:creator>
         "author": author,
         "published": pub_dt.isoformat() if pub_dt else None,
         "modified": mod_dt.isoformat() if mod_dt else None,
