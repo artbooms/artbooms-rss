@@ -75,7 +75,6 @@ def _first_meta(soup, attrs_list):
 # ---------------------------------------------------------------
 def extract_article_links_from_archive_html(html: str, base_url: str):
     soup = BeautifulSoup(html, "lxml")
-    # inverti per leggere dal più vecchio al più nuovo
     items = list(reversed(soup.select("li.archive-item")))
 
     links_with_dates = []
@@ -111,7 +110,6 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
             continue
         seen.add(abs_url)
 
-        # Evita date impossibili
         if dt.year < 2010 or dt.year > datetime.now().year + 1:
             continue
 
@@ -131,7 +129,7 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
     return links
 
 # ---------------------------------------------------------------
-# Parsing singolo articolo (solo meta SEO)
+# Parsing singolo articolo (solo meta SEO ufficiali)
 # ---------------------------------------------------------------
 def parse_article(url, html=None, session=None):
     try:
@@ -140,31 +138,43 @@ def parse_article(url, html=None, session=None):
     except Exception as e:
         logger.exception("fetch_html failed for %s: %s", url, e)
         return {
-            "url": url,
-            "title": None,
-            "description": None,
-            "author": None,
-            "published": None,
-            "modified": None,
+            "url": url, "title": None, "description": None,
+            "author": None, "published": None, "modified": None,
             "image": None,
         }
 
     soup = BeautifulSoup(html, "lxml")
 
+    # --- meta ufficiali Squarespace ---
     title = _first_meta(soup, [{"itemprop": "name"}])
     description = _first_meta(soup, [{"itemprop": "description"}])
     author = _first_meta(soup, [{"itemprop": "author"}])
     published = _first_meta(soup, [{"itemprop": "datePublished"}])
     modified = _first_meta(soup, [{"itemprop": "dateModified"}])
-    image_url = (
-        _first_meta(soup, [{"itemprop": "thumbnailUrl"}])
-        or _first_meta(soup, [{"itemprop": "image"}])
-    )
+    thumbnail = _first_meta(soup, [{"itemprop": "thumbnailUrl"}])
+    image_src = None
+    link_img = soup.find("link", rel="image_src")
+    if link_img and link_img.get("href"):
+        image_src = link_img["href"].strip()
+    image = _first_meta(soup, [{"itemprop": "image"}])
+
+    # --- seleziona immagine migliore ---
+    image_url = thumbnail or image_src or image
+    if image_url:
+        image_url = image_url.replace("http://", "https://")
+
+    # --- canonical URL ---
     canonical = _first_meta(soup, [{"itemprop": "url"}])
     if not canonical:
         link_tag = soup.find("link", rel="canonical")
         if link_tag and link_tag.get("href"):
             canonical = link_tag["href"].strip()
+    if canonical:
+        canonical = canonical.replace("http://", "https://").rstrip("/")
+
+    # --- pulizia titolo ---
+    if title:
+        title = re.sub(r"\s*—\s*ARTBOOMS\s*$", "", title, flags=re.IGNORECASE).strip()
 
     pub_dt = _parse_date(published)
     mod_dt = _parse_date(modified) or pub_dt
@@ -172,10 +182,10 @@ def parse_article(url, html=None, session=None):
     logger.info("Parsed articolo: %s — titolo: %s", url, title)
 
     return {
-        "url": (canonical or url).replace("http://", "https://").rstrip("/"),
+        "url": canonical or url,
         "title": title,
         "description": description or "",
-        "author": author,  # il feed builder lo trasformerà in <dc:creator>
+        "author": author,
         "published": pub_dt.isoformat() if pub_dt else None,
         "modified": mod_dt.isoformat() if mod_dt else None,
         "image": image_url,
