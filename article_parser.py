@@ -14,7 +14,7 @@ MONTHS_EN_SHORT = {
 }
 
 # ---------------------------------------------------------------
-# Date parsing robusto
+# Parsing date robusto
 # ---------------------------------------------------------------
 def _parse_date(s: str):
     if not s:
@@ -43,7 +43,7 @@ def _parse_date(s: str):
     return None
 
 # ---------------------------------------------------------------
-# HTML fetch
+# Fetch HTML
 # ---------------------------------------------------------------
 def fetch_html(url, session=None, timeout=20):
     s = session or requests.Session()
@@ -75,6 +75,7 @@ def _first_meta(soup, attrs_list):
 # ---------------------------------------------------------------
 def extract_article_links_from_archive_html(html: str, base_url: str):
     soup = BeautifulSoup(html, "lxml")
+    # inverti per leggere dal più vecchio al più nuovo
     items = list(reversed(soup.select("li.archive-item")))
 
     links_with_dates = []
@@ -97,7 +98,6 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
             debug_preview.append(
                 f"[{idx}] raw='{date_text}' → parsed='{dt.isoformat() if dt else None}'"
             )
-
         if not dt:
             continue
 
@@ -111,7 +111,8 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
             continue
         seen.add(abs_url)
 
-        if dt.year < 2016:
+        # Evita date impossibili
+        if dt.year < 2010 or dt.year > datetime.now().year + 1:
             continue
 
         links_with_dates.append((dt, idx, abs_url))
@@ -130,7 +131,7 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
     return links
 
 # ---------------------------------------------------------------
-# Parsing singolo articolo (solo meta SEO ufficiali)
+# Parsing singolo articolo (solo meta SEO)
 # ---------------------------------------------------------------
 def parse_article(url, html=None, session=None):
     try:
@@ -139,8 +140,12 @@ def parse_article(url, html=None, session=None):
     except Exception as e:
         logger.exception("fetch_html failed for %s: %s", url, e)
         return {
-            "url": url, "title": None, "description": None,
-            "dc:creator": None, "published": None, "modified": None,
+            "url": url,
+            "title": None,
+            "description": None,
+            "author": None,
+            "published": None,
+            "modified": None,
             "image": None,
         }
 
@@ -170,7 +175,7 @@ def parse_article(url, html=None, session=None):
         "url": (canonical or url).replace("http://", "https://").rstrip("/"),
         "title": title,
         "description": description or "",
-        "dc:creator": author,
+        "author": author,  # il feed builder lo trasformerà in <dc:creator>
         "published": pub_dt.isoformat() if pub_dt else None,
         "modified": mod_dt.isoformat() if mod_dt else None,
         "image": image_url,
