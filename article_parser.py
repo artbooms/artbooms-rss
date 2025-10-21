@@ -13,6 +13,9 @@ MONTHS_EN_SHORT = {
     "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12
 }
 
+# ---------------------------------------------------------------
+# Date parsing robusto
+# ---------------------------------------------------------------
 def _parse_date(s: str):
     if not s:
         return None
@@ -39,7 +42,9 @@ def _parse_date(s: str):
                 return None
     return None
 
-
+# ---------------------------------------------------------------
+# HTML fetch
+# ---------------------------------------------------------------
 def fetch_html(url, session=None, timeout=20):
     s = session or requests.Session()
     headers = {
@@ -53,7 +58,9 @@ def fetch_html(url, session=None, timeout=20):
     r.raise_for_status()
     return r.text
 
-
+# ---------------------------------------------------------------
+# Helper meta
+# ---------------------------------------------------------------
 def _first_meta(soup, attrs_list):
     for attrs in attrs_list:
         tag = soup.find("meta", attrs=attrs)
@@ -63,15 +70,11 @@ def _first_meta(soup, attrs_list):
                 return val.strip()
     return None
 
-
+# ---------------------------------------------------------------
+# Estrazione link archivio (ordine cronologico)
+# ---------------------------------------------------------------
 def extract_article_links_from_archive_html(html: str, base_url: str):
-    """
-    Estrae articoli dall'archivio e li ordina in ordine cronologico crescente
-    (dal più vecchio al più recente). Preferisce la data "after".
-    """
     soup = BeautifulSoup(html, "lxml")
-
-    # 🔁 Invertiamo la lista per leggere dal basso (vecchi → nuovi)
     items = list(reversed(soup.select("li.archive-item")))
 
     links_with_dates = []
@@ -90,7 +93,6 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
 
         date_text = date_tag.get_text(" ", strip=True)
         dt = _parse_date(date_text)
-
         if len(debug_preview) < 5:
             debug_preview.append(
                 f"[{idx}] raw='{date_text}' → parsed='{dt.isoformat() if dt else None}'"
@@ -112,7 +114,6 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
         if dt.year < 2016:
             continue
 
-        # 🧩 Usa il datetime completo per l'ordinamento
         links_with_dates.append((dt, idx, abs_url))
 
     if debug_preview:
@@ -128,9 +129,10 @@ def extract_article_links_from_archive_html(html: str, base_url: str):
         logger.warning("Nessun articolo trovato nell’archivio.")
     return links
 
-
+# ---------------------------------------------------------------
+# Parsing singolo articolo (solo meta SEO ufficiali)
+# ---------------------------------------------------------------
 def parse_article(url, html=None, session=None):
-    """Estrae i meta Squarespace e il contenuto testuale principale."""
     try:
         if html is None:
             html = fetch_html(url, session=session)
@@ -138,8 +140,8 @@ def parse_article(url, html=None, session=None):
         logger.exception("fetch_html failed for %s: %s", url, e)
         return {
             "url": url, "title": None, "description": None,
-            "author": None, "published": None, "modified": None,
-            "content_text": "", "image": None,
+            "dc:creator": None, "published": None, "modified": None,
+            "image": None,
         }
 
     soup = BeautifulSoup(html, "lxml")
@@ -149,10 +151,11 @@ def parse_article(url, html=None, session=None):
     author = _first_meta(soup, [{"itemprop": "author"}])
     published = _first_meta(soup, [{"itemprop": "datePublished"}])
     modified = _first_meta(soup, [{"itemprop": "dateModified"}])
-    # 🔧 supporta anche itemprop="image"
-    image_url = _first_meta(soup, [{"itemprop": "thumbnailUrl"}, {"itemprop": "image"}])
+    image_url = (
+        _first_meta(soup, [{"itemprop": "thumbnailUrl"}])
+        or _first_meta(soup, [{"itemprop": "image"}])
+    )
     canonical = _first_meta(soup, [{"itemprop": "url"}])
-
     if not canonical:
         link_tag = soup.find("link", rel="canonical")
         if link_tag and link_tag.get("href"):
@@ -161,23 +164,14 @@ def parse_article(url, html=None, session=None):
     pub_dt = _parse_date(published)
     mod_dt = _parse_date(modified) or pub_dt
 
-    main = (
-        soup.find("article")
-        or soup.find("main")
-        or soup.find(class_=re.compile(r"(post|entry|article|content|text|sqs-block-content)", re.I))
-    )
-    content_text = main.get_text(" ", strip=True) if main else soup.get_text(" ", strip=True)
-
     logger.info("Parsed articolo: %s — titolo: %s", url, title)
 
     return {
         "url": (canonical or url).replace("http://", "https://").rstrip("/"),
         "title": title,
-        "description": description or (content_text[:250] if content_text else ""),
-        # ⚠️ nel feed XML questo 'author' verrà reso come <dc:creator>
-        "author": author,
+        "description": description or "",
+        "dc:creator": author,
         "published": pub_dt.isoformat() if pub_dt else None,
         "modified": mod_dt.isoformat() if mod_dt else None,
-        "content_text": content_text,
         "image": image_url,
     }
