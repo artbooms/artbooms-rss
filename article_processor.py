@@ -3,6 +3,7 @@ import json
 import time
 import hashlib
 import logging
+import subprocess
 from datetime import datetime, timezone
 import requests
 
@@ -11,16 +12,16 @@ from article_parser import extract_article_links_from_archive_html, parse_articl
 logger = logging.getLogger("article_processor")
 
 # ============================================================
-# Config base (allineata a app.py)
+# Config base
 # ============================================================
 ARCHIVE_URL = os.environ.get("ARCHIVE_URL", "https://www.artbooms.com/archivio-completo")
-BASE_URL    = os.environ.get("BASE_URL",    "https://www.artbooms.com")
-CACHE_PATH  = os.environ.get("CACHE_PATH",  "cache/articles_cache.json")  # 👈 stesso file di app.py
-MAX_BATCH   = int(os.environ.get("MAX_BATCH", "3"))  # quanti articoli per ciclo
-REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY", "0.8"))  # prudenza sulle richieste
+BASE_URL    = os.environ.get("BASE_URL", "https://www.artbooms.com")
+CACHE_PATH  = os.environ.get("CACHE_PATH",  "cache/articles_cache.json")
+MAX_BATCH   = int(os.environ.get("MAX_BATCH", "3"))
+REQUEST_DELAY = float(os.environ.get("REQUEST_DELAY", "0.8"))
 
 
-def _now_iso() -> str:
+def _now_iso():
     return datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
 
 
@@ -34,20 +35,18 @@ def _load_cache():
         try:
             with open(CACHE_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                # Se era una lista, normalizza a dict keyed per URL
                 if isinstance(data, list):
-                    data = {"items": {it["url"]: it for it in data if isinstance(it, dict) and it.get("url")},
+                    data = {"items": {it["url"]: it for it in data if it.get("url")},
                             "cursor": 0, "last_scan": None, "links_hash": None}
                 if isinstance(data.get("items"), list):
-                    data["items"] = {it["url"]: it for it in data["items"] if isinstance(it, dict) and it.get("url")}
-                # Struttura minima
+                    data["items"] = {it["url"]: it for it in data["items"] if it.get("url")}
                 data.setdefault("items", {})
                 data.setdefault("cursor", 0)
                 data.setdefault("last_scan", None)
                 data.setdefault("links_hash", None)
                 return data
         except Exception:
-            logger.exception("Errore caricando la cache; rigenero struttura vuota.")
+            logger.exception("Errore caricando la cache; rigenero vuota.")
     return {"items": {}, "cursor": 0, "last_scan": None, "links_hash": None}
 
 
@@ -58,6 +57,17 @@ def _save_cache(cache):
         json.dump(cache, f, ensure_ascii=False, indent=2)
     os.replace(tmp, CACHE_PATH)
     logger.info("💾 Cache aggiornata: %s articoli totali.", len(cache.get("items", {})))
+
+    # 🔄 Sincronizza su GitHub (forzato)
+    try:
+        subprocess.run(["git", "config", "user.name", "rss-bot"], check=False)
+        subprocess.run(["git", "config", "user.email", "rss-bot@users.noreply.github.com"], check=False)
+        subprocess.run(["git", "add", CACHE_PATH], check=False)
+        subprocess.run(["git", "commit", "-m", f"Update cache {time.strftime('%Y-%m-%d %H:%M:%S')}"], check=False)
+        subprocess.run(["git", "push"], check=False)
+        logger.info("🚀 Cache sincronizzata su GitHub con successo.")
+    except Exception as e:
+        logger.warning("⚠️ Errore nel push su GitHub: %s", e)
 
 
 def _hash_links(links):
@@ -71,7 +81,6 @@ def _scan_archive(session=None):
     s = session or requests.Session()
     html = fetch_html(ARCHIVE_URL, session=s)
     links = extract_article_links_from_archive_html(html, BASE_URL)
-    # 👉 NON riordino: mi fido dell’ordine (vecchi → nuovi) dato dal parser
     logger.info("Archivio scansionato: %d articoli trovati.", len(links))
     return links
 
@@ -84,13 +93,18 @@ def _process_one(url, existing_item=None, session=None):
         logger.exception("Errore parsing articolo: %s", url)
         return None, False
 
-    # Hash contenuto per capire se è cambiato
-    content_hash = hashlib.sha256(
-        (item.get("content_text", "") + (item.get("modified") or "")).encode("utf-8")
-    ).hexdigest()
+    # ✅ Hash basato sui campi SEO (non su content_text)
+    hash_basis = (
+        (item.get("title") or "") +
+        (item.get("description") or "") +
+        (item.get("author") or "") +
+        (item.get("published") or "") +
+        (item.get("modified") or "") +
+        (item.get("image") or "")
+    )
+    content_hash = hashlib.sha256(hash_basis.encode("utf-8")).hexdigest()
 
     if existing_item and existing_item.get("_hash") == content_hash:
-        # invariato
         return existing_item, False
 
     item["_hash"] = content_hash
@@ -99,13 +113,6 @@ def _process_one(url, existing_item=None, session=None):
 
 
 def generate_items(force=False):
-    """
-    1) Legge la lista link (in ordine cronologico vecchi→nuovi)
-    2) Seleziona il batch (o tutti se force=True)
-    3) COSTRUISCE GLI ITEM PER IL FEED (fresh_items)
-    4) SOLO DOPO aggiorna la cache con i nuovi/aggiornati
-    5) Avanza il cursore
-    """
     cache = _load_cache()
     session = requests.Session()
 
@@ -115,29 +122,19 @@ def generate_items(force=False):
         return [], {}
 
     links_hash = _hash_links(links)
-
-    # Se cambia la lista link, aggiorna markers
     if cache.get("links_hash") != links_hash:
         cache["links_hash"] = links_hash
         cache["last_scan"] = _now_iso()
         cache.setdefault("cursor", 0)
 
-    # Batch: rispetta cursore (vecchi → nuovi)
-    if force:
-        batch = links[:]  # attenzione: lentezza, solo per popolamenti una tantum
-        cache["cursor"] = 0
-        logger.info("Modalità FORCED: processerò %d articoli.", len(batch))
-    else:
-        cursor = cache.get("cursor", 0) or 0
-        end = min(cursor + MAX_BATCH, len(links))
-        batch = links[cursor:end]
-        if not batch and links:
-            # se siamo a fine corsa, riparti dall'inizio
-            batch = links[:min(MAX_BATCH, len(links))]
-            cursor = 0
-        logger.info("Elaboro batch %d → %d (totale link %d)", cursor, cursor + len(batch), len(links))
+    cursor = cache.get("cursor", 0) or 0
+    end = min(cursor + MAX_BATCH, len(links))
+    batch = links[cursor:end]
+    if not batch and links:
+        batch = links[:min(MAX_BATCH, len(links))]
+        cursor = 0
+    logger.info("Elaboro batch %d → %d (totale link %d)", cursor, cursor + len(batch), len(links))
 
-    # 3) FEED FIRST: costruisci gli item aggiornati
     fresh_items = []
     for url in batch:
         existing = cache.get("items", {}).get(url)
@@ -146,19 +143,13 @@ def generate_items(force=False):
             fresh_items.append(new_item)
         time.sleep(REQUEST_DELAY)
 
-    # Se non ho elaborato nulla di nuovo, usa gli ultimi conosciuti (così il feed non resta vuoto)
     if not fresh_items:
         fresh_items = list(cache.get("items", {}).values())
 
-    # Ordina gli item per data di pubblicazione (vecchi → nuovi)
-    def _to_key(a):
-        # usa published, altrimenti modified, come stringhe ISO già ordinate
-        return (a.get("published") or a.get("modified") or "")
-    fresh_items.sort(key=_to_key)
+    fresh_items.sort(key=lambda a: (a.get("published") or a.get("modified") or ""))
 
     logger.info("✅ Feed generato: %s articoli totali.", len(fresh_items))
 
-    # 4) SOLO ORA aggiorna la cache con i NUOVI/AGGIORNATI
     for it in fresh_items:
         url = it.get("url")
         if not url:
@@ -167,13 +158,9 @@ def generate_items(force=False):
         if not old or old.get("_hash") != it.get("_hash"):
             cache.setdefault("items", {})[url] = it
 
-    # 5) Avanza cursore
-    #    (se ho consumato K elementi a partire da cursor, avanzo di K)
-    current_cursor = cache.get("cursor", 0) or 0
-    cache["cursor"] = (current_cursor + len(batch)) % max(1, len(links))
+    cache["cursor"] = (cursor + len(batch)) % max(1, len(links))
     _save_cache(cache)
 
-    # Metadati per chi genera il feed
     meta = {
         "self_url": os.environ.get("SELF_FEED_URL", ""),
         "title": os.environ.get("FEED_TITLE", "ARTBOOMS - Archivio completo"),
