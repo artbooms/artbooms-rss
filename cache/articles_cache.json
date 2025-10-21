@@ -2210,9 +2210,42 @@
       "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/58b0cd491b10e3069c8b2920/1489967256865/oldest-11.jpg?format=1500w",
       "_hash": "5d33ff5e82ae1f1537546ba704880536ba57fd2b3e354454c56f1c06d00868eb",
       "_fetched_at": "2025-10-21T15:54:55.375844+00:00"
+    },
+    "https://www.artbooms.com/blog/juliette-clovis-scultura-in-porcellana-limoges": {
+      "url": "https://www.artbooms.com/blog/juliette-clovis-scultura-in-porcellana-limoges",
+      "title": "Le Signore in Porcellana di Limoges di Juliette Clovis Indecise se Tramutarsi in un Corallo o Adottare un Look Steampunk",
+      "description": "Le sculture in porcellana di Limoges dell’artista francese Juliette Clovis sono molto decorative ma anche inquietanti. I suoi busti di donna, ricoperti come sono di farfalle, rose, coralli, serpenti o quant’altro, sembrano sempre sul punto di trasformarsi.",
+      "author": "natasha barbieri",
+      "published": "2017-03-02T11:17:00+01:00",
+      "modified": "2017-03-20T00:32:36+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/58b7649adb29d65fdf3dc37b/1489966356948/clovis-1.jpg?format=1500w",
+      "_hash": "e6c04c5409025bec17fba08430e3d6cb92fce01c15ff5559e4766956a0a1a8c6",
+      "_fetched_at": "2025-10-21T16:29:58.208742+00:00"
+    },
+    "https://www.artbooms.com/blog/azuma-makoto-scultura-shiki-tou": {
+      "url": "https://www.artbooms.com/blog/azuma-makoto-scultura-shiki-tou",
+      "title": "Azuma Makoto crea una scultura facendo librare nell'aria un pino nel bel mezzo di una tempesta di neve",
+      "description": "Azuma Makoto continua a maltrattare le piante. Questa volta è toccato a un grande pino fatto librare al di sopra del suolo. La scultura si chiama “Shiki tou” ed è stata installata nei pressi di Asahikawa, sull’isola di Hokkaido. Un’area che detiene il primato delle precipitazioni nevose.",
+      "author": "natasha barbieri",
+      "published": "2017-03-03T11:15:00+01:00",
+      "modified": "2017-03-20T00:29:54+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/58b8b5b8a5790aeaef8b8722/1489966194131/azuma-makoto-shiki-tou-hanging-pine-tree-hokkaido-1.jpg?format=1500w",
+      "_hash": "4de192940bc70133e950f4bf04952dd1b46df76fa6719e49d661b5409b9a3714",
+      "_fetched_at": "2025-10-21T16:29:59.112294+00:00"
+    },
+    "https://www.artbooms.com/blog/banksy-art-hotel-cisgiordania-walled-off": {
+      "url": "https://www.artbooms.com/blog/banksy-art-hotel-cisgiordania-walled-off",
+      "title": "Banksy inaugura un Art Hotel con vista sulla Striscia di Gaza. Ecco le foto del \"Walled Off\":",
+      "description": "Il “Walled off Hotel” di Banksy. L’albergo, che promette “la vista peggiore del mondo”, ha un indirizzo improbabile per una residenza internazionale di lusso: 182 Caritas Street, Betlemme, Palestina. Proprio accanto alla barriera che divide Israele e Striscia di Gaza.",
+      "author": "natasha barbieri",
+      "published": "2017-03-07T10:57:00+01:00",
+      "modified": "2017-03-20T00:22:45+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/58bc6db12e69cfbfda695e34/1489965765353/banksy-the-walled-off-hotel-bethlehem-11.jpg?format=1500w",
+      "_hash": "b2e10b61d273ad81184f178cc892878b62b0f93f8266f0d31e5e084f078f3dcf",
+      "_fetched_at": "2025-10-21T16:30:00.013174+00:00"
     }
   },
-  "cursor": 201,
+  "cursor": 204,
   "last_scan": "2025-10-21T03:08:12.145606+00:00",
   "links_hash": "4610bd195e802b0837c232307c9380d710e8fe4b32638d4eaeab248e241d051d"
 }
