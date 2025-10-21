@@ -362,9 +362,42 @@
       "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56e220499f7266cdffec8c23/1482104901524/seb-10.jpg?format=1500w",
       "_hash": "5d24e9dac54fb35c39459fc11c43e1caf9d5d4586d472ca5fb78e6dcd2d6c13c",
       "_fetched_at": "2025-10-21T05:22:17.698892+00:00"
+    },
+    "https://www.artbooms.com/blog/mosaici-jim-bachor": {
+      "url": "https://www.artbooms.com/blog/mosaici-jim-bachor",
+      "title": "JIM BACHOR RATTOPPA LE BUCHE SULLE STRADE DI CHIACAGO CON DEGLI ALLEGRI MOSAICI",
+      "description": "Jim Bachor è venuto in Italia a studiare la tecnica tradizionale del mosaico. Tornato a casa a poco a poco nella sua mente ha preso forma un’idea: riempire le buche della sua città con dei mini-mosaici.",
+      "author": "natasha barbieri",
+      "published": "2016-03-15T09:37:00+01:00",
+      "modified": "2020-01-16T01:19:52+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56e7339720c6472659fcad2f/1579133992446/icecream-mosaic-by-Jim-Bachelor-1050x680.jpg?format=1500w",
+      "_hash": "6d316f309ab1f4742d6bf3aed99673d5d00c8d1871dafe989143bffa28387de8",
+      "_fetched_at": "2025-10-21T06:02:11.453110+00:00"
+    },
+    "https://www.artbooms.com/blog/ceramica-kevin-kowalsky": {
+      "url": "https://www.artbooms.com/blog/ceramica-kevin-kowalsky",
+      "title": "LA SORPRENDENTE TECNICA DI KEVIN KOWALSKY CHE FA APPARIRE ALBERI SULLA CERAMICA IN UN ISTANTE",
+      "description": "Il ceramista Kevin Kowalski usando la tecnica \"moka diffusion\" lascia a bocca aperta. Avviene tutto in un attimo. Il tempo che una goccia di liquido colorato scivoli sull’argilla umida, per vedere comparire motivi decorativi complessi ed organici.",
+      "author": "natasha barbieri",
+      "published": "2016-03-16T11:04:00+01:00",
+      "modified": "2016-12-19T00:32:17+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56e8922b3c44d89db7dce9df/1482103937974/KevinKowalski1.jpg?format=1500w",
+      "_hash": "1c8bf598b781d0c7f20ce9df2950fb7398e8479430b4e5088656f8381d2132b2",
+      "_fetched_at": "2025-10-21T06:02:12.453631+00:00"
+    },
+    "https://www.artbooms.com/blog/disegno-3d-stefan-pabst": {
+      "url": "https://www.artbooms.com/blog/disegno-3d-stefan-pabst",
+      "title": "GLI INCREDIBILI DISEGNI 3D DI STEFAN PABST",
+      "description": "E’ un mondo incantato, anche se non sempre incantevole, quello del pittore Stefan Pabst. Ci sono serpenti e ragni enormi ma anche coccinelle giganti e leggiadre farfalle. E tutti hanno in comune una cosa: sembrano veri, tridimensionali, ma non lo sono.",
+      "author": "natasha barbieri",
+      "published": "2016-03-16T12:09:00+01:00",
+      "modified": "2016-12-18T23:15:35+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56e8a11d1d07c0fa63ae242c/1482099335145/maxresdefault.jpg?format=1500w",
+      "_hash": "78aeaee089ff20a6d0b45684b59d006673f955f3a2b80698923534e662074474",
+      "_fetched_at": "2025-10-21T06:02:13.363327+00:00"
     }
   },
-  "cursor": 33,
+  "cursor": 36,
   "last_scan": "2025-10-21T03:08:12.145606+00:00",
   "links_hash": "4610bd195e802b0837c232307c9380d710e8fe4b32638d4eaeab248e241d051d"
 }
