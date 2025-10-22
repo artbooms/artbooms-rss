@@ -2,17 +2,39 @@
   "items": {
     "https://www.artbooms.com/blog/e-sbocciato-il-primo-fiore-nello-spazio201623": {
       "url": "https://www.artbooms.com/blog/e-sbocciato-il-primo-fiore-nello-spazio201623",
-      "title": "E' SBOCCIATO IL PRIMO FIORE NELLO SPAZIO",
-      "description": "E’ una zinnia il primo fiore sbocciato nello spazio. Ne ha dato notizia il 16 gennaio l’astronauta statunitense Scott Kelly attraverso il suo account Twitter. In realtà nel tempo sono state coltivate numerose specie di piante in assenza di gravità (soprattutto vegetali commestibili)...",
+      "title": "E' SBOCCIATO IL PRIMO FIORE NELLO SPAZIO: — ARTBOOMS",
+      "description": "E’ una  zinnia &nbsp;il primo fiore sbocciato nello spazio. Ne ha dato notizia il 16 di gennaio, l’astronauta statunitense  Scott Kelly , attraverso il suo  account Twitter . In realtà nel tempo sono state coltivare numerose specie di piante in assenza di gravità (soprattutto vegetali commestibi",
       "author": "natasha barbieri",
       "published": "2016-02-10T11:21:00+01:00",
       "modified": "2018-07-17T02:11:50+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56b1539e1bbee06392b1fb6c/1531786310994",
-      "_hash": "9056458d348c52da9439365778451c23f8635356992ffb63c0946cfff6c28106",
-      "_fetched_at": "2025-10-21T03:08:12.255073+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56b1539e1bbee06392b1fb6c/1531786310994/?format=1500w",
+      "_hash": "93520ea77dc24ec8ddb5c0914e0733b8fee723d5ab24d8a77ce4b132f7ce88d5",
+      "_fetched_at": "2025-10-22T03:13:47.999695+00:00"
+    },
+    "https://www.artbooms.com/blog/quando-la-pittura-diventa-pi-realista-della-fotografia201622": {
+      "url": "https://www.artbooms.com/blog/quando-la-pittura-diventa-pi-realista-della-fotografia201622",
+      "title": "Marco Grassi: Quando la pittura diventa più realista della fotografia — ARTBOOMS",
+      "description": "Il pittore Marco Grassi dipinger dei ritratti iper-realisti più accurati nella descrizione del soggetto di una fotografia",
+      "author": "natasha barbieri",
+      "published": "2016-02-10T14:25:00+01:00",
+      "modified": "2018-07-17T03:09:56+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56b0059d07eaa0088937e80f/1531789796708/?format=1500w",
+      "_hash": "f31017a4a0dfc495a2d0f1fb44c1f0fa22f7aade7d710e1ecd9c07b74ce1d7ad",
+      "_fetched_at": "2025-10-22T03:13:48.897282+00:00"
+    },
+    "https://www.artbooms.com/blog/in-affitto-su-airbnb-la-ricostruzione-della-camera-di-van-gogh-ad-arles2016210": {
+      "url": "https://www.artbooms.com/blog/in-affitto-su-airbnb-la-ricostruzione-della-camera-di-van-gogh-ad-arles2016210",
+      "title": "In affitto su Airbnb la ricostruzione della camera di Van Gogh ad Arles — ARTBOOMS",
+      "description": "Io non ci andrò, perché non è proprio dietro l’angolo, ma mi piacerebbe molto dormire nella stanza che l’ Art Institute di Chicago  affitta per la cifra simbolica di 9 euro a notte su  Airbnb .&nbsp;  Creata come iniziativa collaterale alla mostra “ Van Gogh’s bedroosms ”, è la meticolosa ricost",
+      "author": "natasha barbieri",
+      "published": "2016-02-10T16:15:00+01:00",
+      "modified": "2018-07-17T03:13:57+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56baae23b09f959bdbdef9f6/1531790037662/?format=1500w",
+      "_hash": "d6e07099c9811566cab2bc6b4d924474c95d22b69b24aaaa48ec7c9475fb9f77",
+      "_fetched_at": "2025-10-22T03:13:49.794035+00:00"
     }
   },
-  "cursor": 0,
-  "last_scan": null,
-  "links_hash": null
+  "cursor": 3,
+  "last_scan": "2025-10-22T03:13:47.892919+00:00",
+  "links_hash": "4610bd195e802b0837c232307c9380d710e8fe4b32638d4eaeab248e241d051d"
 }
