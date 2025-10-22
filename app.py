@@ -73,6 +73,12 @@ def rebuild_feed():
         logging.warning("Cache vuota: feed vuoto.")
         return
 
+    # --- PATCH DI DEBUG ---
+    logging.info("🧩 DEBUG FEED: %d articoli totali prima dell'ordinamento", len(items))
+    for idx, it in enumerate(items[:5]):
+        logging.info("🧩 [%d] titolo='%s' | img=%s | pub=%s | mod=%s",
+                     idx, it.get("title"), it.get("image"), it.get("published"), it.get("modified"))
+
     # RSS standard: più recenti in cima
     def sort_key(a):
         return a.get("modified") or a.get("published") or ""
@@ -112,6 +118,9 @@ def background_populator():
 
             if items:
                 logging.info("🆕 Batch completato, articoli aggiornati: %d", len(items))
+                # --- PATCH DI DEBUG ---
+                for idx, it in enumerate(items[:5]):
+                    logging.info("🧩 Batch item %d | titolo=%s | img=%s", idx, it.get("title"), it.get("image"))
                 rebuild_feed()
                 last_rebuild = time.time()
             else:
@@ -181,4 +190,3 @@ if not any(t.name == "BackgroundPopulator" for t in threading.enumerate()):
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", 10000)))
-
