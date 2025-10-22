@@ -296,9 +296,42 @@
       "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56de2bf659827e74477ba061/1482286831065/snow-2.jpg?format=1500w",
       "_hash": "88ca0c896e1696d1f8cb7638e4c20bd739fa186051f6a95d3766eb2f6bb9eafd",
       "_fetched_at": "2025-10-22T04:44:50.449174+00:00"
+    },
+    "https://www.artbooms.com/blog/street-art-the-boneyard-project": {
+      "url": "https://www.artbooms.com/blog/street-art-the-boneyard-project",
+      "title": "A TUCSON GLI AEREI MILITARI SONO DIVENTATI OPERE D’ARTE — ARTBOOMS",
+      "description": "“The boneyard project” ha coinvolto i migliori street-artists del mondo. Nelle loro mani i rruderi dei vecchi aerei militari sono diventati bellissimi monumenti nel deserto.",
+      "author": "natasha barbieri",
+      "published": "2016-03-09T07:41:00+01:00",
+      "modified": "2020-01-16T01:19:52+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56df826437013bed348fb7c2/1579133992454/pic19.jpg?format=1500w",
+      "_hash": "5ef8db74dcd5bd56b79458d4a05454479f28ecc776a3a9ac4de16a18d4411d95",
+      "_fetched_at": "2025-10-22T05:22:45.195716+00:00"
+    },
+    "https://www.artbooms.com/blog/ohea-letto-intelligente": {
+      "url": "https://www.artbooms.com/blog/ohea-letto-intelligente",
+      "title": "IN SPAGNA UN OPERAIO METALMECCANICO HA INVENTATO OHEA IL LETTO CHE SI RIFA’ DA SOLO: — ARTBOOMS",
+      "description": "Si chiama Ohea ed è un letto che si rifà da solo. In cinquanta secondi netti. Ad inventarlo è stato l’operaio metalmeccanico spagnolo, Ascencio Zubeldia Jauregui",
+      "author": "natasha barbieri",
+      "published": "2016-03-09T11:01:00+01:00",
+      "modified": "2019-01-27T00:57:18+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56df5e88f850826a22913426/1548547038052/01i.jpg?format=1500w",
+      "_hash": "66d7034c0153616e2679ade7f31603905125115ae786243984f244766953faf6",
+      "_fetched_at": "2025-10-22T05:22:46.103622+00:00"
+    },
+    "https://www.artbooms.com/blog/le-sculture-cinetiche-di-peter-william-holden": {
+      "url": "https://www.artbooms.com/blog/le-sculture-cinetiche-di-peter-william-holden",
+      "title": "GLI OGGETTI DANZANO NELLE SCULTURE ANIMATE DI PETER WILLIAM HOLDEN — ARTBOOMS",
+      "description": "Un po’ old-style e un po’ surreali, le sculture cinetiche di Peter William Holden, stupiscono e fanno sognare.",
+      "author": "natasha barbieri",
+      "published": "2016-03-09T13:31:00+01:00",
+      "modified": "2016-12-19T01:19:48+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56da398a22482ece7bd09950/1482106788278/?format=1500w",
+      "_hash": "e312bdef244b9effeadf7eb66f585fdb951f7ec0c43f9932de8743120b3babd1",
+      "_fetched_at": "2025-10-22T05:22:47.097948+00:00"
     }
   },
-  "cursor": 27,
+  "cursor": 30,
   "last_scan": "2025-10-22T03:13:47.892919+00:00",
   "links_hash": "4610bd195e802b0837c232307c9380d710e8fe4b32638d4eaeab248e241d051d"
 }
