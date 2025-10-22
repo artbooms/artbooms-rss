@@ -329,9 +329,42 @@
       "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56da398a22482ece7bd09950/1482106788278/?format=1500w",
       "_hash": "e312bdef244b9effeadf7eb66f585fdb951f7ec0c43f9932de8743120b3babd1",
       "_fetched_at": "2025-10-22T05:22:47.097948+00:00"
+    },
+    "https://www.artbooms.com/blog/scandic-to-go-il-primo-hotel-mobile": {
+      "url": "https://www.artbooms.com/blog/scandic-to-go-il-primo-hotel-mobile",
+      "title": "IL PRIMO HOTEL MOBILE DEL MONDO VIAGGIA PER LA PENISOLA SCANDINAVA — ARTBOOMS",
+      "description": "Lo Scandic to go è una camera d’albergo che si può mettere dove si vuole. L’hotel fa parte della catena alberghiera scandinava Scandic.",
+      "author": "natasha barbieri",
+      "published": "2016-03-10T07:00:00+01:00",
+      "modified": "2016-12-19T01:09:06+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56e0c7ff04426223be2e3ef9/1482106146775/tumblr_ni2hc9zYTv1r2doe0o1_1280-830x553.jpg?format=1500w",
+      "_hash": "fe8d0fc42f12497a044c15ff680d52cc172646a335eafe8294f4d226234ea874",
+      "_fetched_at": "2025-10-22T06:02:34.649065+00:00"
+    },
+    "https://www.artbooms.com/blog/la-cina-poetica-e-spaventata-di-liu-shuwei": {
+      "url": "https://www.artbooms.com/blog/la-cina-poetica-e-spaventata-di-liu-shuwei",
+      "title": "LE MAGNIFICHE FOTO DEL PAESE DELL'INDACO DI LIU SHUWEI: — ARTBOOMS",
+      "description": "Le aggraziate immagini di Liu Shuwei (artista cinese che usa come medium la fotografia) ci parlano di magia e alienazione. Di ecologia e contemplazione.",
+      "author": "natasha barbieri",
+      "published": "2016-03-10T10:25:00+01:00",
+      "modified": "2016-12-19T01:01:14+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56b170040442625816454002/1482105674399/?format=1500w",
+      "_hash": "5bc74881e7aeaffcfd4ae3d040e0bf20d3f078e81fb427209ee4a5ecd72e3c28",
+      "_fetched_at": "2025-10-22T06:02:35.652850+00:00"
+    },
+    "https://www.artbooms.com/blog/le-fioriture-di-seb-janiak": {
+      "url": "https://www.artbooms.com/blog/le-fioriture-di-seb-janiak",
+      "title": "LE SUNTUOSE FIORITURE D’ALI D’INSETTO DI SEB JANIAK — ARTBOOMS",
+      "description": "Il fotografo Seb Janiak crea delle complesse composizioni di ali d’insetto che fanno subito pensare ai fiori. Grandi e suntuose fioriture. Un processo, di solito, lungo e laborioso.",
+      "author": "natasha barbieri",
+      "published": "2016-03-11T11:57:00+01:00",
+      "modified": "2016-12-19T00:48:21+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56e220499f7266cdffec8c23/1482104901524/seb-10.jpg?format=1500w",
+      "_hash": "cf36f8dac388723b86284860e344d84bc5e77f23167de9325747408f35e8b60a",
+      "_fetched_at": "2025-10-22T06:02:36.559339+00:00"
     }
   },
-  "cursor": 30,
+  "cursor": 33,
   "last_scan": "2025-10-22T03:13:47.892919+00:00",
   "links_hash": "4610bd195e802b0837c232307c9380d710e8fe4b32638d4eaeab248e241d051d"
 }
