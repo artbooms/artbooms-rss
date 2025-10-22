@@ -659,9 +659,42 @@
       "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/570d90408a65e2e984e5f9b3/1579133992422/12973566_1023648647726779_3405257559014050449_o.jpg?format=1500w",
       "_hash": "5cd68fd02edf3a144c9c45db3b65e3b356cb7cbc8ec1717c0454ad055eac6540",
       "_fetched_at": "2025-10-22T15:24:29.765815+00:00"
+    },
+    "https://www.artbooms.com/blog/dragonfly-helmet-elmetto-scultura-giapponese": {
+      "url": "https://www.artbooms.com/blog/dragonfly-helmet-elmetto-scultura-giapponese",
+      "title": "L'elmo libellula che sembra uscito da un film di Hollywood e invece veniva usato dai samurai nel 1600 — ARTBOOMS",
+      "description": "Si chiama \"Dragonfly Helmet\" (elmo libellula) e sembra uscito direttamente da un deposito di oggetti di scena hollywoodiani. E invece è stato fabbricato in Giappone nel XVII secolo. Il \"Dragonfly Helmet\" fa parte della collezione del Minneapolis Institute of Art ed è un\"kawa",
+      "author": "natasha barbieri",
+      "published": "2016-04-14T08:50:00+02:00",
+      "modified": "2019-01-26T03:41:28+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/570edeac2eeb8126f6789d67/1548470488696/Dragonfly_Bubbler.jpg?format=1500w",
+      "_hash": "3c57c0532d38795b186335e56608ad4902a29fc585d33139ad32c9cbba2ba461",
+      "_fetched_at": "2025-10-22T16:02:45.625730+00:00"
+    },
+    "https://www.artbooms.com/blog/nuovi-dipinti-3d-stefan-pabst": {
+      "url": "https://www.artbooms.com/blog/nuovi-dipinti-3d-stefan-pabst",
+      "title": "Le ultime fatiche 3D del pittore Stefan Pabst sono la sua mano sinistra e un gel per iniezioni intramuscolo  — ARTBOOMS",
+      "description": "Stefan Pabst, ha sempre rappresentato soprattutto oggetti di uso quotidiano, ma ultimamente le sue scelte si sono fatte più ironiche. Le più recenti fatiche di Pabst, infatti, sono la sua mano sinistra e la confezione di un gel per iniezione intramuscolo. Tutto dipinto con la tecnica 3D",
+      "author": "natasha barbieri",
+      "published": "2016-04-14T10:25:00+02:00",
+      "modified": "2019-01-26T03:29:53+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/570ef19ed51cd4cb371daa94/1548469793209/535296_1010153445720797_1362174367849878359_n.jpg?format=1500w",
+      "_hash": "59a162d5a9834d4dacfa029e274412e945d74de0b8d2701e645d7b5b561c0309",
+      "_fetched_at": "2025-10-22T16:02:46.623054+00:00"
+    },
+    "https://www.artbooms.com/blog/moon-globo-luna-3d-oscar-lhermitte": {
+      "url": "https://www.artbooms.com/blog/moon-globo-luna-3d-oscar-lhermitte",
+      "title": "Moon è il mappaluna in 3D costruito con i dati della Nasa — ARTBOOMS",
+      "description": "Si chiama “Moon” e riproduce la luna in ogni minuscolo particolare, cratere per cratere. Come una scultura straordinariamente accurata. E' intelligente e ruota sincronizzata con le fasi lunari.",
+      "author": "natasha barbieri",
+      "published": "2016-04-15T11:04:00+02:00",
+      "modified": "2016-12-17T02:25:13+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/571033f52fe131aa27411cd0/1481937913264/Moon_03.jpg?format=1500w",
+      "_hash": "8fecb4141d1650484821906bb0b2e1ef89a4b4928fbc68be15925c712d5885fb",
+      "_fetched_at": "2025-10-22T16:02:47.526832+00:00"
     }
   },
-  "cursor": 60,
+  "cursor": 63,
   "last_scan": "2025-10-22T03:13:47.892919+00:00",
   "links_hash": "4610bd195e802b0837c232307c9380d710e8fe4b32638d4eaeab248e241d051d"
 }
