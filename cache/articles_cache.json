@@ -1451,9 +1451,42 @@
       "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5797f76ee4fcb59f61aa8f7c/1481156078588/Raubdruckerin-pirati-tipografici%281%29.jpg?format=1500w",
       "_hash": "63e1e19cfe1032496a77c65795263842e61f41a4f4dfdf39a58423c304a5916c",
       "_fetched_at": "2025-10-22T20:54:53.806663+00:00"
+    },
+    "https://www.artbooms.com/blog/yeesookyung-translated-vase-sculture-ceramica": {
+      "url": "https://www.artbooms.com/blog/yeesookyung-translated-vase-sculture-ceramica",
+      "title": "Yeesookyung crea delle raffinate sculture incollando frammenti di vasi rotti e rifinendo con foglia d’oro — ARTBOOMS",
+      "description": "La serie di sculture in ceramica “Translated vase”, dell'artista Yeesookyung, gioca sui concetti di recupero e restauro, per creare delle opere d’arte contemporanea che strizzano l’occhio alla tradizione kintsugi.",
+      "author": "natasha barbieri",
+      "published": "2016-07-28T10:39:00+02:00",
+      "modified": "2016-12-08T00:48:46+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/579938191b631b51b01249af/1481154526309/Yeesookyung-translated-vase.jpg?format=1500w",
+      "_hash": "21d1a6889eb9b977c77f0c9faa33e43ffa9db868b7b8db1ab8b909ad137955f1",
+      "_fetched_at": "2025-10-22T21:17:08.471130+00:00"
+    },
+    "https://www.artbooms.com/blog/malplaquet-house-collezione-arte-tim-knox-todd-longstaffe-gowan": {
+      "url": "https://www.artbooms.com/blog/malplaquet-house-collezione-arte-tim-knox-todd-longstaffe-gowan",
+      "title": "Londra: Vendesi antica ed inquietante dimora. Già appartenuta a due collezionisti d'arte. Arredi e fantasmi inclusi — ARTBOOMS",
+      "description": "La storica villa londinese Malplaquet House è di nuovo in vendita. Insieme all’inquietante e ricca collezione di Tim Knox e Todd Longstaffe-Gowan.",
+      "author": "natasha barbieri",
+      "published": "2016-07-29T10:48:00+02:00",
+      "modified": "2016-12-08T00:35:57+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/579a95266b8f5b8f495a0771/1481153757752/malplaquet-house-collezione-tim-knox-todd-longstaffe-gowan-10.jpg?format=1500w",
+      "_hash": "d0447c25a350fcdb02d720bd17902685d2424d03137dbf445c8cbb5b3c66fcf3",
+      "_fetched_at": "2025-10-22T21:17:09.373426+00:00"
+    },
+    "https://www.artbooms.com/blog/pastel-street-art-oslo": {
+      "url": "https://www.artbooms.com/blog/pastel-street-art-oslo",
+      "title": "Lo street-artist Pastel dipinge enormi fiori esotici su un muro di Oslo — ARTBOOMS",
+      "description": "Lo street-artistPastel, ha completato un murale ad Oslo. L’operasi intitola \"Nelu\" e rappresenta degli enormi fiori stilizzati su sfondo monocromo.",
+      "author": "natasha barbieri",
+      "published": "2016-10-10T07:22:00+02:00",
+      "modified": "2020-01-16T01:19:52+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/57e1e0e529687fa8f38f2806/1579133992345/PASTEL.jpg?format=1500w",
+      "_hash": "1260fb5e7925676e3b7073bef0f11e5d99198589fda08cb0aba72984d86b87e7",
+      "_fetched_at": "2025-10-22T21:17:10.272341+00:00"
     }
   },
-  "cursor": 132,
+  "cursor": 135,
   "last_scan": "2025-10-22T03:13:47.892919+00:00",
   "links_hash": "4610bd195e802b0837c232307c9380d710e8fe4b32638d4eaeab248e241d051d"
 }
