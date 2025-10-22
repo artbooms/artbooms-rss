@@ -149,6 +149,16 @@ def parse_article(url, html=None, session=None):
     published   = _first_meta(soup, [{"itemprop": "datePublished"}])
     modified    = _first_meta(soup, [{"itemprop": "dateModified"}])
 
+    # 🔧 fallback immagine se manca la miniatura
+    if not thumbnail:
+        alt_img = _first_meta(soup, [{"itemprop": "image"}])
+        if alt_img:
+            thumbnail = alt_img
+        else:
+            link_img = soup.find("link", rel="image_src")
+            if link_img and link_img.get("href"):
+                thumbnail = link_img["href"].strip()
+
     # fallback canonical se manca
     if not canonical:
         link_tag = soup.find("link", rel="canonical")
