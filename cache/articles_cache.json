@@ -758,9 +758,42 @@
       "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/571ec46fe3214003e960560c/1481932544000/Senza+titolo-2.jpg?format=1500w",
       "_hash": "69a7fb247e81954964c879bd1c2999bdc3196338ef198e4cb241fdefbe8217cc",
       "_fetched_at": "2025-10-22T18:34:55.441156+00:00"
+    },
+    "https://www.artbooms.com/blog/arazzi-3d-ana-teresa-barboza": {
+      "url": "https://www.artbooms.com/blog/arazzi-3d-ana-teresa-barboza",
+      "title": "L’artista Ana Teresa Barboza usa i fili come fossero tubetti per creare spettacolari arazzi 3D — ARTBOOMS",
+      "description": "L’artista peruviana Ana Teresa Barboza, prima disegna poi ricama. Spesso si tratta di paesaggi, vedute della costa, onde che si infrangono sugli scogli.",
+      "author": "natasha barbieri",
+      "published": "2016-04-27T15:43:00+02:00",
+      "modified": "2016-12-17T00:42:05+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/57202340f699bb2aca0d7ea1/1481931725837/004.jpg?format=1500w",
+      "_hash": "deac67f8178c8289165eeda9ab9b6c6609b7a7f1eed7a218af08d990e0a8583c",
+      "_fetched_at": "2025-10-22T19:04:39.134937+00:00"
+    },
+    "https://www.artbooms.com/blog/street-art-striscie-pedonali-3d-india": {
+      "url": "https://www.artbooms.com/blog/street-art-striscie-pedonali-3d-india",
+      "title": "L’India usa la pittura 3D per confondere gli automobilisti troppo veloci — ARTBOOMS",
+      "description": "Un provvedimento del Governo indiano prevede che le strisce pedonali delle arterie più trafficate vengano rifatte usando la pittura 3D. Per dare l’impressione che i pedoni che le attraversano camminino sospesi.",
+      "author": "natasha barbieri",
+      "published": "2016-04-28T10:09:00+02:00",
+      "modified": "2020-01-16T01:19:52+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5721667a1d07c084365752e7/1579133992407/3d-street-art-prevent-speed-breakers-india-6.jpg?format=1500w",
+      "_hash": "ad7f61a4a0ee815877c87c3788c2d00e757ff78e227f98743f78147fd1474672",
+      "_fetched_at": "2025-10-22T19:04:40.035492+00:00"
+    },
+    "https://www.artbooms.com/blog/casette-di-cartone-per-gatti-landmarks-di-poopy-cat": {
+      "url": "https://www.artbooms.com/blog/casette-di-cartone-per-gatti-landmarks-di-poopy-cat",
+      "title": "Le casette per micio dal design più innovativo riproducono gli edifici-simbolo dei quattro continenti — ARTBOOMS",
+      "description": "Si chiamano “Landmarks”, le cucce per micio della ditta olandese “Poopy Cat”, e riproducono con sagome minimali e facciate decorate, gli edifici simbolo dell’umanità. C’è la Tour Eiffel, la Casa Bianca, il Cremlino, la Sfinge di Giza, il Taj Mahal, il tempio pagoda e il tempio Maya.",
+      "author": "natasha barbieri",
+      "published": "2016-04-28T11:00:00+02:00",
+      "modified": "2016-12-16T03:03:30+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/57214f34e707ebc86d560505/1481853810270/cardboard-cat-818.gif?format=1500w",
+      "_hash": "a26b4d73ed3da83e9e8ada03b643bee64bfa27a1b9d42890481f5e1090feab0b",
+      "_fetched_at": "2025-10-22T19:04:40.932929+00:00"
     }
   },
-  "cursor": 69,
+  "cursor": 72,
   "last_scan": "2025-10-22T03:13:47.892919+00:00",
   "links_hash": "4610bd195e802b0837c232307c9380d710e8fe4b32638d4eaeab248e241d051d"
 }
