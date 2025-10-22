@@ -22,6 +22,14 @@ MAX_BATCH = 3
 
 FEED_SELF_URL = "https://artbooms-rss-x6pc.onrender.com/rss"
 
+PING_URLS = [
+    f"https://www.google.com/ping?sitemap={FEED_SELF_URL}",
+    f"https://www.bing.com/ping?sitemap={FEED_SELF_URL}",
+]
+
+PING_MIN_INTERVAL = 600  # 10 minuti (in secondi)
+_last_ping_time = 0
+
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
@@ -50,8 +58,27 @@ def bootstrap_cache():
                 json.dump({"items": {}}, f)
 
 # ============================================================
-# Feed RSS
+# Feed RSS e ping automatico
 # ============================================================
+def ping_search_engines():
+    """Invia ping a Google e Bing (massimo 1 ogni 10 minuti)."""
+    global _last_ping_time
+    now = time.time()
+    if now - _last_ping_time < PING_MIN_INTERVAL:
+        logging.info("⏳ Ping saltato: ultimo inviato meno di 10 minuti fa.")
+        return
+    _last_ping_time = now
+
+    for url in PING_URLS:
+        try:
+            r = requests.get(url, timeout=10)
+            if r.ok:
+                logging.info("🔔 Ping inviato con successo: %s", url)
+            else:
+                logging.warning("⚠️ Ping fallito (%s): status %s", url, r.status_code)
+        except Exception as e:
+            logging.warning("⚠️ Errore durante il ping %s: %s", url, e)
+
 def rebuild_feed():
     try:
         with open(CACHE_PATH, "r", encoding="utf-8") as f:
@@ -73,13 +100,12 @@ def rebuild_feed():
         logging.warning("Cache vuota: feed vuoto.")
         return
 
-    # --- PATCH DI DEBUG ---
+    # --- DEBUG iniziale ---
     logging.info("🧩 DEBUG FEED: %d articoli totali prima dell'ordinamento", len(items))
     for idx, it in enumerate(items[:5]):
         logging.info("🧩 [%d] titolo='%s' | img=%s | pub=%s | mod=%s",
                      idx, it.get("title"), it.get("image"), it.get("published"), it.get("modified"))
 
-    # RSS standard: più recenti in cima
     def sort_key(a):
         return a.get("modified") or a.get("published") or ""
     items_sorted = sorted(items, key=sort_key, reverse=True)
@@ -104,6 +130,10 @@ def rebuild_feed():
         with open("feed.xml", "wb") as f:
             f.write(rss_xml)
         logging.info("✅ Feed ricostruito da cache: %s articoli", len(items_sorted))
+
+        # 🔔 PING AUTOMATICO DOPO COSTRUZIONE
+        ping_search_engines()
+
     except Exception as e:
         logging.error("Errore generazione feed: %s", e)
 
@@ -115,10 +145,8 @@ def background_populator():
     while True:
         try:
             items, _ = generate_items()
-
             if items:
                 logging.info("🆕 Batch completato, articoli aggiornati: %d", len(items))
-                # --- PATCH DI DEBUG ---
                 for idx, it in enumerate(items[:5]):
                     logging.info("🧩 Batch item %d | titolo=%s | img=%s", idx, it.get("title"), it.get("image"))
                 rebuild_feed()
@@ -129,7 +157,6 @@ def background_populator():
                     logging.info("♻️ Rigenerazione periodica del feed (nessun nuovo articolo).")
                     rebuild_feed()
                     last_rebuild = now
-
         except Exception as e:
             logging.error("Errore popolatore: %s", e)
         time.sleep(POPULATE_INTERVAL)
