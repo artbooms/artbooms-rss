@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timezone
+from email.utils import format_datetime
 from xml.sax.saxutils import escape
 
 logger = logging.getLogger("rss_generator")
@@ -19,44 +20,66 @@ def build_rss(items: list, meta: dict):
     feed_title = escape(meta.get("title", "ARTBOOMS – Archivio completo"))
     feed_description = escape(meta.get("description", "Tutti gli articoli di Artbooms"))
     feed_language = meta.get("language", "it-IT")
-    build_time = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
+    build_time = datetime.utcnow().replace(tzinfo=timezone.utc)
+    build_time_rfc = format_datetime(build_time)
 
     rss_items = []
     for it in items:
-        # se it non è dict lo ignora
         if not isinstance(it, dict):
             logger.warning("Elemento RSS non valido: %s", type(it))
             continue
+
         title = escape(it.get("title") or "")
         link = escape(it.get("url") or "")
         desc = escape(it.get("description") or "")
         author = escape(it.get("author") or "")
-        pub = it.get("published") or build_time
+        image = it.get("image")
+        pub_iso = it.get("published") or it.get("modified")
         guid = link or title
 
-        rss_items.append(
-            f"<item>"
-            f"<title>{title}</title>"
-            f"<link>{link}</link>"
-            f"<description>{desc}</description>"
-            f"<dc:creator>{author}</dc:creator>"
-            f"<pubDate>{pub}</pubDate>"
-            f"<guid>{guid}</guid>"
-            f"</item>"
-        )
+        # 🔧 Conversione data in RFC2822
+        try:
+            if pub_iso:
+                dt = datetime.fromisoformat(pub_iso.replace("Z", "+00:00"))
+                pub_rfc = format_datetime(dt)
+            else:
+                pub_rfc = build_time_rfc
+        except Exception:
+            pub_rfc = build_time_rfc
+
+        # 🔧 Costruzione blocco <item> completo con immagine
+        item_xml = [
+            "<item>",
+            f"<title>{title}</title>",
+            f"<link>{link}</link>",
+            f"<description>{desc}</description>",
+            f"<dc:creator>{author}</dc:creator>",
+            f"<pubDate>{pub_rfc}</pubDate>",
+            f"<guid>{guid}</guid>",
+        ]
+
+        # 🔧 Aggiunge immagine come enclosure (standard RSS)
+        if image:
+            safe_img = escape(image)
+            item_xml.append(f'<enclosure url="{safe_img}" type="image/jpeg" />')
+            item_xml.append(f'<media:content url="{safe_img}" medium="image" />')
+
+        item_xml.append("</item>")
+        rss_items.append("\n".join(item_xml))
 
     body = "\n".join(rss_items)
     rss = (
-        f'<?xml version="1.0" encoding="UTF-8"?>\n'
-        f'<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">\n'
-        f'<channel>\n'
-        f'<title>{feed_title}</title>\n'
-        f'<description>{feed_description}</description>\n'
-        f'<language>{feed_language}</language>\n'
-        f'<lastBuildDate>{build_time}</lastBuildDate>\n'
-        f'{body}\n'
-        f'</channel>\n'
-        f'</rss>'
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" '
+        'xmlns:media="http://search.yahoo.com/mrss/">\n'
+        "<channel>\n"
+        f"<title>{feed_title}</title>\n"
+        f"<description>{feed_description}</description>\n"
+        f"<language>{feed_language}</language>\n"
+        f"<lastBuildDate>{build_time_rfc}</lastBuildDate>\n"
+        f"{body}\n"
+        "</channel>\n"
+        "</rss>"
     )
 
     logger.info("✅ RSS costruito con %d elementi effettivi.", len(rss_items))
