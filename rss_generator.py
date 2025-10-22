@@ -6,7 +6,7 @@ from xml.sax.saxutils import escape
 logger = logging.getLogger("rss_generator")
 
 def build_rss(items: list, meta: dict):
-    """Costruisce il feed RSS 2.0 da una lista di articoli."""
+    """Costruisce il feed RSS 2.0 da una lista di articoli (senza duplicare link)."""
     try:
         n = len(items)
         logger.info("🧩 Costruzione RSS: ricevuti %d articoli.", n)
@@ -30,7 +30,7 @@ def build_rss(items: list, meta: dict):
             continue
 
         title = escape(it.get("title") or "")
-        link = escape(it.get("url") or "")
+        guid = escape(it.get("url") or "")  # 🔧 guid = url
         desc = escape(it.get("description") or "")
         author = escape(it.get("author") or "")
         image = it.get("image")
@@ -50,7 +50,7 @@ def build_rss(items: list, meta: dict):
         item_xml = [
             "<item>",
             f"<title>{title}</title>",
-            f"<link>{link}</link>",
+            f"<guid isPermaLink=\"true\">{guid}</guid>",  # ✅ sostituisce <link>
             f"<description>{desc}</description>",
             f"<dc:creator>{author}</dc:creator>",
             f"<pubDate>{pub_rfc}</pubDate>",
@@ -59,7 +59,7 @@ def build_rss(items: list, meta: dict):
         # 🔧 Aggiunge solo <enclosure> (immagine unica)
         if image:
             safe_img = escape(image)
-            item_xml.append(f'<enclosure url="{safe_img}" type="image/jpeg" />')
+            item_xml.append(f'<enclosure url="{safe_img}" type="image/jpeg" length="0" />')
 
         item_xml.append("</item>")
         rss_items.append("\n".join(item_xml))
@@ -67,12 +67,16 @@ def build_rss(items: list, meta: dict):
     body = "\n".join(rss_items)
     rss = (
         '<?xml version="1.0" encoding="UTF-8"?>\n'
-        '<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" '
-        'xmlns:media="http://search.yahoo.com/mrss/">\n'
+        '<rss version="2.0" '
+        'xmlns:dc="http://purl.org/dc/elements/1.1/" '
+        'xmlns:media="http://search.yahoo.com/mrss/" '
+        'xmlns:atom="http://www.w3.org/2005/Atom">\n'
         "<channel>\n"
         f"<title>{feed_title}</title>\n"
+        f"<link>https://www.artbooms.com</link>\n"
         f"<description>{feed_description}</description>\n"
         f"<language>{feed_language}</language>\n"
+        f"<atom:link href=\"https://artbooms-rss-x6pc.onrender.com/rss\" rel=\"self\" type=\"application/rss+xml\" />\n"
         f"<lastBuildDate>{build_time_rfc}</lastBuildDate>\n"
         f"{body}\n"
         "</channel>\n"
