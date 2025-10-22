@@ -35,7 +35,6 @@ def build_rss(items: list, meta: dict):
         author = escape(it.get("author") or "")
         image = it.get("image")
         pub_iso = it.get("published") or it.get("modified")
-        guid = link or title
 
         # 🔧 Conversione data in RFC2822
         try:
@@ -47,7 +46,7 @@ def build_rss(items: list, meta: dict):
         except Exception:
             pub_rfc = build_time_rfc
 
-        # 🔧 Costruzione blocco <item> completo con immagine
+        # 🔧 Costruzione blocco <item>
         item_xml = [
             "<item>",
             f"<title>{title}</title>",
@@ -55,14 +54,12 @@ def build_rss(items: list, meta: dict):
             f"<description>{desc}</description>",
             f"<dc:creator>{author}</dc:creator>",
             f"<pubDate>{pub_rfc}</pubDate>",
-            f"<guid>{guid}</guid>",
         ]
 
-        # 🔧 Aggiunge immagine come enclosure (standard RSS)
+        # 🔧 Aggiunge solo <enclosure> (immagine unica)
         if image:
             safe_img = escape(image)
             item_xml.append(f'<enclosure url="{safe_img}" type="image/jpeg" />')
-            item_xml.append(f'<media:content url="{safe_img}" medium="image" />')
 
         item_xml.append("</item>")
         rss_items.append("\n".join(item_xml))
