@@ -32,9 +32,42 @@
       "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56baae23b09f959bdbdef9f6/1531790037662/?format=1500w",
       "_hash": "d6e07099c9811566cab2bc6b4d924474c95d22b69b24aaaa48ec7c9475fb9f77",
       "_fetched_at": "2025-10-22T03:13:49.794035+00:00"
+    },
+    "https://www.artbooms.com/blog/quindicanni-di-wild-africa2016211": {
+      "url": "https://www.artbooms.com/blog/quindicanni-di-wild-africa2016211",
+      "title": "Quindic’anni di Wild Africa — ARTBOOMS",
+      "description": "Laurent Baheux  ha passato ben quindici anni in Africa. Dove si è spostato di Paese in Paese e ha fotografato gli animali selvatici con costanza e metodo. Leoni, Scimmie, zebre e molti altri, che negli scatti di Baheux diventano creature fantastiche, magici animali totem che ci pongono silenziose do",
+      "author": "natasha barbieri",
+      "published": "2016-02-11T12:30:00+01:00",
+      "modified": "2018-07-17T03:19:38+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56bbd185c2ea51b1c84bee7f/1531790378796/?format=1500w",
+      "_hash": "38ab405327c396c2ddf292c6d604ea73a07da08bba7793d1ad5257d4ceb1d968",
+      "_fetched_at": "2025-10-22T04:27:17.803551+00:00"
+    },
+    "https://www.artbooms.com/blog/tutti-i-colori-dei-batteri2016127": {
+      "url": "https://www.artbooms.com/blog/tutti-i-colori-dei-batteri2016127",
+      "title": "Tutti i colori dei batteri — ARTBOOMS",
+      "description": "Per la competizione di pittura indetta dalla American Society for Microbiology'sintitolata Agar Art gli autori hanno usato i vetrini invece delle tele e i batteri al posto dei colori.",
+      "author": "natasha barbieri",
+      "published": "2016-02-11T14:00:00+01:00",
+      "modified": "2018-07-17T02:39:56+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56a820f9fd5d08ec9bdfdf50/1531787996594/?format=1500w",
+      "_hash": "580345491f85ded033d888b48a2889636d221f2db6fb563dba881313844e52e2",
+      "_fetched_at": "2025-10-22T04:27:18.804923+00:00"
+    },
+    "https://www.artbooms.com/blog/stati-uniti-donna-trova-opera-di-andy-warhol-in-una-scatola-di-immondizia201628": {
+      "url": "https://www.artbooms.com/blog/stati-uniti-donna-trova-opera-di-andy-warhol-in-una-scatola-di-immondizia201628",
+      "title": "STATI UNITI: DONNA TROVA OPERA DI ANDY WARHOL IN UNA SCATOLA DI IMMONDIZIA — ARTBOOMS",
+      "description": "In una scatola di oggetti usati comprata via internet una donna ha trovato una litografia acobaleno di Andy Warhol",
+      "author": "natasha barbieri",
+      "published": "2016-02-11T15:00:00+01:00",
+      "modified": "2018-07-17T02:57:45+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56b7e249c6fc08771b200482/1531789065516/?format=1500w",
+      "_hash": "82f264c1205af9bf79d4cce7b8c0f6243d6ae038e20b38345db82eded25fe81b",
+      "_fetched_at": "2025-10-22T04:27:19.804988+00:00"
     }
   },
-  "cursor": 3,
+  "cursor": 6,
   "last_scan": "2025-10-22T03:13:47.892919+00:00",
   "links_hash": "4610bd195e802b0837c232307c9380d710e8fe4b32638d4eaeab248e241d051d"
 }
