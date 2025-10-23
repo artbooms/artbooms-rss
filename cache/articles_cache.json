@@ -2441,9 +2441,42 @@
       "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/58deee18bebafbe50caa6538/1491529869230/boa-mistura.jpg?format=1500w",
       "_hash": "6309d90ea5373b7e1dbfe031ecc2062bd680eebe9f7573cf3b888782ab120f30",
       "_fetched_at": "2025-10-22T23:52:23.360954+00:00"
+    },
+    "https://www.artbooms.com/blog/anja-niemi-fotografia-the-woman-who-never-existed": {
+      "url": "https://www.artbooms.com/blog/anja-niemi-fotografia-the-woman-who-never-existed",
+      "title": "Anja Niemi crea bellissime opere ispirate a Eleonora Duse facendo contemporaneamente da fotografa, modella, costumista e coreografa — ARTBOOMS",
+      "description": "Nella serie di fotografie \"the woman who never existed\" l'artista anja niemi fa contemporaneamente da fotografa, modella, coreografa e costumista.",
+      "author": "natasha barbieri",
+      "published": "2017-04-07T11:40:00+02:00",
+      "modified": "2017-05-07T03:05:13+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/58e6dff63a0411b7794e7203/1494119113475/anja-niemi-05.jpg?format=1500w",
+      "_hash": "dc1fcb9f9297b73bec4645dccb67f184337293359ea12de52b62052e9e9ea33d",
+      "_fetched_at": "2025-10-23T01:45:40.999888+00:00"
+    },
+    "https://www.artbooms.com/blog/willy-verginer-sculture-in-legno-policrome": {
+      "url": "https://www.artbooms.com/blog/willy-verginer-sculture-in-legno-policrome",
+      "title": "Le sculture in legno di Willy Verginer stravolte da vivaci strisce di colori-design — ARTBOOMS",
+      "description": "L'artista  Willy Verginer  a dispetto del nome che potrebbe trarre in inganno è italiano. Vive e lavora ad Ortisei in Val Gardena. Ed è proprio nell’artigianato locale che affondano le radici le sue sculture.  L’artista realizza opere in bilico tra il ritratto e la metafora, intagliando solidi ceppi",
+      "author": "natasha barbieri",
+      "published": "2017-04-11T11:05:00+02:00",
+      "modified": "2017-04-11T11:05:36+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/58d31fb7f7e0ab731dc98c3b/1491901536725/WillyVerginer_07.jpg?format=1500w",
+      "_hash": "6cd670ebf29e6aba1d22f01f480a5fa59d40b4e6b34adf0578e8f63070cd1e74",
+      "_fetched_at": "2025-10-23T01:45:41.998311+00:00"
+    },
+    "https://www.artbooms.com/blog/jeff-koons-per-louis-vuitton-borse-serie-masters-2017": {
+      "url": "https://www.artbooms.com/blog/jeff-koons-per-louis-vuitton-borse-serie-masters-2017",
+      "title": "Jeff Koons riproduce la copia della Monna Lisa sulle borsette di Louis Vuitton — ARTBOOMS",
+      "description": "Si tratta di un gioco di specchi tra vero e falso, ironia e serietà, arte e vita. Sembra una noia? Macchè è “ Masters ”, la nuova collezione di borse create da  Jeff Koons  per  Luis Vuitton , fresca di presentazione nella cornice del  Louvre .  E bellissima, of course. Per celebrare un po’ le opere",
+      "author": "natasha barbieri",
+      "published": "2017-04-12T11:15:00+02:00",
+      "modified": "2019-01-26T00:27:42+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/58ed7592e58c621894937b5c/1548458862795/jeff-koons-louis-vuitton-masters-gioconda-particolare-bauletto.jpg?format=1500w",
+      "_hash": "9c8fbe20edd67b439aac52b4fa95f477b9099ef6a00b716fc5986fe1b3f61648",
+      "_fetched_at": "2025-10-23T01:45:42.995628+00:00"
     }
   },
-  "cursor": 222,
+  "cursor": 225,
   "last_scan": "2025-10-22T03:13:47.892919+00:00",
   "links_hash": "4610bd195e802b0837c232307c9380d710e8fe4b32638d4eaeab248e241d051d"
 }
