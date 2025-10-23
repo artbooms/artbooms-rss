@@ -205,6 +205,22 @@ def home():
     )
 
 # ============================================================
+# 🔹 NUOVA ROTTA DI "WAKE" (risveglio manuale)
+# ============================================================
+@app.route("/wake")
+def wake():
+    """
+    Risveglia manualmente Render e forza un aggiornamento del feed.
+    Puoi chiamare: https://artbooms-rss-x6pc.onrender.com/wake
+    """
+    try:
+        threading.Thread(target=background_populator, daemon=True).start()
+        return jsonify({"status": "ok", "message": "Popolatore avviato manualmente"}), 200
+    except Exception as e:
+        logging.error("Errore durante il wake: %s", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# ============================================================
 # Avvio
 # ============================================================
 bootstrap_cache()
