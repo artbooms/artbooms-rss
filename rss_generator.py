@@ -19,14 +19,18 @@ def build_rss(items: list, meta: dict):
         items = []
         n = 0
 
-    # 🔧 Ordina per data di pubblicazione (più recente in cima)
+    # 🔧 Ordina SOLO per data di pubblicazione (più recente in cima)
     try:
+        items = [
+            it for it in items
+            if it.get("published")  # tiene solo quelli con data di pubblicazione valida
+        ]
         items = sorted(
             items,
-            key=lambda x: x.get("published") or x.get("modified") or "",
+            key=lambda x: x["published"],
             reverse=True,
         )
-        logger.info("📊 DEBUG RSS: ordinati %d articoli per data di pubblicazione.", len(items))
+        logger.info("📊 DEBUG RSS: ordinati %d articoli per data di pubblicazione (solo 'published').", len(items))
     except Exception as e:
         logger.exception("Errore ordinamento articoli: %s", e)
 
@@ -58,17 +62,14 @@ def build_rss(items: list, meta: dict):
         # 🔧 Descrizione pulita (corregge entità HTML doppie o tagliate)
         raw_desc = (it.get("description") or "")
         if "&" in raw_desc:
-            # Rimuove eventuali entità HTML incomplete alla fine della stringa
             raw_desc = re.sub(r"&[^;]{0,10}$", "", raw_desc)
-            # 🔧 Corregge ampersand non validi (es. &Pop -> &amp;Pop)
             raw_desc = re.sub(r"&(?![A-Za-z0-9#]+;)", "&amp;", raw_desc)
-            # 🔧 Corregge anche ampersand seguiti da spazio o punteggiatura (es. & Pop)
             raw_desc = re.sub(r"&(?=[\s.,;:!?])", "&amp;", raw_desc)
         desc = escape(unescape(raw_desc))
 
         author = escape(it.get("author") or "")
         image = it.get("image")
-        pub_iso = it.get("published") or it.get("modified")
+        pub_iso = it.get("published")  # ✅ solo data di pubblicazione
 
         # 🔧 Conversione data in RFC2822
         try:
@@ -80,11 +81,10 @@ def build_rss(items: list, meta: dict):
         except Exception:
             pub_rfc = build_time_rfc
 
-        # 🔧 Costruzione blocco <item>
         item_xml = [
             "<item>",
             f"<title>{title}</title>",
-            f"<guid isPermaLink=\"true\">{guid}</guid>",  # ✅ sostituisce <link>
+            f"<guid isPermaLink=\"true\">{guid}</guid>",
             f"<description>{desc}</description>",
             f"<dc:creator>{author}</dc:creator>",
             f"<pubDate>{pub_rfc}</pubDate>",
