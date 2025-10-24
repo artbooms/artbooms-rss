@@ -42,6 +42,11 @@ def build_rss(items: list, meta: dict):
             logger.warning("Elemento RSS non valido: %s", type(it))
             continue
 
+        # 🩹 Salta articoli completamente vuoti (senza titolo e descrizione)
+        if not it.get("title") and not it.get("description"):
+            logger.warning("Articolo senza titolo e descrizione: %s", it.get("url"))
+            continue
+
         # 🔧 Titolo pulito: de-escape, fallback se vuoto
         raw_title = (it.get("title") or "").strip()
         if not raw_title:
