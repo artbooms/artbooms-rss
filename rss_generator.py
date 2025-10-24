@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timezone
 from email.utils import format_datetime
 from xml.sax.saxutils import escape
+from html import unescape  # 🔧 aggiunto per correggere le entità HTML doppie
 
 logger = logging.getLogger("rss_generator")
 
@@ -40,9 +41,17 @@ def build_rss(items: list, meta: dict):
             logger.warning("Elemento RSS non valido: %s", type(it))
             continue
 
-        title = escape(it.get("title") or "")
+        # 🔧 Titolo pulito: de-escape, fallback se vuoto
+        raw_title = (it.get("title") or "").strip()
+        if not raw_title:
+            raw_title = "(senza titolo)"
+        title = escape(unescape(raw_title))
+
         guid = escape(it.get("url") or "")  # 🔧 guid = url
-        desc = escape(it.get("description") or "")
+
+        # 🔧 Descrizione pulita (rimuove entità HTML incomplete o doppie)
+        desc = escape(unescape(it.get("description") or ""))
+
         author = escape(it.get("author") or "")
         image = it.get("image")
         pub_iso = it.get("published") or it.get("modified")
