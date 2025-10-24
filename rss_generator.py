@@ -31,6 +31,8 @@ def build_rss(items: list, meta: dict):
             reverse=True,
         )
         logger.info("📊 DEBUG RSS: ordinati %d articoli per data di pubblicazione (solo 'published').", len(items))
+        if items:
+            logger.info("🕒 Ultimo pubblicato: %s", items[0].get("title"))
     except Exception as e:
         logger.exception("Errore ordinamento articoli: %s", e)
 
@@ -69,7 +71,8 @@ def build_rss(items: list, meta: dict):
 
         author = escape(it.get("author") or "")
         image = it.get("image")
-        pub_iso = it.get("published")  # ✅ solo data di pubblicazione
+        # ✅ Solo data di pubblicazione
+        pub_iso = it.get("published")
 
         # 🔧 Conversione data in RFC2822
         try:
