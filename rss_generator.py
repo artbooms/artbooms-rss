@@ -17,6 +17,17 @@ def build_rss(items: list, meta: dict):
         items = []
         n = 0
 
+    # 🔧 Ordina per data di pubblicazione (più recente in cima)
+    try:
+        items = sorted(
+            items,
+            key=lambda x: x.get("published") or x.get("modified") or "",
+            reverse=True,
+        )
+        logger.info("📊 DEBUG RSS: ordinati %d articoli per data di pubblicazione.", len(items))
+    except Exception as e:
+        logger.exception("Errore ordinamento articoli: %s", e)
+
     feed_title = escape(meta.get("title", "ARTBOOMS – Archivio completo"))
     feed_description = escape(meta.get("description", "Tutti gli articoli di Artbooms"))
     feed_language = meta.get("language", "it-IT")
