@@ -55,6 +55,8 @@ def build_rss(items: list, meta: dict):
         if "&" in raw_desc:
             # Rimuove eventuali entità HTML incomplete alla fine della stringa
             raw_desc = re.sub(r"&[^;]{0,10}$", "", raw_desc)
+            # 🔧 Corregge ampersand non validi (es. &Pop -> &amp;Pop)
+            raw_desc = re.sub(r"&(?![A-Za-z0-9#]+;)", "&amp;", raw_desc)
         desc = escape(unescape(raw_desc))
 
         author = escape(it.get("author") or "")
