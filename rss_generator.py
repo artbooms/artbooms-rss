@@ -67,6 +67,8 @@ def build_rss(items: list, meta: dict):
             raw_desc = re.sub(r"&[^;]{0,10}$", "", raw_desc)
             raw_desc = re.sub(r"&(?![A-Za-z0-9#]+;)", "&amp;", raw_desc)
             raw_desc = re.sub(r"&(?=[\s.,;:!?])", "&amp;", raw_desc)
+            # 🔧 Evita l'avviso W3C per sequenze come &amp;Pop
+            raw_desc = re.sub(r"&amp;([A-Z][a-z]+)", r"&amp; \1", raw_desc)
         desc = escape(unescape(raw_desc))
 
         author = escape(it.get("author") or "")
