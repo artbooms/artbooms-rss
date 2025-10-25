@@ -106,8 +106,9 @@ def rebuild_feed():
         logging.info("🧩 [%d] titolo='%s' | img=%s | pub=%s | mod=%s",
                      idx, it.get("title"), it.get("image"), it.get("published"), it.get("modified"))
 
+    # 🩹 Ordina principalmente per 'published', usa 'modified' solo se manca
     def sort_key(a):
-        return a.get("modified") or a.get("published") or ""
+        return a.get("published") or a.get("modified") or ""
     items_sorted = sorted(items, key=sort_key, reverse=True)
 
     newest = items_sorted[0].get("title") if items_sorted else "N/D"
