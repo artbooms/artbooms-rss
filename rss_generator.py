@@ -2,13 +2,12 @@ import logging
 from datetime import datetime, timezone
 from email.utils import format_datetime
 from xml.sax.saxutils import escape
-from html import unescape  # serve solo per pulire entità HTML doppie
-import re  # 🔧 aggiunto per pulire entità HTML troncate
+from html import unescape
+import re
 
 logger = logging.getLogger("rss_generator")
 
 def build_rss(items: list, meta: dict):
-    """Costruisce il feed RSS 2.0 da una lista di articoli (senza duplicare link)."""
     try:
         n = len(items)
         logger.info("🧩 Costruzione RSS: ricevuti %d articoli.", n)
@@ -19,17 +18,9 @@ def build_rss(items: list, meta: dict):
         items = []
         n = 0
 
-    # 🔧 Ordina SOLO per data di pubblicazione (più recente in cima)
     try:
-        items = [
-            it for it in items
-            if it.get("published")  # tiene solo quelli con data di pubblicazione valida
-        ]
-        items = sorted(
-            items,
-            key=lambda x: x["published"],
-            reverse=True,
-        )
+        items = [it for it in items if it.get("published")]
+        items = sorted(items, key=lambda x: x["published"], reverse=True)
         logger.info("📊 DEBUG RSS: ordinati %d articoli per data di pubblicazione (solo 'published').", len(items))
         if items:
             logger.info("🕒 Ultimo pubblicato: %s", items[0].get("title"))
@@ -48,38 +39,30 @@ def build_rss(items: list, meta: dict):
             logger.warning("Elemento RSS non valido: %s", type(it))
             continue
 
-        # 🩹 Salta articoli completamente vuoti (senza titolo e descrizione)
         if not it.get("title") and not it.get("description"):
             logger.warning("Articolo senza titolo e descrizione: %s", it.get("url"))
             continue
 
-        # 🔧 Titolo pulito: de-escape, fallback se vuoto
         raw_title = (it.get("title") or "").strip()
         if not raw_title:
             raw_title = "(senza titolo)"
         title = escape(unescape(raw_title))
 
-        guid = escape(it.get("url") or "")  # 🔧 guid = url
+        guid = escape(it.get("url") or "")
 
-        # 🔧 Descrizione pulita (corregge entità HTML doppie o tagliate)
         raw_desc = (it.get("description") or "")
         if "&" in raw_desc:
-            # Rimuove eventuali entità HTML incomplete
             raw_desc = re.sub(r"&[^;]{0,10}$", "", raw_desc)
-            # Corregge ampersand non validi (es. &Pop -> &amp;Pop)
             raw_desc = re.sub(r"&(?![A-Za-z0-9#]+;)", "&amp;", raw_desc)
-            # Corregge anche ampersand seguiti da spazio o punteggiatura
             raw_desc = re.sub(r"&(?=[\s.,;:!?])", "&amp;", raw_desc)
-            # 🩹 Evita l'avviso W3C per sequenze come &amp;Pop (aggiunge spazio di sicurezza)
             raw_desc = re.sub(r"&amp;([A-Z][a-z]+)", r"&amp; \1", raw_desc)
-        desc = escape(unescape(raw_desc))
+        # 🩹 NON ri-escape — evita doppia codifica XML
+        desc = raw_desc.strip()
 
         author = escape(it.get("author") or "")
         image = it.get("image")
-        # ✅ Solo data di pubblicazione
         pub_iso = it.get("published")
 
-        # 🔧 Conversione data in RFC2822
         try:
             if pub_iso:
                 dt = datetime.fromisoformat(pub_iso.replace("Z", "+00:00"))
