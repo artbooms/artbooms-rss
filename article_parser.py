@@ -177,6 +177,9 @@ def parse_article(url, html=None, session=None):
     # date
     pub_dt = _parse_date(published)
     mod_dt = _parse_date(modified) or pub_dt
+    # 🩹 PRIORITÀ PUBBLICAZIONE: non permettere che 'modified' superi 'published'
+    if pub_dt and mod_dt and mod_dt > pub_dt:
+        mod_dt = pub_dt
 
     # log di verifica
     logger.info("Parsed articolo: %s | titolo=%s | autore=%s | img=%s",
