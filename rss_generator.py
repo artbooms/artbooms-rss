@@ -56,8 +56,9 @@ def build_rss(items: list, meta: dict):
             raw_desc = re.sub(r"&(?![A-Za-z0-9#]+;)", "&amp;", raw_desc)
             raw_desc = re.sub(r"&(?=[\s.,;:!?])", "&amp;", raw_desc)
             raw_desc = re.sub(r"&amp;([A-Z][a-z]+)", r"&amp; \1", raw_desc)
-        # 🩹 NON ri-escape — evita doppia codifica XML
-        desc = raw_desc.strip()
+
+        # 🩹 Inserisci CDATA per soddisfare W3C (nessun impatto su contenuto)
+        desc = f"<![CDATA[{raw_desc.strip()}]]>"
 
         author = escape(it.get("author") or "")
         image = it.get("image")
