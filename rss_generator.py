@@ -64,10 +64,13 @@ def build_rss(items: list, meta: dict):
         # 🔧 Descrizione pulita (corregge entità HTML doppie o tagliate)
         raw_desc = (it.get("description") or "")
         if "&" in raw_desc:
+            # Rimuove eventuali entità HTML incomplete
             raw_desc = re.sub(r"&[^;]{0,10}$", "", raw_desc)
+            # Corregge ampersand non validi (es. &Pop -> &amp;Pop)
             raw_desc = re.sub(r"&(?![A-Za-z0-9#]+;)", "&amp;", raw_desc)
+            # Corregge anche ampersand seguiti da spazio o punteggiatura
             raw_desc = re.sub(r"&(?=[\s.,;:!?])", "&amp;", raw_desc)
-            # 🔧 Evita l'avviso W3C per sequenze come &amp;Pop
+            # 🩹 Evita l'avviso W3C per sequenze come &amp;Pop (aggiunge spazio di sicurezza)
             raw_desc = re.sub(r"&amp;([A-Z][a-z]+)", r"&amp; \1", raw_desc)
         desc = escape(unescape(raw_desc))
 
