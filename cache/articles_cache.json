@@ -4710,14 +4710,15 @@
     },
     "https://www.artbooms.com/blog/leah-kennedy-namibia-fotografia-aerea": {
       "url": "https://www.artbooms.com/blog/leah-kennedy-namibia-fotografia-aerea",
-      "title": "Le fotografie aeree di Leah Kennedy che fanno diventare la Namibia simile a un quadro di Burri — ARTBOOMS",
-      "description": "E’ una  Namibia  morbida, quasi liquida, tattile, fatta di colori caldi che si spengono nei grigio-azzurri di alcune rocce, quella che ritrae la  fotografia aerea  dell’ australiana  Leah Kennedy .  Come capita quasi sempre quando le immagini vengono catturate dall’alto, gli scatti della Kennedy sco",
-      "author": "natasha barbieri",
-      "published": "2018-10-24T11:43:00+02:00",
-      "modified": "2018-10-24T11:43:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5bcfb21f4785d3c856bd07a1/1579387460605/Namibia-20161015-CF001935-0106-1-768x960%402x.jpg?format=1500w",
-      "_hash": "b5c882e9bf4da451dcbf3e8ec3ea3b3c8688c7175147a16610b8117d930e0772",
-      "_fetched_at": "2025-10-25T07:44:14.573722+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2025-10-26T23:41:14.259088+00:00"
     },
     "https://www.artbooms.com/blog/liz-west-aglow-installazione-ciotole-fluorescenti-colorate": {
       "url": "https://www.artbooms.com/blog/liz-west-aglow-installazione-ciotole-fluorescenti-colorate",
@@ -12178,7 +12179,7 @@
       "_fetched_at": "2025-10-25T02:43:14.242952+00:00"
     }
   },
-  "cursor": 426,
+  "cursor": 444,
   "last_scan": "2025-10-22T03:13:47.892919+00:00",
   "links_hash": "4610bd195e802b0837c232307c9380d710e8fe4b32638d4eaeab248e241d051d"
 }
