@@ -8716,25 +8716,27 @@
     },
     "https://www.artbooms.com/blog/love-is-in-the-bin-di-banksy-vola-in-asia": {
       "url": "https://www.artbooms.com/blog/love-is-in-the-bin-di-banksy-vola-in-asia",
-      "title": "\"Love is in the Bin\" di Banksy vola in Asia per 22 milioni — ARTBOOMS",
-      "description": "Le vacanze sulla costa inglese ( “A Great Bitish Spraycation”) a Banksy hanno portato bene. Ha battuto un nuovo record all’asta. “Love is in the bin” è stata venduta a un collezionista asiatico per 22 milioni di euro.",
-      "author": "natasha barbieri",
-      "published": "2021-10-20T10:21:00+02:00",
-      "modified": "2021-10-20T10:21:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/616ca1d3a1e27824a3ac000a/1642461175467/banksy-love-is-in-the-bin-03.jpg?format=1500w",
-      "_hash": "68339842747f9af01ae431e6b512c0a328d213a6860029a4b5ba1ea97a1e253b",
-      "_fetched_at": "2025-10-25T12:06:36.927949+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2025-10-27T18:03:18.435981+00:00"
     },
     "https://www.artbooms.com/blog/breath-ghosts-blind-di-maurizio-cattelan": {
       "url": "https://www.artbooms.com/blog/breath-ghosts-blind-di-maurizio-cattelan",
-      "title": "Breath Ghosts Blind di Maurizio Cattelan in fotografie e musica (sinfonica) — ARTBOOMS",
-      "description": "Per un giorno “Breath Ghosts Blind”, la di Maurizio Cattelan al Pirelli HangarBicocca avrà una colonna sonora d’eccezione. Eseguita dal vivo e scelta da Cattelan: si tratta di musica sinfonica. Nel pezzo le foto della personale. milanese del famoso artista",
-      "author": "natasha barbieri",
-      "published": "2021-10-21T10:30:00+02:00",
-      "modified": "2021-10-21T10:30:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6168af7c9f76780124d0316d/1642979319888/Breath+Ghosts+Blind8.jpg?format=1500w",
-      "_hash": "a48592042cb811bf1ddbae62b360fb8d8b25fbcdd78a3798a734009895101ec3",
-      "_fetched_at": "2025-10-25T12:06:38.227918+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2025-10-27T18:03:19.505141+00:00"
     },
     "https://www.artbooms.com/blog/sadeck-waff-tutting-paralimpiadi-tokyo": {
       "url": "https://www.artbooms.com/blog/sadeck-waff-tutting-paralimpiadi-tokyo",
@@ -12180,7 +12182,7 @@
       "_fetched_at": "2025-10-25T02:43:14.242952+00:00"
     }
   },
-  "cursor": 780,
+  "cursor": 837,
   "last_scan": "2025-10-22T03:13:47.892919+00:00",
   "links_hash": "4610bd195e802b0837c232307c9380d710e8fe4b32638d4eaeab248e241d051d"
 }
