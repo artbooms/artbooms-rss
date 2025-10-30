@@ -12102,14 +12102,15 @@
     },
     "https://www.artbooms.com/blog/maurizio-cattelan-seasons-bergamo": {
       "url": "https://www.artbooms.com/blog/maurizio-cattelan-seasons-bergamo",
-      "title": "A Bergamo  la mostra “Seasons”  di Maurizio Cattelan — ARTBOOMS",
-      "description": "Per quanto “Seasons” di Maurizio Cattelan non sia una vera e propria personale, è forse una delle esposizioni più belle dell’artista da un po’ tempo a questa parte.",
-      "author": "natasha barbieri",
-      "published": "2025-06-13T10:52:00+02:00",
-      "modified": "2025-06-13T10:52:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/684b7d517024c5594380e142/1749804763119/GAMeC_Pensare+come+una+montagna_Maurizio+Cattelan.+Seasons_Ph.+Lorenzo+Palmieri_30.JPG?format=1500w",
-      "_hash": "3131c9bcb9571a9173bed2108ce2bc15bcbbfdd7b02e93c7090a5f9f1abb226f",
-      "_fetched_at": "2025-10-25T02:39:05.521950+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2025-10-30T23:49:28.859418+00:00"
     },
     "https://www.artbooms.com/blog/giovanni-ozzola-ora-blu": {
       "url": "https://www.artbooms.com/blog/giovanni-ozzola-ora-blu",
@@ -12178,7 +12179,7 @@
       "_fetched_at": "2025-10-25T02:43:14.242952+00:00"
     }
   },
-  "cursor": 1086,
+  "cursor": 1104,
   "last_scan": "2025-10-22T03:13:47.892919+00:00",
   "links_hash": "4610bd195e802b0837c232307c9380d710e8fe4b32638d4eaeab248e241d051d"
 }
