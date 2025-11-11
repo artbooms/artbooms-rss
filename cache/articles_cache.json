@@ -12187,9 +12187,20 @@
       "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6904171343872b24e6c2c964/1761904540980/237567FLV.jpg?format=1500w",
       "_hash": "6f8be3ec1bb52c91538dce4db2e697a87d2c9fc3c8a46595ec462fa36dbfd9e5",
       "_fetched_at": "2025-10-31T14:19:42.062884+00:00"
+    },
+    "https://www.artbooms.com/blog/yayoi-kusama-fondazione-beyeler": {
+      "url": "https://www.artbooms.com/blog/yayoi-kusama-fondazione-beyeler",
+      "title": "Yayoi Kusama alla Fondazione Beyeler: 60 anni di visioni — ARTBOOMS",
+      "description": "Alla Fondazione Beyeler di Basilea, oltre 300 opere raccontano la carriera di Yayoi Kusama, la più celebre artista giapponese vivente.",
+      "author": "natasha barbieri",
+      "published": "2025-11-11T10:55:00+01:00",
+      "modified": "2025-11-11T10:55:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/69126e7643a34720c8c143b1/1762854931399/Installationsansicht_Infinity_Mirrored_Room_The_Hope_of_the_Polka_Dots_39807_Def.jpg?format=1500w",
+      "_hash": "be288f237b8a76ae9bc2d02244d39cbe21fdc6986b7533adfa2163a6fc35a331",
+      "_fetched_at": "2025-11-11T19:51:26.558046+00:00"
     }
   },
-  "cursor": 1092,
+  "cursor": 0,
   "last_scan": "2025-11-11T09:56:16.382262+00:00",
   "links_hash": "626053f4a930c16b22e062e6a4be27b00396db6ef66e92f8a87cea93a97f932e"
 }
