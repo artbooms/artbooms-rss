@@ -12135,14 +12135,15 @@
     },
     "https://www.artbooms.com/blog/vija-celmins-fondation-beyeler": {
       "url": "https://www.artbooms.com/blog/vija-celmins-fondation-beyeler",
-      "title": "Sessant’anni  di Vija Celmins in mostra alla Fondazione Beyeler — ARTBOOMS",
-      "description": "Durante la sua carriera sessantennale Vija Celmins ha prodotto soltanto 220 opere. Novanta di queste sono ora esposte alla Fondazione Beyeler Basilea.",
-      "author": "natasha barbieri",
-      "published": "2025-06-27T10:52:00+02:00",
-      "modified": "2025-06-27T10:52:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6859e671d5ef910bff566983/1762999050849/25.06.12.FB_VijaCelmins_064_Def_Crop.jpg?format=1500w",
-      "_hash": "b241ca4bba10a72fe6825fd3707fe12c8b911b3848f60a35006da2ab89e4a480",
-      "_fetched_at": "2025-11-13T12:14:51.265595+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2025-11-19T14:28:10.886744+00:00"
     },
     "https://www.artbooms.com/blog/jack-whitten-moma": {
       "url": "https://www.artbooms.com/blog/jack-whitten-moma",
@@ -12198,9 +12199,20 @@
       "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/69126e7643a34720c8c143b1/1762996722935/Installationsansicht_Infinity_Mirrored_Room_The_Hope_of_the_Polka_Dots_39807_Def.jpg?format=1500w",
       "_hash": "04b4277db128eea3c28651c2e23898c1fe8d44a8d92a2ab350777f89fda03cbf",
       "_fetched_at": "2025-11-13T12:18:59.477246+00:00"
+    },
+    "https://www.artbooms.com/blog/toshihiko-shibuya-snow-pallet-fotografie": {
+      "url": "https://www.artbooms.com/blog/toshihiko-shibuya-snow-pallet-fotografie",
+      "title": "Toshihiko Shibuya in mostra a Milano — ARTBOOMS",
+      "description": "La piccola mostra di fotografie della serie scultorea Snow Pallet di Toshihiko Shibuya al Consolato Generale del Giappone di Milano racconta la bellezza delle nevicate sull’isola di Hokkaido.",
+      "author": "natasha barbieri",
+      "published": "2025-11-19T10:55:00+01:00",
+      "modified": "2025-11-19T10:55:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/691d10e2be5fff5730dfbaae/1763546153291/snowpallet12++A2++%E3%81%AE%E3%82%B3%E3%83%94%E3%83%BC.jpg?format=1500w",
+      "_hash": "81411120e98b044a3e2b096075c496cf4959298891f9be24c32cae0a81448ae7",
+      "_fetched_at": "2025-11-19T14:32:19.089989+00:00"
     }
   },
-  "cursor": 1098,
+  "cursor": 18,
   "last_scan": "2025-11-19T10:04:22.755305+00:00",
   "links_hash": "9b31d78682b8ff09b253ff7460b5a133fad5b12c6e40c70b173bbe36c0065acd"
 }
