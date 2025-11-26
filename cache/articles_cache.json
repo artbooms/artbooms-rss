@@ -299,15 +299,14 @@
     },
     "https://www.artbooms.com/blog/street-art-the-boneyard-project": {
       "url": "https://www.artbooms.com/blog/street-art-the-boneyard-project",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2025-11-26T07:36:19.789300+00:00"
+      "title": "A TUCSON GLI AEREI MILITARI SONO DIVENTATI OPERE D’ARTE — ARTBOOMS",
+      "description": "“The boneyard project” ha coinvolto i migliori street-artists del mondo. Nelle loro mani i rruderi dei vecchi aerei militari sono diventati bellissimi monumenti nel deserto.",
+      "author": "natasha barbieri",
+      "published": "2016-03-09T07:41:00+01:00",
+      "modified": "2016-03-09T07:41:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56df826437013bed348fb7c2/1579133992454/pic19.jpg?format=1500w",
+      "_hash": "edd5fa8c10697f2fc867a3cb99782a3890c1f11d10e297b6926551bf342660fd",
+      "_fetched_at": "2025-11-26T20:26:18.146995+00:00"
     },
     "https://www.artbooms.com/blog/ohea-letto-intelligente": {
       "url": "https://www.artbooms.com/blog/ohea-letto-intelligente",
@@ -12223,7 +12222,7 @@
       "_fetched_at": "2025-11-25T05:32:18.147333+00:00"
     }
   },
-  "cursor": 27,
+  "cursor": 51,
   "last_scan": "2025-11-22T09:47:53.550095+00:00",
   "links_hash": "d592b5e3832257a31ed92c6472b06499bbb04fe6613b0c9d3c9f8cdf6deae277"
 }
