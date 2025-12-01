@@ -8235,9 +8235,9 @@
       "author": "Elton Alickaj",
       "published": "2021-02-18T10:24:00+01:00",
       "modified": "2021-02-18T10:24:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/602da5c016cabf35771b8620/1721693396176/107.jpg?format=1500w",
-      "_hash": "e6dc3a88ee3912a05296a10d440cb77cef766a55a02d5828fc887ef7fb71741d",
-      "_fetched_at": "2025-10-25T11:34:48.191370+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/602da5c016cabf35771b8620/1764555440726/107.jpg?format=1500w",
+      "_hash": "74b7d72b9b1293a5ce8a6131e5752015ac0df11db8431e2eedbc1dffc6e40c6c",
+      "_fetched_at": "2025-12-01T12:10:24.283799+00:00"
     },
     "https://www.artbooms.com/blog/stan-douglas-new-york-penn-station": {
       "url": "https://www.artbooms.com/blog/stan-douglas-new-york-penn-station",
@@ -8532,9 +8532,9 @@
       "author": "natasha barbieri",
       "published": "2021-04-21T11:52:00+02:00",
       "modified": "2021-04-21T11:52:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/607a15208e883c1bd52b6abf/1642980209658/hagan-6-960x627%402x.jpg?format=1500w",
-      "_hash": "121989166045b31cc4cc6c48862287e7aa637291c37df2edd69807c689043f2f",
-      "_fetched_at": "2025-10-25T11:54:08.993811+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/607a15208e883c1bd52b6abf/1764555578444/hagan-6-960x627%402x.jpg?format=1500w",
+      "_hash": "f2e550e364fe40fca644f85399f58caf63bf3920027eb0c40acae36c2e750915",
+      "_fetched_at": "2025-12-01T12:29:04.875643+00:00"
     },
     "https://www.artbooms.com/blog/alex-da-corte-met-new-york-the-roof-garden-commission": {
       "url": "https://www.artbooms.com/blog/alex-da-corte-met-new-york-the-roof-garden-commission",
@@ -12233,7 +12233,7 @@
       "_fetched_at": "2025-11-29T12:16:28.680500+00:00"
     }
   },
-  "cursor": 726,
+  "cursor": 807,
   "last_scan": "2025-11-29T09:50:57.828098+00:00",
   "links_hash": "32236ecbff6df9e6698d197a56cb51a8c8697132f58c31a70a5d7d1ca9fa7b9b"
 }
