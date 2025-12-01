@@ -4594,9 +4594,9 @@
       "author": "natasha barbieri",
       "published": "2018-07-26T11:44:00+02:00",
       "modified": "2018-07-26T11:44:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5b591970758d467ac65c08b6/1579390022247/kototamalune_Bourgeon_Ancetres.jpg?format=1500w",
-      "_hash": "5c486a468de4bfabdbad42ff7e4030c0e6c88cc7fa9e4e059abf58b4bc0f7aac",
-      "_fetched_at": "2025-10-25T07:37:55.007151+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5b591970758d467ac65c08b6/1764555578506/kototamalune_Bourgeon_Ancetres.jpg?format=1500w",
+      "_hash": "a4703c5c227148eb05ac9ef056031427512ae680705231e3894cf46e9f6e4d06",
+      "_fetched_at": "2025-12-01T07:41:01.424119+00:00"
     },
     "https://www.artbooms.com/blog/valerie-rey-sculture-legno-vetro": {
       "url": "https://www.artbooms.com/blog/valerie-rey-sculture-legno-vetro",
@@ -4605,9 +4605,9 @@
       "author": "natasha barbieri",
       "published": "2018-07-27T10:32:00+02:00",
       "modified": "2018-07-27T10:32:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5b5a682e03ce64a70e783da2/1579389884755/ValerieRey_03.jpg?format=1500w",
-      "_hash": "2659976e4a9e75873415db4fbf2e02700c1d38560a87bd99d94ea4a097d55ae9",
-      "_fetched_at": "2025-10-25T07:37:56.161145+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5b5a682e03ce64a70e783da2/1764555579354/ValerieRey_03.jpg?format=1500w",
+      "_hash": "4e071f7e990fcd592720d989d2c858de3f8677a27f7bf1abd4760a88789b4ec9",
+      "_fetched_at": "2025-12-01T07:41:02.667344+00:00"
     },
     "https://www.artbooms.com/blog/pierre-louis-ferrer-fotografia-infrarossi-dordogna-giallo": {
       "url": "https://www.artbooms.com/blog/pierre-louis-ferrer-fotografia-infrarossi-dordogna-giallo",
@@ -12233,7 +12233,7 @@
       "_fetched_at": "2025-11-29T12:16:28.680500+00:00"
     }
   },
-  "cursor": 411,
+  "cursor": 435,
   "last_scan": "2025-11-29T09:50:57.828098+00:00",
   "links_hash": "32236ecbff6df9e6698d197a56cb51a8c8697132f58c31a70a5d7d1ca9fa7b9b"
 }
