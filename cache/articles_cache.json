@@ -10127,9 +10127,9 @@
       "author": "natasha barbieri",
       "published": "2022-12-07T10:57:00+01:00",
       "modified": "2022-12-07T10:57:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/638a90e69be6e4474dd2c5e6/1670796820654/2022_GDT-on-set-Pinocchio.jpg?format=1500w",
-      "_hash": "69db663b0c821fae13c07bfbd6ad4efa21eb5138f57708e625cd10444d63f149",
-      "_fetched_at": "2025-10-25T13:35:54.728207+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/638a90e69be6e4474dd2c5e6/1764555399727/2022_GDT-on-set-Pinocchio.jpg?format=1500w",
+      "_hash": "d03b11d47ea3f17f147774a3ff8cfedf70c074ce05b4f0f84fd3651643fde6e2",
+      "_fetched_at": "2025-12-01T14:11:14.796073+00:00"
     },
     "https://www.artbooms.com/blog/jan-fabre-disegni-sangue-sculture-corallo": {
       "url": "https://www.artbooms.com/blog/jan-fabre-disegni-sangue-sculture-corallo",
@@ -10237,9 +10237,9 @@
       "author": "natasha barbieri",
       "published": "2023-01-18T10:57:00+01:00",
       "modified": "2023-01-18T10:57:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/63bb40e8cb84542ccb046311/1686706226911/1673021650.jpg?format=1500w",
-      "_hash": "2c1fd60dc63a56e729da639729ee454e8b52bdfe2f820f34988de6d94f6bb792",
-      "_fetched_at": "2025-10-25T13:44:09.521982+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/63bb40e8cb84542ccb046311/1764555147389/1673021650.jpg?format=1500w",
+      "_hash": "983b8d411b44ccec8cb458ec363bf1adcb1278c1cecfdc3e1a072085ee517107",
+      "_fetched_at": "2025-12-01T14:19:29.679723+00:00"
     },
     "https://www.artbooms.com/blog/gian-maria-tosatti-pirelli-hangar-bicocca-nowhere": {
       "url": "https://www.artbooms.com/blog/gian-maria-tosatti-pirelli-hangar-bicocca-nowhere",
@@ -12233,7 +12233,7 @@
       "_fetched_at": "2025-11-29T12:16:28.680500+00:00"
     }
   },
-  "cursor": 900,
+  "cursor": 948,
   "last_scan": "2025-11-29T09:50:57.828098+00:00",
   "links_hash": "32236ecbff6df9e6698d197a56cb51a8c8697132f58c31a70a5d7d1ca9fa7b9b"
 }
