@@ -7817,9 +7817,9 @@
       "author": "natasha barbieri",
       "published": "2020-07-16T11:06:00+02:00",
       "modified": "2020-07-16T11:06:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5f0f9a08ad0b5c27fb005c7c/1602800429329/new-jullien-8.jpg?format=1500w",
-      "_hash": "2e0a1a4fa3b52ca624e7b9277abbf3e41d4bd18bdff51a90e18f477b36afcbdf",
-      "_fetched_at": "2025-10-25T11:07:19.510141+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5f0f9a08ad0b5c27fb005c7c/1764555399482/new-jullien-8.jpg?format=1500w",
+      "_hash": "9ad69f79652eb6adcf07dff2c73a9213eb0bfafa557971ba734669f24fc8134f",
+      "_fetched_at": "2025-12-01T11:43:38.087898+00:00"
     },
     "https://www.artbooms.com/blog/parigi-cinem-aperto-su-barche-elettriche": {
       "url": "https://www.artbooms.com/blog/parigi-cinem-aperto-su-barche-elettriche",
@@ -7949,9 +7949,9 @@
       "author": "natasha barbieri",
       "published": "2020-10-01T10:32:00+02:00",
       "modified": "2020-10-01T10:32:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5f6fc17f1d058032c897d6b2/1602797512006/1+Migliaro+Vincenzo%2C+Seduzioni.jpg?format=1500w",
-      "_hash": "acfac0bef83d9e808a51404b17e6cbf40aa3d70a3bdbc3a727dc1fc7bd3fca54",
-      "_fetched_at": "2025-10-25T11:15:37.839302+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5f6fc17f1d058032c897d6b2/1764555579576/1+Migliaro+Vincenzo%2C+Seduzioni.jpg?format=1500w",
+      "_hash": "83b31e7de0127b45b6c9e275629e5ed7d9200f5ec573047800d2704f3fd7c9bf",
+      "_fetched_at": "2025-12-01T11:51:55.445884+00:00"
     },
     "https://www.artbooms.com/blog/juliette-clovis-sculture-in-ceramica-pangolino": {
       "url": "https://www.artbooms.com/blog/juliette-clovis-sculture-in-ceramica-pangolino",
@@ -7960,9 +7960,9 @@
       "author": "natasha barbieri",
       "published": "2020-10-02T10:26:00+02:00",
       "modified": "2020-10-02T10:26:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5f67c8efd78cc314d21cf800/1602797424174/ezgif.com-webp-to-jpg.jpg?format=1500w",
-      "_hash": "3cdaef5c7fac25723e920168d996681ed1adc692d6ab621be9c86730abccc2ac",
-      "_fetched_at": "2025-10-25T11:18:12.429461+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5f67c8efd78cc314d21cf800/1764555579928/ezgif.com-webp-to-jpg.jpg?format=1500w",
+      "_hash": "5f81245f97a79185102506c4ec7a8c96a3401be4ddc89de5fb7e874a53fde97e",
+      "_fetched_at": "2025-12-01T11:53:58.029903+00:00"
     },
     "https://www.artbooms.com/blog/toshihiko-shibuya-manabe-garden-generation-8": {
       "url": "https://www.artbooms.com/blog/toshihiko-shibuya-manabe-garden-generation-8",
@@ -12233,7 +12233,7 @@
       "_fetched_at": "2025-11-29T12:16:28.680500+00:00"
     }
   },
-  "cursor": 708,
+  "cursor": 726,
   "last_scan": "2025-11-29T09:50:57.828098+00:00",
   "links_hash": "32236ecbff6df9e6698d197a56cb51a8c8697132f58c31a70a5d7d1ca9fa7b9b"
 }
