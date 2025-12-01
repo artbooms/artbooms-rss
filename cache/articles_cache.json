@@ -6706,9 +6706,9 @@
       "author": "natasha barbieri",
       "published": "2019-12-14T10:38:00+01:00",
       "modified": "2019-12-14T10:38:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5e0a8a98bb6d5e7d703037bd/1581630249905/Pair-by-the-sea_2.jpg?format=1500w",
-      "_hash": "ad51644d73e3479b9cf57a697875a4708da99ee2a496e12e868ce88ad4f2dfcd",
-      "_fetched_at": "2025-10-25T09:56:02.233512+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5e0a8a98bb6d5e7d703037bd/1764555580093/Pair-by-the-sea_2.jpg?format=1500w",
+      "_hash": "5628f1968632ed78bb3842dc94bacbd6857cc10b803e6d7e3265d06b7cc9f680",
+      "_fetched_at": "2025-12-01T10:31:53.945853+00:00"
     },
     "https://www.artbooms.com/blog/patrick-jacobs-diorami-nocturnes-mostra-thepoolnyc": {
       "url": "https://www.artbooms.com/blog/patrick-jacobs-diorami-nocturnes-mostra-thepoolnyc",
@@ -6904,9 +6904,9 @@
       "author": "natasha barbieri",
       "published": "2020-02-05T10:40:00+01:00",
       "modified": "2020-02-05T10:40:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5e378837e0e43424445b5dc6/1582318493166/fondazione-prada-the-porcelain-room-designboom-002.jpg?format=1500w",
-      "_hash": "26cc5507c6c7b15b419de198971d7c9d7401e9270a8be5f975e0b147058b1781",
-      "_fetched_at": "2025-10-25T10:08:27.926119+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5e378837e0e43424445b5dc6/1764555578793/fondazione-prada-the-porcelain-room-designboom-002.jpg?format=1500w",
+      "_hash": "756f789ceba95ae4a8e284263ac9d190570f9bb8a1d47c705735621788a4925e",
+      "_fetched_at": "2025-12-01T10:44:20.468277+00:00"
     },
     "https://www.artbooms.com/blog/thermodynamic-constellation-tomas-saraceno-palazzo-strozzi-firenze": {
       "url": "https://www.artbooms.com/blog/thermodynamic-constellation-tomas-saraceno-palazzo-strozzi-firenze",
@@ -12233,7 +12233,7 @@
       "_fetched_at": "2025-11-29T12:16:28.680500+00:00"
     }
   },
-  "cursor": 609,
+  "cursor": 639,
   "last_scan": "2025-11-29T09:50:57.828098+00:00",
   "links_hash": "32236ecbff6df9e6698d197a56cb51a8c8697132f58c31a70a5d7d1ca9fa7b9b"
 }
