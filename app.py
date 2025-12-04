@@ -7,6 +7,7 @@ import requests
 from flask import Flask, Response, jsonify, send_file
 from article_processor import generate_items
 from rss_generator import build_rss
+from news_sitemap import news_sitemap_view  # 👈 AGGIUNTO
 
 CACHE_PATH = "cache/articles_cache.json"
 RAW_CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss-v2/main/cache/articles_cache.json"
@@ -204,6 +205,10 @@ def home():
         "<p>Feed: <a href='/rss'>/rss</a> — Debug: <a href='/debug/cache'>/debug/cache</a></p>",
         mimetype="text/html"
     )
+
+@app.route("/news-sitemap.xml")
+def news_sitemap():
+    return news_sitemap_view()
 
 # ============================================================
 # 🔹 NUOVA ROTTA DI "WAKE" (risveglio manuale)
