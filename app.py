@@ -200,11 +200,22 @@ def healthz():
 
 @app.route("/")
 def home():
-    return Response(
-        "<h2>✅ Artbooms RSS è attivo</h2>"
-        "<p>Feed: <a href='/rss'>/rss</a> — Debug: <a href='/debug/cache'>/debug/cache</a></p>",
-        mimetype="text/html"
-    )
+    html = """
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+      <meta charset="utf-8" />
+      <title>Artbooms RSS</title>
+      <meta name="google-site-verification" content="kB6T4eVcha1nR3EBJ3VdvbgYYMQ-WwhxUwG45_5Af60" />
+    </head>
+    <body>
+      <h2>✅ Artbooms RSS è attivo</h2>
+      <p>Feed: <a href="/rss">/rss</a> — Debug: <a href="/debug/cache">/debug/cache</a></p>
+      <p>News sitemap: <a href="/news-sitemap.xml">/news-sitemap.xml</a></p>
+    </body>
+    </html>
+    """
+    return Response(html, mimetype="text/html")
 
 @app.route("/news-sitemap.xml")
 def news_sitemap():
