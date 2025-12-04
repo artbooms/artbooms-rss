@@ -1,163 +1,128 @@
-// Cloudflare Worker per Artbooms News Sitemap
-//
-// - NON tocca il sito, né Squarespace, né il feed su Render
-// - Legge SOLO la cache JSON pubblica su GitHub
-// - Genera una sitemap news per gli ultimi N giorni
+import datetime
+import requests
+from flask import Response
 
-const CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss-v2/main/cache/articles_cache.json";
+NEWS_CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss-v2/main/cache/articles_cache.json"
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/123.0.0.0 Safari/537.36"
+)
 
-// Finestra temporale: 29 giorni (restiamo sotto i 30, se Google News ignora il vecchio non è un problema)
-const DAYS_WINDOW = 29;
+# Finestra temporale: 29 giorni (sotto i 30; se Google ignora i più vecchi, semplicemente non li usa)
+DAYS_WINDOW = 29
+SITE_NAME = "ARTBOOMS"
+LANG = "it"
+KEYWORDS = "arte contemporanea, arte e cultura"
 
-const SITE_NAME = "ARTBOOMS";
-const LANG = "it";
-const KEYWORDS = "arte contemporanea, arte e cultura";
 
-function escapeXml(str) {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-async function buildNewsSitemap() {
-  let res;
-  try {
-    res = await fetch(CACHE_URL, {
-      headers: {
-        "User-Agent": "ArtboomsNewsSitemapBot/1.0",
-      },
-    });
-  } catch (e) {
-    // in caso di errore rete → sitemap vuota ma valida
-    return emptyNewsSitemap();
-  }
-
-  if (!res.ok) {
-    return emptyNewsSitemap();
-  }
-
-  let data;
-  try {
-    data = await res.json();
-  } catch (e) {
-    return emptyNewsSitemap();
-  }
-
-  let itemsRaw = data && data.items ? data.items : [];
-  let items = [];
-
-  if (Array.isArray(itemsRaw)) {
-    items = itemsRaw;
-  } else if (typeof itemsRaw === "object" && itemsRaw !== null) {
-    items = Object.values(itemsRaw);
-  }
-
-  const now = new Date();
-  const cutoffMs = now.getTime() - DAYS_WINDOW * 24 * 60 * 60 * 1000;
-
-  const recentItems = items
-    .filter((it) => it && typeof it === "object")
-    // SOLO articoli del blog
-    .filter((it) => (it.url || "").includes("/blog/"))
-    .map((it) => {
-      return {
-        url: (it.url || "").trim(),
-        title: (it.title || "").trim(),
-        published: (it.published || "").trim(),
-      };
-    })
-    .filter((it) => it.url && it.title && it.published)
-    .map((it) => {
-      const d = new Date(it.published.replace("Z", "+00:00"));
-      return { ...it, dateObj: d };
-    })
-    .filter((it) => !isNaN(it.dateObj.getTime()))
-    // solo articoli nella finestra temporale
-    .filter(
-      (it) =>
-        it.dateObj.getTime() >= cutoffMs &&
-        it.dateObj.getTime() <= now.getTime() + 60 * 60 * 1000
+def _escape_xml(s: str) -> str:
+    if not isinstance(s, str):
+        s = str(s)
+    return (
+        s.replace("&", "&amp;")
+         .replace("<", "&lt;")
+         .replace(">", "&gt;")
     )
-    // ordina dal più recente al meno recente
-    .sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
 
-  // Costruzione XML
-  let xmlParts = [];
-  xmlParts.push('<?xml version="1.0" encoding="UTF-8"?>');
-  xmlParts.push(
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" ' +
-      'xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">'
-  );
 
-  for (const it of recentItems) {
-    const loc = escapeXml(it.url);
-    const title = escapeXml(it.title);
-    const pubIso = it.dateObj.toISOString();
+def news_sitemap_view():
+    """
+    Genera la News Sitemap leggendo la cache JSON su GitHub.
 
-    xmlParts.push("  <url>");
-    xmlParts.push(`    <loc>${loc}</loc>`);
-    xmlParts.push("    <news:news>");
-    xmlParts.push("      <news:publication>");
-    xmlParts.push(`        <news:name>${escapeXml(SITE_NAME)}</news:name>`);
-    xmlParts.push(`        <news:language>${LANG}</news:language>`);
-    xmlParts.push("      </news:publication>");
-    xmlParts.push(`      <news:keywords>${KEYWORDS}</news:keywords>`);
-    xmlParts.push(`      <news:publication_date>${pubIso}</news:publication_date>`);
-    // Titolo con suffisso " — ARTBOOMS" come avevamo deciso
-    xmlParts.push(`      <news:title>${title} — ${escapeXml(SITE_NAME)}</news:title>`);
-    xmlParts.push("    </news:news>");
-    xmlParts.push("  </url>");
-  }
+    - Usa solo i campi: url, title, published
+    - Finestra temporale: ultimi DAYS_WINDOW giorni
+    - Nessun filtro sul path (non ci interessa che ci sia /blog/ nell'URL)
+    - news:keywords = "arte contemporanea, arte e cultura"
+    - news:title = "<titolo> — ARTBOOMS"
+    """
+    # 1) Scarico la cache JSON da GitHub
+    try:
+        resp = requests.get(
+            NEWS_CACHE_URL,
+            headers={"User-Agent": USER_AGENT},
+            timeout=15,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception:
+        # In caso di errore: sitemap vuota ma valida
+        empty_xml = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+</urlset>"""
+        return Response(empty_xml, mimetype="application/xml")
 
-  xmlParts.push("</urlset>");
+    raw_items = data.get("items", [])
+    if isinstance(raw_items, dict):
+        items = list(raw_items.values())
+    elif isinstance(raw_items, list):
+        items = raw_items
+    else:
+        items = []
 
-  return xmlParts.join("\n");
-}
+    # 2) Filtro per finestra temporale (ultimi DAYS_WINDOW giorni)
+    now = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+    window = datetime.timedelta(days=DAYS_WINDOW)
+    recent = []
 
-function emptyNewsSitemap() {
-  return (
-    '<?xml version="1.0" encoding="UTF-8"?>' +
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" ' +
-    'xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"></urlset>'
-  );
-}
+    for it in items:
+        if not isinstance(it, dict):
+            continue
 
-export default {
-  async fetch(request, env, ctx) {
-    const url = new URL(request.url);
+        url = (it.get("url") or "").strip()
+        title = (it.get("title") or "").strip()
+        pub_str = (it.get("published") or "").strip()
 
-    // Endpoint principale: /news-sitemap.xml
-    if (url.pathname === "/news-sitemap.xml") {
-      const xml = await buildNewsSitemap();
-      return new Response(xml, {
-        status: 200,
-        headers: {
-          "Content-Type": "application/xml; charset=UTF-8",
-          "Cache-Control": "no-cache",
-        },
-      });
-    }
+        if not url or not title or not pub_str:
+            continue
 
-    // Pagina principale ( / ) con meta tag di verifica di Search Console
-    if (url.pathname === "/" || url.pathname === "") {
-      const html = `
-        <html>
-          <head>
-            <meta name="google-site-verification" content="FNFRJ_2vO9IDH-7Vk7z7FmoUh4ralTwuoITmQaGYEto" />
-          </head>
-          <body>
-            <h2>✅ Artbooms News Sitemap worker attivo</h2>
-            <p>Sitemap news: <a href="/news-sitemap.xml">/news-sitemap.xml</a></p>
-          </body>
-        </html>`;
-      return new Response(html, {
-        status: 200,
-        headers: { "Content-Type": "text/html; charset=UTF-8" },
-      });
-    }
+        try:
+            pub_dt = datetime.datetime.fromisoformat(pub_str)
+        except ValueError:
+            continue
 
-    // Tutto il resto → 404 semplice
-    return new Response("Not found", { status: 404 });
-  },
-};
+        # Aggancio timezone se mancante
+        if pub_dt.tzinfo is None:
+            pub_dt = pub_dt.replace(tzinfo=datetime.timezone.utc)
+
+        if now - pub_dt > window:
+            continue
+
+        it["_pub_dt"] = pub_dt
+        it["_url"] = url
+        it["_title"] = title
+        recent.append(it)
+
+    # Ordino dal più recente al meno recente
+    recent.sort(key=lambda a: a["_pub_dt"], reverse=True)
+
+    # 3) Costruisco XML News Sitemap
+    parts = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"',
+        '        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">',
+    ]
+
+    for it in recent:
+        loc = _escape_xml(it["_url"])
+        title = _escape_xml(it["_title"])
+        pub_iso = it["_pub_dt"].replace(microsecond=0).isoformat()
+
+        parts.append("  <url>")
+        parts.append(f"    <loc>{loc}</loc>")
+        parts.append("    <news:news>")
+        parts.append("      <news:publication>")
+        parts.append(f"        <news:name>{_escape_xml(SITE_NAME)}</news:name>")
+        parts.append(f"        <news:language>{LANG}</news:language>")
+        parts.append("      </news:publication>")
+        parts.append(f"      <news:keywords>{_escape_xml(KEYWORDS)}</news:keywords>")
+        parts.append(f"      <news:publication_date>{pub_iso}</news:publication_date>")
+        parts.append(f"      <news:title>{title} — {_escape_xml(SITE_NAME)}</news:title>")
+        parts.append("    </news:news>")
+        parts.append("  </url>")
+
+    parts.append("</urlset>")
+    xml = "\n".join(parts)
+
+    return Response(xml, mimetype="application/xml")
