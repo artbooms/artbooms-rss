@@ -9027,9 +9027,9 @@
       "author": "natasha barbieri",
       "published": "2021-12-15T10:58:00+01:00",
       "modified": "2021-12-15T10:58:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/61b923feb94cd16dfa9df603/1642381237720/IMG_0737+%281%29.jpg?format=1500w",
-      "_hash": "c4717f30bc80440f8d16e9999b706866897b21b853d170ec7d4e4dc4adca0755",
-      "_fetched_at": "2025-10-25T12:25:20.593705+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/61b923feb94cd16dfa9df603/1765081272790/IMG_0737+%281%29.jpg?format=1500w",
+      "_hash": "860911defcf973b0ba560048a0d34b21bf0352c15f6fd4975c1ab0c7566d9a0a",
+      "_fetched_at": "2025-12-07T05:34:59.680035+00:00"
     },
     "https://www.artbooms.com/blog/max-magaldi-scultura-sonora": {
       "url": "https://www.artbooms.com/blog/max-magaldi-scultura-sonora",
@@ -9082,9 +9082,9 @@
       "author": "natasha barbieri",
       "published": "2022-01-12T10:57:00+01:00",
       "modified": "2022-01-12T10:57:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/61ccdc207b7d843ebd292b48/1642978870383/32.jpg?format=1500w",
-      "_hash": "f66a890ddb14a3c8a279b0da0fd42eb250986956527a606a7dbfec4bef79a77d",
-      "_fetched_at": "2025-10-25T12:29:28.842510+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/61ccdc207b7d843ebd292b48/1765079096219/32.jpg?format=1500w",
+      "_hash": "02233ecb8cddcec931fb5f032b8a9dc7c3fa17d4dc95aec7d6bdf6816437c1c1",
+      "_fetched_at": "2025-12-07T05:39:06.531806+00:00"
     },
     "https://www.artbooms.com/blog/van-gogh-i-girasoli-film-david-bickerstaff": {
       "url": "https://www.artbooms.com/blog/van-gogh-i-girasoli-film-david-bickerstaff",
@@ -12233,7 +12233,7 @@
       "_fetched_at": "2025-11-29T12:16:28.680500+00:00"
     }
   },
-  "cursor": 804,
+  "cursor": 831,
   "last_scan": "2025-11-29T09:50:57.828098+00:00",
   "links_hash": "32236ecbff6df9e6698d197a56cb51a8c8697132f58c31a70a5d7d1ca9fa7b9b"
 }
