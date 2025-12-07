@@ -10413,9 +10413,9 @@
       "author": "natasha barbieri",
       "published": "2023-02-21T10:54:00+01:00",
       "modified": "2023-02-21T10:54:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/63f3ee81145ef9587e8918af/1686703576438/jeff-koons-balloon-dog-broken.jpg?format=1500w",
-      "_hash": "f66361a81d5ad975cc6860b900a7defd818adf4dfef73779f1b5f3a59a0623f2",
-      "_fetched_at": "2025-10-25T13:53:56.066305+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/63f3ee81145ef9587e8918af/1765080011403/jeff-koons-balloon-dog-broken.jpg?format=1500w",
+      "_hash": "01e1d89011c6c688386adb8789efdc1c466e198c7499e25ddc8f96bc9c079764",
+      "_fetched_at": "2025-12-07T07:05:18.214959+00:00"
     },
     "https://www.artbooms.com/blog/lynette-yiadom-boakye-tate-britain": {
       "url": "https://www.artbooms.com/blog/lynette-yiadom-boakye-tate-britain",
@@ -12233,7 +12233,7 @@
       "_fetched_at": "2025-11-29T12:16:28.680500+00:00"
     }
   },
-  "cursor": 933,
+  "cursor": 969,
   "last_scan": "2025-11-29T09:50:57.828098+00:00",
   "links_hash": "32236ecbff6df9e6698d197a56cb51a8c8697132f58c31a70a5d7d1ca9fa7b9b"
 }
