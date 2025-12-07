@@ -8598,9 +8598,9 @@
       "author": "natasha barbieri",
       "published": "2021-09-28T10:29:00+02:00",
       "modified": "2021-09-28T10:29:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/61369640d5cc917e0267e9b4/1642465037333/jeff-koons-bmw-03.jpg?format=1500w",
-      "_hash": "ab1c08a45b595504d2d0be94870a3903c65eba51a0cf47050566c27339724f3f",
-      "_fetched_at": "2025-10-25T11:58:17.788612+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/61369640d5cc917e0267e9b4/1765081970353/jeff-koons-bmw-03.jpg?format=1500w",
+      "_hash": "391e00084c69ef029e6f4109fc16be8d6f59e6ccec772637b33f694317c4f11f",
+      "_fetched_at": "2025-12-07T05:07:34.647002+00:00"
     },
     "https://www.artbooms.com/blog/fotografie-strane-mele-william-mullan": {
       "url": "https://www.artbooms.com/blog/fotografie-strane-mele-william-mullan",
@@ -12233,7 +12233,7 @@
       "_fetched_at": "2025-11-29T12:16:28.680500+00:00"
     }
   },
-  "cursor": 759,
+  "cursor": 804,
   "last_scan": "2025-11-29T09:50:57.828098+00:00",
   "links_hash": "32236ecbff6df9e6698d197a56cb51a8c8697132f58c31a70a5d7d1ca9fa7b9b"
 }
