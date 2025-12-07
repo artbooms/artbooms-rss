@@ -2680,9 +2680,9 @@
       "author": "natasha barbieri",
       "published": "2017-05-17T11:56:00+02:00",
       "modified": "2017-05-17T11:56:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/591a42831b631b3fd8cac840/1510539026935/koons-ballerina-03.jpg?format=1500w",
-      "_hash": "2f2cc49d6d4c158e6438b1d5369717c6dbb2d32159c733f29fc6b43b6459c394",
-      "_fetched_at": "2025-10-25T05:35:26.803984+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/591a42831b631b3fd8cac840/1765083785777/koons-ballerina-03.jpg?format=1500w",
+      "_hash": "8581c5d54df972c943fe27fb6e0cf6b38f08a82109219c918cb2b3c92924b478",
+      "_fetched_at": "2025-12-07T12:06:48.720129+00:00"
     },
     "https://www.artbooms.com/blog/gal-weistein-sun-stand-still-padiglione-di-israele-biennale-di-venezia-2017": {
       "url": "https://www.artbooms.com/blog/gal-weistein-sun-stand-still-padiglione-di-israele-biennale-di-venezia-2017",
@@ -3160,13 +3160,13 @@
     "https://www.artbooms.com/blog/jeff-koons-snapchat-art-realta-aumentata": {
       "url": "https://www.artbooms.com/blog/jeff-koons-snapchat-art-realta-aumentata",
       "title": "Jeff Koons collabora con Snapchat e le sue sculture in realtà aumentata si trasformano in adesivi 3d pronti ad appiccicarsi dentro le foto di tutti noi  — ARTBOOMS",
-      "description": "Se dovesse capitarvi di vedere la fotografia di una scultura di Jeff Koons proprio sotto casa vostra non dovete agitarvi. Purtroppo il vostro quartiere non ha fatto un improvviso salto di qualità ma non avete neppure le allucinazioni.   Si tratta invece di un progetto di  realtà aumentata  realizzat",
+      "description": "Se dovesse capitarvi di vedere la fotografia di una scultura di Jeff Koons proprio sotto casa vostra non dovete agitarvi. Purtroppo il vostro quartiere non ha fatto un improvviso salto di qualità ma non avete neppure le allucinazioni.   Si tratta invece di un progetto di    realtà aumentata    reali",
       "author": "natasha barbieri",
       "published": "2017-10-05T11:22:00+02:00",
       "modified": "2017-10-05T11:22:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/59d56654e3df2871287ae71c/1507728112727/snapchat-jeff-koons-.jpeg?format=1500w",
-      "_hash": "4ff29e834723a72591cee6ee44434a5c31b666c13612b231c6c5491205f99876",
-      "_fetched_at": "2025-10-25T06:05:15.110614+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/59d56654e3df2871287ae71c/1765083538989/snapchat-jeff-koons-.jpeg?format=1500w",
+      "_hash": "fd18135ff86945c4c50901fcccc317331b6bc76cbdce1feae24af7fd6bcd84af",
+      "_fetched_at": "2025-12-07T12:35:52.978745+00:00"
     },
     "https://www.artbooms.com/blog/bernhard-lang-carrara-marble-fotografia-aerea": {
       "url": "https://www.artbooms.com/blog/bernhard-lang-carrara-marble-fotografia-aerea",
@@ -12233,7 +12233,7 @@
       "_fetched_at": "2025-11-29T12:16:28.680500+00:00"
     }
   },
-  "cursor": 225,
+  "cursor": 297,
   "last_scan": "2025-11-29T09:50:57.828098+00:00",
   "links_hash": "32236ecbff6df9e6698d197a56cb51a8c8697132f58c31a70a5d7d1ca9fa7b9b"
 }
