@@ -1344,14 +1344,15 @@
     },
     "https://www.artbooms.com/blog/azuma-makoto-performance-burning-flowers": {
       "url": "https://www.artbooms.com/blog/azuma-makoto-performance-burning-flowers",
-      "title": "L’artista Azuma Makoto fa un falò con 2mila fiori da lui rispettosamente disposti secondo le regole dell’Ikebana — ARTBOOMS",
-      "description": "Azuma Makoto nella sua ultima installazione “Burning flowers”, composta da ben 2mila fiori, scelti e sistemati dallo stesso Azuma Makoto, l’artista ha bruciato tutto. La performance si è svolta in una cava a Togichi in Giappone.",
-      "author": "natasha barbieri",
-      "published": "2016-07-12T11:06:00+02:00",
-      "modified": "2016-07-12T11:06:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5783f705d1758ebe1519a162/1481162655418/azuma-makoto-burning-flowers-designboom-07-818x545.jpg?format=1500w",
-      "_hash": "08b540e270b299bea7d31d393fc775da47be86fb73b2a863900006cbba3210c7",
-      "_fetched_at": "2025-10-25T04:09:26.901441+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2025-12-19T04:22:52.596721+00:00"
     },
     "https://www.artbooms.com/blog/mademoiselle-maurice-murale-cycle-lunaires-a-parigi": {
       "url": "https://www.artbooms.com/blog/mademoiselle-maurice-murale-cycle-lunaires-a-parigi",
@@ -12245,7 +12246,7 @@
       "_fetched_at": "2025-12-11T19:50:36.053720+00:00"
     }
   },
-  "cursor": 120,
+  "cursor": 168,
   "last_scan": "2025-12-11T10:04:39.526472+00:00",
   "links_hash": "5c2d8e8ba64bd8ca06e00e92f12e17414416454e0f2970e3e3376e28ea582039"
 }
