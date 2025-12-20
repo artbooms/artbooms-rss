@@ -1179,15 +1179,14 @@
     },
     "https://www.artbooms.com/blog/haroshi-scultura-di-skateboard": {
       "url": "https://www.artbooms.com/blog/haroshi-scultura-di-skateboard",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2025-12-19T17:28:35.120945+00:00"
+      "title": "Haroshi, l’artista che crea sculture lignee con complicati intarsi lavorando le tavole da skateboard — ARTBOOMS",
+      "description": "L'artista Haroshi, raccoglie vecchi skateboard e ne fa delle ironiche sculture multicolore. Che dietro la facciata pop nascondono l’anima di raffinati manufatti lignei.",
+      "author": "natasha barbieri",
+      "published": "2016-06-16T10:24:00+02:00",
+      "modified": "2016-06-16T10:24:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5761f8535016e175588d3f57/1548451884823/Haroshi_NikeSBdunkstop1.jpg?format=1500w",
+      "_hash": "0f494d29f9c3e522075d2d0c705d893b5db36c671833e8626400f7f03c8802aa",
+      "_fetched_at": "2025-12-20T06:33:19.433330+00:00"
     },
     "https://www.artbooms.com/blog/gregory-halili-sculture-in-corallo": {
       "url": "https://www.artbooms.com/blog/gregory-halili-sculture-in-corallo",
@@ -12256,7 +12255,7 @@
       "_fetched_at": "2025-12-19T16:11:48.428031+00:00"
     }
   },
-  "cursor": 39,
+  "cursor": 111,
   "last_scan": "2025-12-19T10:04:34.762013+00:00",
   "links_hash": "213feac867f53c1e4a6b106d3a7f9fc671f5b3ba6e0adeb1e6c437283ba51851"
 }
