@@ -8648,14 +8648,15 @@
     },
     "https://www.artbooms.com/blog/arte-sella-roosegaarde-liquidl-andscape": {
       "url": "https://www.artbooms.com/blog/arte-sella-roosegaarde-liquidl-andscape",
-      "title": "Liquid Landscape di  Daan Roosegaarde  per Arte Sella  — ARTBOOMS",
-      "description": "L’installazione permanente Liquid Landscape, creata dal designer olandese Daan Roosegaarde (fondatore  dello Studio Roosegaarde), per il museo all'aria  aperta Arte Sella, è un prato che quando viene calpestato ondeggia come una massa liquida.",
-      "author": "natasha barbieri",
-      "published": "2021-10-07T10:42:00+02:00",
-      "modified": "2021-10-07T10:42:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/613001c93ec19b06a104c9fd/1642463065791/studio-roosegaarde-surreal-liquid-landscape-arte-sella-italy-designboom-7.jpg?format=1500w",
-      "_hash": "b1e948e5c9de768e4999bb97dfa8dc25254209c78045162f334d255d32ee0055",
-      "_fetched_at": "2025-10-25T12:02:26.301035+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2025-12-22T06:44:07.847284+00:00"
     },
     "https://www.artbooms.com/blog/masami-yamamoto-sculture-iperrealiste-ceramica": {
       "url": "https://www.artbooms.com/blog/masami-yamamoto-sculture-iperrealiste-ceramica",
@@ -12255,7 +12256,7 @@
       "_fetched_at": "2025-12-21T21:22:57.552422+00:00"
     }
   },
-  "cursor": 783,
+  "cursor": 813,
   "last_scan": "2025-12-19T10:04:34.762013+00:00",
   "links_hash": "213feac867f53c1e4a6b106d3a7f9fc671f5b3ba6e0adeb1e6c437283ba51851"
 }
