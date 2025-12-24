@@ -1338,9 +1338,9 @@
       "author": "natasha barbieri",
       "published": "2016-07-08T10:30:00+02:00",
       "modified": "2016-07-08T10:30:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/577efb37414fb5b2350b1127/1764555579152/piume+fossili+ambra.jpg?format=1500w",
-      "_hash": "40a639ab4337f45e0545535cf32cc51f2426a97f19e6ed8b31e0c1df7f245ce5",
-      "_fetched_at": "2025-12-01T04:13:24.393363+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/577efb37414fb5b2350b1127/1766536133072/piume+fossili+ambra.jpg?format=1500w",
+      "_hash": "df1a23e1f4e5c8a3b83c33a9a85b88178edbcbd17351eff4b0cdba2110818bbd",
+      "_fetched_at": "2025-12-24T04:50:58.666964+00:00"
     },
     "https://www.artbooms.com/blog/azuma-makoto-performance-burning-flowers": {
       "url": "https://www.artbooms.com/blog/azuma-makoto-performance-burning-flowers",
@@ -12266,7 +12266,7 @@
       "_fetched_at": "2025-12-23T13:27:56.322909+00:00"
     }
   },
-  "cursor": 81,
+  "cursor": 129,
   "last_scan": "2025-12-23T09:52:12.376095+00:00",
   "links_hash": "13100b3503720a94ff32f04714a8ccd637f95933c4ef07c4a6cc6678c5f8fffd"
 }
