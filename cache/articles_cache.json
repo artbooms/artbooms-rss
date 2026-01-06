@@ -10815,15 +10815,14 @@
     },
     "https://www.artbooms.com/blog/leandro-erlich-oltre-la-soglia": {
       "url": "https://www.artbooms.com/blog/leandro-erlich-oltre-la-soglia",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-01-05T20:23:58.403273+00:00"
+      "title": "Come un labirinto, l’arte di Leandro Erlich a Palazzo Reale — ARTBOOMS",
+      "description": "Gli inganni percettivi che riempiono di meraviglia caratterizzano l’opera  di Leandro Erlich, protagonista della mostra \"Oltre la Soglia”. A Palazzo Reale di Milano.",
+      "author": "natasha barbieri",
+      "published": "2023-06-06T10:56:00+02:00",
+      "modified": "2023-06-06T10:56:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/64791fd819a5c438db69196b/1686696018975/LeandroErlich_Foto+di+Fabrizio+Spucches+per+Arthemisia+%284%29.jpg?format=1500w",
+      "_hash": "30fa0f2f51b116b067a507124be4fe585e0879197add3b394bacefb4360122f2",
+      "_fetched_at": "2026-01-06T09:26:23.247184+00:00"
     },
     "https://www.artbooms.com/blog/michelangelo-pistoletto-quadri-specchianti": {
       "url": "https://www.artbooms.com/blog/michelangelo-pistoletto-quadri-specchianti",
@@ -12267,7 +12266,7 @@
       "_fetched_at": "2025-12-23T13:27:56.322909+00:00"
     }
   },
-  "cursor": 948,
+  "cursor": 1005,
   "last_scan": "2025-12-23T09:52:12.376095+00:00",
   "links_hash": "13100b3503720a94ff32f04714a8ccd637f95933c4ef07c4a6cc6678c5f8fffd"
 }
