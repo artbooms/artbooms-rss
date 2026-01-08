@@ -1201,14 +1201,15 @@
     },
     "https://www.artbooms.com/blog/christo-the-floating-piers-installazion-lago-iseo": {
       "url": "https://www.artbooms.com/blog/christo-the-floating-piers-installazion-lago-iseo",
-      "title": "Inaugurata \"the floating piers\" l'installazione un pò zen e un pò minimalista firmata Christo — ARTBOOMS",
-      "description": "La monumentale passerella \"The floating piers\"realizzata da Christo sul Lago d'Iseo è un opera minimale di Land-art resa più intensa dal colore arancionee dalla bellezza del paesaggio",
-      "author": "natasha barbieri",
-      "published": "2016-06-17T11:05:00+02:00",
-      "modified": "2016-06-17T11:05:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/576334c8be6594afef485c48/1764555195377/the-floating-piers-05.jpg?format=1500w",
-      "_hash": "e80c242f79b0da99057370b30e638e4667d6fe85a87b19e3fdc0b9f7576a7e32",
-      "_fetched_at": "2025-12-01T04:05:06.286001+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-01-08T18:12:08.993482+00:00"
     },
     "https://www.artbooms.com/blog/share-france-video-food-art-alexandre-dubosc": {
       "url": "https://www.artbooms.com/blog/share-france-video-food-art-alexandre-dubosc",
@@ -12266,7 +12267,7 @@
       "_fetched_at": "2025-12-23T13:27:56.322909+00:00"
     }
   },
-  "cursor": 93,
+  "cursor": 153,
   "last_scan": "2025-12-23T09:52:12.376095+00:00",
   "links_hash": "13100b3503720a94ff32f04714a8ccd637f95933c4ef07c4a6cc6678c5f8fffd"
 }
