@@ -4062,14 +4062,15 @@
     },
     "https://www.artbooms.com/blog/karen-margolis-pittura-astratta-garden-of-mutei-garis-and-hahn-gallery": {
       "url": "https://www.artbooms.com/blog/karen-margolis-pittura-astratta-garden-of-mutei-garis-and-hahn-gallery",
-      "title": "Karen Margolis che buca, brucia, ricama e fa disegni miniati su dei fogli di carta di banano — ARTBOOMS",
-      "description": "Le composizioni dell’artista statunitense  Karen Margolis  ricordano gruppi di cellule viste al microscopio, distese di minuscole muffe colorate, coralli. &nbsp;Di fatto sono opere astratte, ma la Margolis, con una solida formazione scientifica (è laureata in psicologia), mixa queste suggestioni",
-      "author": "natasha barbieri",
-      "published": "2018-04-11T11:51:00+02:00",
-      "modified": "2018-04-11T11:51:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5acbe08370a6adaedb70d047/1530753112387/margolis.jpg?format=1500w",
-      "_hash": "d9c28bebf4dcf6313cc4379a9bcc017395e5e818c654a872c58c71dc86f16269",
-      "_fetched_at": "2025-10-25T07:04:51.032952+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-01-08T21:15:03.567982+00:00"
     },
     "https://www.artbooms.com/blog/tellas-street-art": {
       "url": "https://www.artbooms.com/blog/tellas-street-art",
@@ -12267,7 +12268,7 @@
       "_fetched_at": "2025-12-23T13:27:56.322909+00:00"
     }
   },
-  "cursor": 336,
+  "cursor": 387,
   "last_scan": "2025-12-23T09:52:12.376095+00:00",
   "links_hash": "13100b3503720a94ff32f04714a8ccd637f95933c4ef07c4a6cc6678c5f8fffd"
 }
