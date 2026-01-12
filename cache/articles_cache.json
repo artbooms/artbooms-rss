@@ -5777,14 +5777,15 @@
     },
     "https://www.artbooms.com/blog/banksy-murale-venezia-naufrago-bambino": {
       "url": "https://www.artbooms.com/blog/banksy-murale-venezia-naufrago-bambino",
-      "title": "E dall'acqua della laguna spuntò \"Naufrago bambino\". Banksy dipinge un nuovo murale durante l'inaugurazione della Biennale di Venezia — ARTBOOMS",
-      "description": "Non è ancora chiaro quando sia stata scoperta, ma a giudicare  dall’aspetto e dal tema trattato, l’opera sembra  proprio  di  Banksy . Dipinta da una barca nel canale di Ca’ Foscari, vicino all’omonima università e al Campo Santa Margherita, nei giorni dell’inaugurazione della  Biennale di Venezia",
-      "author": "natasha barbieri",
-      "published": "2019-05-15T10:59:00+02:00",
-      "modified": "2019-05-15T10:59:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5cdb48640d9297f23044fa0a/1579133992132/banksy-migrant-child-mural-venice-designboom-1.jpg?format=1500w",
-      "_hash": "49b70c13451669d24515b4e69bf02a0d954baaa6b4c8d24cf6260f8b11903bc4",
-      "_fetched_at": "2025-10-25T08:56:22.383784+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-01-12T20:41:46.227951+00:00"
     },
     "https://www.artbooms.com/blog/padiglione-lituania-sun-and-sea-marina-leone-d-oro-biennale-di-venezia-2019": {
       "url": "https://www.artbooms.com/blog/padiglione-lituania-sun-and-sea-marina-leone-d-oro-biennale-di-venezia-2019",
@@ -12266,7 +12267,7 @@
       "_fetched_at": "2025-12-23T13:27:56.322909+00:00"
     }
   },
-  "cursor": 510,
+  "cursor": 537,
   "last_scan": "2025-12-23T09:52:12.376095+00:00",
   "links_hash": "13100b3503720a94ff32f04714a8ccd637f95933c4ef07c4a6cc6678c5f8fffd"
 }
