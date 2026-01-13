@@ -629,15 +629,14 @@
     },
     "https://www.artbooms.com/blog/azuma-makoto-installazione-floreale-ape-piaggio": {
       "url": "https://www.artbooms.com/blog/azuma-makoto-installazione-floreale-ape-piaggio",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-01-13T04:21:06.655780+00:00"
+      "title": "L'Ape Piaggio dell'artista Azuma Makoto è coperto da centinaia di fiori e migliaia di foglie verdi — ARTBOOMS",
+      "description": "Un'Ape Piaggio come quella creata dall'artista, Azuma Makoto, di certo non si può vedere tutti i giorni. Si tratta di un'installazione composta da migliaia tra fiori e rami veri, elaborata per il negozio Fendi del quartiere di Tokyo,&nbsp;Ginza, in Giappone.",
+      "author": "natasha barbieri",
+      "published": "2016-04-12T11:06:00+02:00",
+      "modified": "2016-04-12T11:06:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/570c56d945bf21b2ab757e2a/1764555423293/FENDI-FLOWER-SHOP-by-Makoto-Azuma-9.jpg?format=1500w",
+      "_hash": "da33e8d1214e11329a8a25f8878d45612cbfde9e736dddb9f8d19b346bfb50e6",
+      "_fetched_at": "2026-01-13T17:28:56.031706+00:00"
     },
     "https://www.artbooms.com/blog/jonty-hurwitz-the-fragile-giant": {
       "url": "https://www.artbooms.com/blog/jonty-hurwitz-the-fragile-giant",
@@ -12267,7 +12266,7 @@
       "_fetched_at": "2025-12-23T13:27:56.322909+00:00"
     }
   },
-  "cursor": 1113,
+  "cursor": 60,
   "last_scan": "2025-12-23T09:52:12.376095+00:00",
   "links_hash": "13100b3503720a94ff32f04714a8ccd637f95933c4ef07c4a6cc6678c5f8fffd"
 }
