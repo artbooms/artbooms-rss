@@ -6580,15 +6580,14 @@
     },
     "https://www.artbooms.com/blog/biennale-arte-venezia-2019-bilancio": {
       "url": "https://www.artbooms.com/blog/biennale-arte-venezia-2019-bilancio",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-01-30T20:55:29.733169+00:00"
+      "title": "La Biennale  di Venezia 2019 raggiunge i 600mila visitatori — ARTBOOMS",
+      "description": "La 58esima edizione della Biennale Arte di Venezia ha chiuso i battenti domenica scorsa ed è arrivato il tempo dei bilanci. Ma per molti artisti, come Tomas Saraceno, l'assenza dall'Italia non si protrarrà troppo a lungo.",
+      "author": "natasha barbieri",
+      "published": "2019-11-27T11:10:00+01:00",
+      "modified": "2019-11-27T11:10:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5ddb1288ee3ebb607aec1fc3/1579138383441/IR_PHILIPPINES_1041.jpg?format=1500w",
+      "_hash": "583dc071d8a16dda2f0e5d7761711c5972e54ea179295700b0d0c6cd863aeb6f",
+      "_fetched_at": "2026-01-31T10:13:31.915759+00:00"
     },
     "https://www.artbooms.com/blog/bernhard-lang-munich-fotografia-aerea-monaco": {
       "url": "https://www.artbooms.com/blog/bernhard-lang-munich-fotografia-aerea-monaco",
@@ -12289,7 +12288,7 @@
       "_fetched_at": "2026-01-28T21:36:16.301927+00:00"
     }
   },
-  "cursor": 585,
+  "cursor": 633,
   "last_scan": "2026-01-28T10:04:29.367839+00:00",
   "links_hash": "c7fd0d1d75f293f4027b65d3b5464df17ef6ea168a528e43c35c443cb55d0e54"
 }
