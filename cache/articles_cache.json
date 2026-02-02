@@ -12096,9 +12096,9 @@
       "author": "natasha barbieri",
       "published": "2025-06-10T10:56:00+02:00",
       "modified": "2025-06-10T10:56:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/684764640902f5784802b4ea/1749545767006/56%28DS_05741-Migliorato-NR%29%C2%A9photoElaBialkowskaOKNOstudio%281%29.jpg?format=1500w",
-      "_hash": "fbf88df2873e21d64a0194266a06b3a660c5a558c77d782078832d5a5e492f5c",
-      "_fetched_at": "2025-10-25T02:39:04.318901+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/684764640902f5784802b4ea/1769996570008/56%28DS_05741-Migliorato-NR%29%C2%A9photoElaBialkowskaOKNOstudio%281%29.jpg?format=1500w",
+      "_hash": "1cefd711f5fa86dfaa5199fd57e074a68fb9eed2e65c3229675c7c14ff3d01fb",
+      "_fetched_at": "2026-02-02T08:42:01.249504+00:00"
     },
     "https://www.artbooms.com/blog/maurizio-cattelan-seasons-bergamo": {
       "url": "https://www.artbooms.com/blog/maurizio-cattelan-seasons-bergamo",
@@ -12151,9 +12151,9 @@
       "author": "natasha barbieri",
       "published": "2025-07-10T10:55:00+02:00",
       "modified": "2025-07-10T10:55:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/686f11cb886a155d3e2e71e2/1762998381642/TR15688_Whitten-1-2000x1002.jpg?format=1500w",
-      "_hash": "d92222a533126da3b9342042980b2e86be4f0082471455383360145ebade58c8",
-      "_fetched_at": "2025-11-13T12:16:53.814549+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/686f11cb886a155d3e2e71e2/1769997244198/TR15688_Whitten-1-2000x1002.jpg?format=1500w",
+      "_hash": "0e4d7715fd30b0daf5ab4e6660928a0c6641bd14e4efea831619758878821d2a",
+      "_fetched_at": "2026-02-02T08:46:08.170418+00:00"
     },
     "https://www.artbooms.com/blog/mimmo-jodice-mostra-udine": {
       "url": "https://www.artbooms.com/blog/mimmo-jodice-mostra-udine",
@@ -12228,9 +12228,9 @@
       "author": "natasha barbieri",
       "published": "2025-11-29T10:50:00+01:00",
       "modified": "2025-11-29T10:50:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/692a54b599d25352fe92c0c7/1764409846033/01_andro-eradze_flowering-fading_2024.jpg?format=1500w",
-      "_hash": "08707a42d5a77caff3a5ea297eaad29f5df9876fd15d0f11a57fe501d4819ebd",
-      "_fetched_at": "2025-11-29T12:16:28.680500+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/692a54b599d25352fe92c0c7/1769994409772/01_andro-eradze_flowering-fading_2024.jpg?format=1500w",
+      "_hash": "4ef8d522081218e8bc816e7fac2df96dc24fabba69cabb3ba753c27eaa06e84d",
+      "_fetched_at": "2026-02-02T08:50:16.749032+00:00"
     },
     "https://www.artbooms.com/blog/guerra-culturale-russia-ucraina": {
       "url": "https://www.artbooms.com/blog/guerra-culturale-russia-ucraina",
@@ -12288,7 +12288,7 @@
       "_fetched_at": "2026-01-28T21:36:16.301927+00:00"
     }
   },
-  "cursor": 1086,
+  "cursor": 12,
   "last_scan": "2026-01-28T10:04:29.367839+00:00",
   "links_hash": "c7fd0d1d75f293f4027b65d3b5464df17ef6ea168a528e43c35c443cb55d0e54"
 }
