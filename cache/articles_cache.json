@@ -12286,9 +12286,20 @@
       "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/69794cfa15d13826c4fa3d3f/1769604066856/20251209_081138.jpg+best+%28200%29+%E3%81%AE%E3%82%B3%E3%83%94%E3%83%BC+%281%29.jpg?format=1500w",
       "_hash": "f706ba4bb2f3f92eaa395a470fb9d7cba5a1b49e84f543354fc1172d3e02e6bd",
       "_fetched_at": "2026-01-28T21:36:16.301927+00:00"
+    },
+    "https://www.artbooms.com": {
+      "url": "https://www.artbooms.com",
+      "title": "ARTBOOMS",
+      "description": "ARTBOOMS è una rivista di arte contemporanea che pubblica notizie, mostre, analisi, recensioni e approfondimenti su arte, design, fotografia e cultura visiva.",
+      "author": null,
+      "published": null,
+      "modified": null,
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/t/56a96441be7b96c6877d1add/1453941830764/logofb1.jpg?format=1500w",
+      "_hash": "85a03f0a8edfe861872d2f919fc806758758c7cbc933d5377d90460d3d8be832",
+      "_fetched_at": "2026-02-02T20:25:29.219843+00:00"
     }
   },
-  "cursor": 717,
-  "last_scan": "2026-01-28T10:04:29.367839+00:00",
-  "links_hash": "c7fd0d1d75f293f4027b65d3b5464df17ef6ea168a528e43c35c443cb55d0e54"
+  "cursor": 0,
+  "last_scan": "2026-02-02T20:25:28.750775+00:00",
+  "links_hash": "be45adee613ea6dc16e7179cc8fd8ff36b5f92acf81a08020df9d4fe7a5f154a"
 }
