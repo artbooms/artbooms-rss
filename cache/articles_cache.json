@@ -3170,39 +3170,36 @@
     },
     "https://www.artbooms.com/blog/bernhard-lang-carrara-marble-fotografia-aerea": {
       "url": "https://www.artbooms.com/blog/bernhard-lang-carrara-marble-fotografia-aerea",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-02-05T21:55:33.408558+00:00"
+      "title": "Il candore delle cave di Carrara che nella fotografia aerea di Bernhard Lang si fa Astrattismo — ARTBOOMS",
+      "description": "La serie “ Carrara Marble ” del fotografo tedesco  Bernhard Lang  (di cui ho parlato  qui  e  qui ) sembra un susseguirsi di rappresentazioni astratte tono su tono. Molto raffinate, molto pittoriche, persino materiche. In realtà, invece, si tratta di fotografie aeree delle cave di  marmo di Carrara",
+      "author": "natasha barbieri",
+      "published": "2017-10-06T10:32:00+02:00",
+      "modified": "2017-10-06T10:32:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/59d696d532601ec7e6e85d79/1510528828100/AV_Carraa002.jpg?format=1500w",
+      "_hash": "260834f0d0c8bc09f9eb4def0bc55c1d05c3f9c4a4ec5f42a5af25965e60b60c",
+      "_fetched_at": "2026-02-06T11:27:31.775828+00:00"
     },
     "https://www.artbooms.com/blog/urs-fischer-in-florence-mostra-piazza-della-signoria": {
       "url": "https://www.artbooms.com/blog/urs-fischer-in-florence-mostra-piazza-della-signoria",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-02-05T21:55:34.405248+00:00"
+      "title": "Urs Fischer turba Firenze con due sculturone di cera multicolore munite di stoppino e un botto in Piazza della Signoria — ARTBOOMS",
+      "description": "Ci sono due ritratti  iperrealisti  in cera con tanto di stoppino, destinati a sciogliersi alla fine della mostra e un gigantesco monumento astratto in metallo alla creatività.  ' In Florenc e' (a cura di  Francesco Bonami ) è un grande evento di arte pubblica firmato da  Urs Fischer ,  che dopo Jef",
+      "author": "natasha barbieri",
+      "published": "2017-10-10T10:28:00+02:00",
+      "modified": "2017-10-10T10:28:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/59dbdc10914e6b12a38f019b/1507624088540/IMG_5088-copia.jpg?format=1500w",
+      "_hash": "d41b8399f09f12a60a3b20ee376f24a9a3cfe3247d8d36ec82115a3885d093d2",
+      "_fetched_at": "2026-02-06T11:27:32.698935+00:00"
     },
     "https://www.artbooms.com/blog/hidemi-nishida-fragile-chairs-installazione-sedie-lago-di-poroto": {
       "url": "https://www.artbooms.com/blog/hidemi-nishida-fragile-chairs-installazione-sedie-lago-di-poroto",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-02-05T21:55:35.405313+00:00"
+      "title": "La magica installazione di Hidemi Nishida che ha fatto galleggiare decine di sedie su un lago giapponese — ARTBOOMS",
+      "description": "L’installazione dell’architetto ed artista giapponese  Hidemi Nishida  ‘Fragile Chairs’ è semplice e magica. Si tratta solo di sedie, in fondo. Ma messe così, a galleggiare sul  lago di Poroto  nell’isola di Hokkaido, fanno tutto un altro effetto. Come se ne stessero lì, pronte a far riposare gli sp",
+      "author": "natasha barbieri",
+      "published": "2017-10-11T10:55:00+02:00",
+      "modified": "2017-10-11T10:55:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/59dc28c129f1876a45838239/1531184889294/hidemi-nishida-01.JPG?format=1500w",
+      "_hash": "8d00a34d3e2f947533c9c38e11243d18e50c1db4fd77e2902cb75607284df5ca",
+      "_fetched_at": "2026-02-06T11:27:33.626196+00:00"
     },
     "https://www.artbooms.com/blog/ai-weiwei-good-fences-make-good-neighbours-mostra-arte-pubblica-ny-public-art-fund": {
       "url": "https://www.artbooms.com/blog/ai-weiwei-good-fences-make-good-neighbours-mostra-arte-pubblica-ny-public-art-fund",
@@ -12302,7 +12299,7 @@
       "_fetched_at": "2026-02-02T20:25:29.219843+00:00"
     }
   },
-  "cursor": 285,
+  "cursor": 330,
   "last_scan": "2026-02-06T10:06:43.231268+00:00",
   "links_hash": "188ed70b9a1a2e9c8fd126fa8f34d3dff479744c375c08b5b163127a05bf3c8c"
 }
