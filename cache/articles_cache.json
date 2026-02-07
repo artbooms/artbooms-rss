@@ -8252,14 +8252,15 @@
     },
     "https://www.artbooms.com/blog/trovato-un-messaggio-scritto-da-edvard-munch-su-l-urlo": {
       "url": "https://www.artbooms.com/blog/trovato-un-messaggio-scritto-da-edvard-munch-su-l-urlo",
-      "title": "Edvard Munch ha scritto un messaggio in un angolo de  \"L'Urlo\" — ARTBOOMS",
-      "description": "Sono anni che un messaggio scritto su “L’Urlo “ di Edvard Munch non fa dormire gli storici dell’arte. Si pensava potesse essere stata scritta da un vandalo. Ma ora uno studio del Museo Nazionale della Norvegia ha chiarito che a scrivere è stato Munch stesso.",
-      "author": "natasha barbieri",
-      "published": "2021-02-23T11:02:00+01:00",
-      "modified": "2021-02-23T11:02:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/60342a0b48ec6a2ce1c42f16/1643148696704/l-urlo-edvard-munch-inscription-writing-04.jpg?format=1500w",
-      "_hash": "0044006ddde4e78cc9a77d50d55e58734e6c09a652b08515d2b3e1772b19f222",
-      "_fetched_at": "2025-10-25T11:36:52.311787+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-02-07T06:14:47.926989+00:00"
     },
     "https://www.artbooms.com/blog/galleria-continua-sede-parigi-mostra-jr": {
       "url": "https://www.artbooms.com/blog/galleria-continua-sede-parigi-mostra-jr",
@@ -12310,7 +12311,7 @@
       "_fetched_at": "2026-02-06T21:20:18.139576+00:00"
     }
   },
-  "cursor": 741,
+  "cursor": 822,
   "last_scan": "2026-02-06T10:06:43.231268+00:00",
   "links_hash": "188ed70b9a1a2e9c8fd126fa8f34d3dff479744c375c08b5b163127a05bf3c8c"
 }
