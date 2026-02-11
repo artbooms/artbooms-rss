@@ -12146,14 +12146,15 @@
     },
     "https://www.artbooms.com/blog/jack-whitten-moma": {
       "url": "https://www.artbooms.com/blog/jack-whitten-moma",
-      "title": "La grande mostra di Jack Whitten al Moma sta per concludersi — ARTBOOMS",
-      "description": "“Jack Whitten: the Messenger” al Moma di New York copre quasi sei decadi di lavoro dell'artista afroamericano. E' la prima retrospettiva dedicata a  Jack Whitten ed era davvero molto attesa.",
-      "author": "natasha barbieri",
-      "published": "2025-07-10T10:55:00+02:00",
-      "modified": "2025-07-10T10:55:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/686f11cb886a155d3e2e71e2/1769997244198/TR15688_Whitten-1-2000x1002.jpg?format=1500w",
-      "_hash": "0e4d7715fd30b0daf5ab4e6660928a0c6641bd14e4efea831619758878821d2a",
-      "_fetched_at": "2026-02-02T08:46:08.170418+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-02-11T23:13:31.501027+00:00"
     },
     "https://www.artbooms.com/blog/mimmo-jodice-mostra-udine": {
       "url": "https://www.artbooms.com/blog/mimmo-jodice-mostra-udine",
@@ -12310,7 +12311,7 @@
       "_fetched_at": "2026-02-09T03:14:37.129834+00:00"
     }
   },
-  "cursor": 1095,
+  "cursor": 36,
   "last_scan": "2026-02-06T10:06:43.231268+00:00",
   "links_hash": "188ed70b9a1a2e9c8fd126fa8f34d3dff479744c375c08b5b163127a05bf3c8c"
 }
