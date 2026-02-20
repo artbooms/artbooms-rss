@@ -9440,15 +9440,14 @@
     },
     "https://www.artbooms.com/blog/james-barnor": {
       "url": "https://www.artbooms.com/blog/james-barnor",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-02-19T16:39:52.745748+00:00"
+      "title": "I favolosi swinging sixties africani di James Barnor — ARTBOOMS",
+      "description": "Il fotografo ghanese, James Barnor, ha catturato con i suoi scatti lo spirito di sei decenni in due diversi continenti. Al centro delle sue immagini, bianco e nero prima e coloratissime durante i favolosi sixties, sempre la comunità africana.",
+      "author": "natasha barbieri",
+      "published": "2022-03-17T10:49:00+01:00",
+      "modified": "2022-03-17T10:49:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6232699ebd33fa231669533a/1647562580639/11.+James+Barnor_MASI.jpg?format=1500w",
+      "_hash": "999ad17094bb364f21371291a80b9b70a1803cf695888eb8c9fa38cc2f99f822",
+      "_fetched_at": "2026-02-20T05:54:43.862966+00:00"
     },
     "https://www.artbooms.com/blog/emile-rakotondrazaka-ramily": {
       "url": "https://www.artbooms.com/blog/emile-rakotondrazaka-ramily",
@@ -12311,7 +12310,7 @@
       "_fetched_at": "2026-02-09T03:14:37.129834+00:00"
     }
   },
-  "cursor": 768,
+  "cursor": 861,
   "last_scan": "2026-02-06T10:06:43.231268+00:00",
   "links_hash": "188ed70b9a1a2e9c8fd126fa8f34d3dff479744c375c08b5b163127a05bf3c8c"
 }
