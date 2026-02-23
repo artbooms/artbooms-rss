@@ -1806,14 +1806,15 @@
     },
     "https://www.artbooms.com/blog/ian-berry-pittura-denim": {
       "url": "https://www.artbooms.com/blog/ian-berry-pittura-denim",
-      "title": "Ian Berry l’artista che dipinge con i jeans senza usare colore e pennello — ARTBOOMS",
-      "description": "Ian Berry vive a Londra e fa l’artista. Riproduce scene di vita quotidiana. Ma Ian Berry non usa tela e pennello. Ian Berry non usa neppure i colori. Lui dipinge con i jeans.",
-      "author": "natasha barbieri",
-      "published": "2016-12-01T10:51:00+01:00",
-      "modified": "2016-12-01T10:51:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/583f49f7be6594419e2d51fd/1482789990407/LapoElkann.jpg?format=1500w",
-      "_hash": "1a2f99f2d96d852c0078cfad89a8d9093969b8cc2e9faadb89fd6c5d177d3eef",
-      "_fetched_at": "2025-10-25T04:38:06.304550+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-02-23T20:33:02.218442+00:00"
     },
     "https://www.artbooms.com/blog/david-burdeny-salt-fotografia-vista-aerea": {
       "url": "https://www.artbooms.com/blog/david-burdeny-salt-fotografia-vista-aerea",
@@ -12322,7 +12323,7 @@
       "_fetched_at": "2026-02-20T22:42:13.767234+00:00"
     }
   },
-  "cursor": 126,
+  "cursor": 207,
   "last_scan": "2026-02-20T10:05:07.236317+00:00",
   "links_hash": "3f2d7c4529eabef9d0eb3146833cf0b8ef4c3422e64a8d1af155b4701bb0a95f"
 }
