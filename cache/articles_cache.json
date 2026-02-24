@@ -10937,15 +10937,14 @@
     },
     "https://www.artbooms.com/blog/carlos-cruz-diez-san-gimignano": {
       "url": "https://www.artbooms.com/blog/carlos-cruz-diez-san-gimignano",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-02-23T17:06:07.250530+00:00"
+      "title": "Carlos Cruz-Diez in mostra a San Gimignano per i  100 anni — ARTBOOMS",
+      "description": "Il pioniere della Optical Art, Carlos Cruz- Diez, starebbe per compiere 100 anni. Mancato nel 2019, quel traguardo non è riuscito a raggiungerlo.  Per celebrarlo a San Gimignano  c'è una grande mostra.",
+      "author": "natasha barbieri",
+      "published": "2023-08-11T10:51:00+02:00",
+      "modified": "2023-08-11T10:51:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/64d577f5a50e065d0054de64/1711502912049/BIG_+CACR2023_ECdn.jpg?format=1500w",
+      "_hash": "0ccf739b7c4a984950d9c912bb4e3904cdb6abf52dcee3e5860a997aa799011f",
+      "_fetched_at": "2026-02-24T06:24:50.194916+00:00"
     },
     "https://www.artbooms.com/blog/anish-kapoor-palazzo-strozzi-firenze": {
       "url": "https://www.artbooms.com/blog/anish-kapoor-palazzo-strozzi-firenze",
@@ -12323,7 +12322,7 @@
       "_fetched_at": "2026-02-20T22:42:13.767234+00:00"
     }
   },
-  "cursor": 942,
+  "cursor": 1053,
   "last_scan": "2026-02-20T10:05:07.236317+00:00",
   "links_hash": "3f2d7c4529eabef9d0eb3146833cf0b8ef4c3422e64a8d1af155b4701bb0a95f"
 }
