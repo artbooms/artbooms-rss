@@ -409,14 +409,15 @@
     },
     "https://www.artbooms.com/blog/pittura-iper-realista-paesaggio-an-jung-hwan": {
       "url": "https://www.artbooms.com/blog/pittura-iper-realista-paesaggio-an-jung-hwan",
-      "title": "I PAESAGGI CHE SEMBRANO VERI MA NON LO SONO DI AN JUNG HWAN — ARTBOOMS",
-      "description": "&nbsp;An Jung Hwan è un pittore iper-realista. Generalmente però l’iper-realismo sceglie come soggetto la figura umana, a volte si spinge fino alle nature morte ma mai arriva a rappresentare paesaggi. An Jung Hwan, invece, dipinge proprio paesaggi",
-      "author": "natasha barbieri",
-      "published": "2016-03-17T15:09:00+01:00",
-      "modified": "2016-03-17T15:09:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56ea0ba127d4bda53e66aee4/1482098657523/art6.jpg?format=1500w",
-      "_hash": "fc35379d7e8bd1fc52c89fbfe5b7ec97d591c4a957b44f3ff3901fe137763f80",
-      "_fetched_at": "2025-10-25T03:11:16.163190+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-03-03T03:50:15.427812+00:00"
     },
     "https://www.artbooms.com/blog/scultura-tim-silver-oneirophrenia-artbasel": {
       "url": "https://www.artbooms.com/blog/scultura-tim-silver-oneirophrenia-artbasel",
@@ -12332,7 +12333,7 @@
       "_fetched_at": "2026-02-28T07:37:28.158982+00:00"
     }
   },
-  "cursor": 1080,
+  "cursor": 123,
   "last_scan": "2026-02-27T09:47:29.472015+00:00",
   "links_hash": "18c6de98f4f9802b6f3af6490c0dfd0f7790dda6cfc6bccf1739c14327abc78d"
 }
