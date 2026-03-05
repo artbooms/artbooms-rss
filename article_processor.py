@@ -129,27 +129,19 @@ def generate_items(force=False):
 
     cursor = cache.get("cursor", 0) or 0
 
-    # ============================================================
-    # ✅ FIX DEFINITIVO DEL RITARDO (fast-path):
-    # Se la cache NON è vuota e ci sono URL nuovi nell’archivio (non ancora in cache),
-    # processiamo SUBITO gli ultimi MAX_BATCH nuovi (i più recenti).
-    #
-    # - NON cambia l’ordine del feed finale.
-    # - NON ricarica tutto.
-    # - Mantiene la "prima carica": se cache è vuota, si parte dal vecchio (cursor).
-    # ============================================================
+    # ✅ FIX RITARDO (FAST-PATH): se esistono URL nuovi nell’archivio (non ancora in cache),
+    # processiamo subito gli ultimi MAX_BATCH nuovi (i più recenti).
+    # Non cambia l’ordine del feed finale: l’RSS viene costruito dalla cache.
     items_dict = cache.get("items", {}) or {}
+    missing = [u for u in links if u not in items_dict]
+
     use_missing_batch = False
-    batch = []
-
-    if items_dict:
-        missing = [u for u in links if u not in items_dict]
-        if missing:
-            batch = missing[-MAX_BATCH:]  # links è old→new: gli ultimi sono i più recenti
-            use_missing_batch = True
-            logger.info("🆕 Nuovi URL trovati (%d). Processiamo subito gli ultimi %d.", len(missing), len(batch))
-
-    if not batch:
+    if missing:
+        # links è old→new: gli ultimi missing sono i più recenti
+        batch = missing[-MAX_BATCH:]
+        use_missing_batch = True
+        logger.info("🆕 Nuovi URL trovati (%d). Processiamo subito gli ultimi %d.", len(missing), len(batch))
+    else:
         end = min(cursor + MAX_BATCH, len(links))
         batch = links[cursor:end]
         if not batch and links:
@@ -180,8 +172,6 @@ def generate_items(force=False):
         if not old or old.get("_hash") != it.get("_hash"):
             cache.setdefault("items", {})[url] = it
 
-    # Cursor: se abbiamo processato solo i nuovi, NON tocchiamo il cursor
-    # (così non alteriamo la rotazione normale).
     if not use_missing_batch:
         cache["cursor"] = (cursor + len(batch)) % max(1, len(links))
 
