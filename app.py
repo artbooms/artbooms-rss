@@ -8,9 +8,10 @@ from flask import Flask, Response, jsonify, send_file
 from article_processor import generate_items
 from rss_generator import build_rss
 from news_sitemap import news_sitemap_view  # 👈 AGGIUNTO
+from fresh_sitemap import fresh_sitemap_view  # 👈 AGGIUNTO
 
 CACHE_PATH = "cache/articles_cache.json"
-RAW_CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss-v2/main/cache/articles_cache.json"
+RAW_CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -101,13 +102,11 @@ def rebuild_feed():
         logging.warning("Cache vuota: feed vuoto.")
         return
 
-    # --- DEBUG iniziale ---
     logging.info("🧩 DEBUG FEED: %d articoli totali prima dell'ordinamento", len(items))
     for idx, it in enumerate(items[:5]):
         logging.info("🧩 [%d] titolo='%s' | img=%s | pub=%s | mod=%s",
                      idx, it.get("title"), it.get("image"), it.get("published"), it.get("modified"))
 
-    # 🩹 Ordina principalmente per 'published', usa 'modified' solo se manca
     def sort_key(a):
         return a.get("published") or a.get("modified") or ""
     items_sorted = sorted(items, key=sort_key, reverse=True)
@@ -132,10 +131,7 @@ def rebuild_feed():
         with open("feed.xml", "wb") as f:
             f.write(rss_xml)
         logging.info("✅ Feed ricostruito da cache: %s articoli", len(items_sorted))
-
-        # 🔔 PING AUTOMATICO DOPO COSTRUZIONE
         ping_search_engines()
-
     except Exception as e:
         logging.error("Errore generazione feed: %s", e)
 
@@ -211,7 +207,7 @@ def home():
     <body>
       <h2>✅ Artbooms RSS è attivo</h2>
       <p>Feed: <a href="/rss">/rss</a> — Debug: <a href="/debug/cache">/debug/cache</a></p>
-      <p>News sitemap: <a href="/news-sitemap.xml">/news-sitemap.xml</a></p>
+      <p>News sitemap: <a href="/news-sitemap.xml">/news-sitemap.xml</a> — Fresh sitemap: <a href="/fresh-sitemap.xml">/fresh-sitemap.xml</a></p>
     </body>
     </html>
     """
@@ -221,21 +217,9 @@ def home():
 def news_sitemap():
     return news_sitemap_view()
 
-# ============================================================
-# 🔹 NUOVA ROTTA DI "WAKE" (risveglio manuale)
-# ============================================================
-@app.route("/wake")
-def wake():
-    """
-    Risveglia manualmente Render e forza un aggiornamento del feed.
-    Puoi chiamare: https://artbooms-rss-x6pc.onrender.com/wake
-    """
-    try:
-        threading.Thread(target=background_populator, daemon=True).start()
-        return jsonify({"status": "ok", "message": "Popolatore avviato manualmente"}), 200
-    except Exception as e:
-        logging.error("Errore durante il wake: %s", e)
-        return jsonify({"status": "error", "message": str(e)}), 500
+@app.route("/fresh-sitemap.xml")
+def fresh_sitemap():
+    return fresh_sitemap_view()
 
 # ============================================================
 # Avvio
