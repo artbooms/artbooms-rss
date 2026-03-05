@@ -10,7 +10,7 @@ from rss_generator import build_rss
 from news_sitemap import news_sitemap_view  # 👈 AGGIUNTO
 
 CACHE_PATH = "cache/articles_cache.json"
-RAW_CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss-v2/main/cache/articles_cache.json"
+RAW_CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
