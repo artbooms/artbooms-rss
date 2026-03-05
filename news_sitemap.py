@@ -2,15 +2,18 @@ import datetime
 import requests
 from flask import Response
 
-NEWS_CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss-v2/main/cache/articles_cache.json"
+# ✅ Cache ufficiale (repo principale)
+NEWS_CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
+
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
     "Chrome/123.0.0.0 Safari/537.36"
 )
 
-# Finestra temporale: 29 giorni (sotto i 30; se Google ignora i più vecchi, semplicemente non li usa)
-DAYS_WINDOW = 29
+# ✅ Google News: ultimi 2 giorni (48 ore)
+DAYS_WINDOW = 2
+
 SITE_NAME = "ARTBOOMS"
 LANG = "it"
 KEYWORDS = "arte contemporanea, arte e cultura"
@@ -26,32 +29,32 @@ def _escape_xml(s: str) -> str:
     )
 
 
+def _xml_response(xml: str) -> Response:
+    resp = Response(xml, mimetype="application/xml")
+    # ✅ evita cache “strana”
+    resp.headers["Cache-Control"] = "no-cache, max-age=0, must-revalidate"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    return resp
+
+
 def news_sitemap_view():
     """
-    Genera la News Sitemap leggendo la cache JSON su GitHub.
+    News Sitemap (Google News) leggendo la cache JSON su GitHub.
 
-    - Usa solo i campi: url, title, published
-    - Finestra temporale: ultimi DAYS_WINDOW giorni
-    - Nessun filtro sul path (non ci interessa che ci sia /blog/ nell'URL)
-    - news:keywords = "arte contemporanea, arte e cultura"
-    - news:title = "<titolo> — ARTBOOMS"
+    - Usa solo: url, title, published
+    - Finestra temporale: ultimi DAYS_WINDOW giorni (qui: 2)
     """
-    # 1) Scarico la cache JSON da GitHub
     try:
-        resp = requests.get(
-            NEWS_CACHE_URL,
-            headers={"User-Agent": USER_AGENT},
-            timeout=15,
-        )
-        resp.raise_for_status()
-        data = resp.json()
+        r = requests.get(NEWS_CACHE_URL, headers={"User-Agent": USER_AGENT}, timeout=15)
+        r.raise_for_status()
+        data = r.json()
     except Exception:
-        # In caso di errore: sitemap vuota ma valida
         empty_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
 </urlset>"""
-        return Response(empty_xml, mimetype="application/xml")
+        return _xml_response(empty_xml)
 
     raw_items = data.get("items", [])
     if isinstance(raw_items, dict):
@@ -61,11 +64,10 @@ def news_sitemap_view():
     else:
         items = []
 
-    # 2) Filtro per finestra temporale (ultimi DAYS_WINDOW giorni)
     now = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
     window = datetime.timedelta(days=DAYS_WINDOW)
-    recent = []
 
+    recent = []
     for it in items:
         if not isinstance(it, dict):
             continue
@@ -73,7 +75,6 @@ def news_sitemap_view():
         url = (it.get("url") or "").strip()
         title = (it.get("title") or "").strip()
         pub_str = (it.get("published") or "").strip()
-
         if not url or not title or not pub_str:
             continue
 
@@ -82,7 +83,6 @@ def news_sitemap_view():
         except ValueError:
             continue
 
-        # Aggancio timezone se mancante
         if pub_dt.tzinfo is None:
             pub_dt = pub_dt.replace(tzinfo=datetime.timezone.utc)
 
@@ -94,10 +94,9 @@ def news_sitemap_view():
         it["_title"] = title
         recent.append(it)
 
-    # Ordino dal più recente al meno recente
+    # più recente → meno recente
     recent.sort(key=lambda a: a["_pub_dt"], reverse=True)
 
-    # 3) Costruisco XML News Sitemap
     parts = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"',
@@ -123,6 +122,4 @@ def news_sitemap_view():
         parts.append("  </url>")
 
     parts.append("</urlset>")
-    xml = "\n".join(parts)
-
-    return Response(xml, mimetype="application/xml")
+    return _xml_response("\n".join(parts))
