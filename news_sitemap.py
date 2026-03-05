@@ -2,17 +2,15 @@ import datetime
 import requests
 from flask import Response
 
-# ✅ Cache ufficiale (repo principale)
 NEWS_CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
-
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
     "Chrome/123.0.0.0 Safari/537.36"
 )
 
-# ✅ Google News: ultimi 2 giorni (48 ore)
-DAYS_WINDOW = 2
+# 🔹 finestra attuale (come il tuo): 29 giorni
+DAYS_WINDOW = 29
 
 SITE_NAME = "ARTBOOMS"
 LANG = "it"
@@ -31,7 +29,6 @@ def _escape_xml(s: str) -> str:
 
 def _xml_response(xml: str) -> Response:
     resp = Response(xml, mimetype="application/xml")
-    # ✅ evita cache “strana”
     resp.headers["Cache-Control"] = "no-cache, max-age=0, must-revalidate"
     resp.headers["Pragma"] = "no-cache"
     resp.headers["Expires"] = "0"
@@ -40,15 +37,21 @@ def _xml_response(xml: str) -> Response:
 
 def news_sitemap_view():
     """
-    News Sitemap (Google News) leggendo la cache JSON su GitHub.
+    Genera la News Sitemap leggendo la cache JSON su GitHub.
 
-    - Usa solo: url, title, published
-    - Finestra temporale: ultimi DAYS_WINDOW giorni (qui: 2)
+    - Usa solo i campi: url, title, published
+    - Finestra temporale: ultimi DAYS_WINDOW giorni
+    - news:keywords = "arte contemporanea, arte e cultura"
+    - news:title = "<titolo> — ARTBOOMS"
     """
     try:
-        r = requests.get(NEWS_CACHE_URL, headers={"User-Agent": USER_AGENT}, timeout=15)
-        r.raise_for_status()
-        data = r.json()
+        resp = requests.get(
+            NEWS_CACHE_URL,
+            headers={"User-Agent": USER_AGENT},
+            timeout=15,
+        )
+        resp.raise_for_status()
+        data = resp.json()
     except Exception:
         empty_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
@@ -75,6 +78,7 @@ def news_sitemap_view():
         url = (it.get("url") or "").strip()
         title = (it.get("title") or "").strip()
         pub_str = (it.get("published") or "").strip()
+
         if not url or not title or not pub_str:
             continue
 
@@ -94,7 +98,6 @@ def news_sitemap_view():
         it["_title"] = title
         recent.append(it)
 
-    # più recente → meno recente
     recent.sort(key=lambda a: a["_pub_dt"], reverse=True)
 
     parts = [
