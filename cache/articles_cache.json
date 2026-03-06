@@ -12305,9 +12305,9 @@
       "author": "natasha barbieri",
       "published": "2026-02-06T10:55:00+01:00",
       "modified": "2026-02-06T10:55:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6985718252693b3bcdfbe98b/1770601584506/582dc94d9a2c303deb2b65fa2b6a18a7-1500x1000.jpg?format=1500w",
-      "_hash": "c6ac90136d4a313d69dc4885b0652cb18d90c3a5074ddec1e075b47d6cba32a0",
-      "_fetched_at": "2026-02-09T03:14:37.129834+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6985718252693b3bcdfbe98b/1772763086754/582dc94d9a2c303deb2b65fa2b6a18a7-1500x1000.jpg?format=1500w",
+      "_hash": "da24f5958840368fa04fa36bb06004034cc2b1238cb8c8d02bce5f9ce90a1933",
+      "_fetched_at": "2026-03-06T13:07:05.567931+00:00"
     },
     "https://www.artbooms.com/blog/melvin-edwards-palais-de-tokyo": {
       "url": "https://www.artbooms.com/blog/melvin-edwards-palais-de-tokyo",
@@ -12332,7 +12332,7 @@
       "_fetched_at": "2026-02-28T07:37:28.158982+00:00"
     }
   },
-  "cursor": 1116,
+  "cursor": 75,
   "last_scan": "2026-02-27T09:47:29.472015+00:00",
   "links_hash": "18c6de98f4f9802b6f3af6490c0dfd0f7790dda6cfc6bccf1739c14327abc78d"
 }
