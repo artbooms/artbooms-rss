@@ -2653,14 +2653,15 @@
     },
     "https://www.artbooms.com/blog/nevin-aladag-music-room-documenta-biennale-venezia": {
       "url": "https://www.artbooms.com/blog/nevin-aladag-music-room-documenta-biennale-venezia",
-      "title": "L’artista Nevin Aladag che trasforma i mobili antichi in strumenti musicali — ARTBOOMS",
-      "description": "Ci sono tavolini intarsiati, appendiabiti e divani d’epoca. Qualche sedia dal design primo novecentesco. E’ la “Music Room” (Stanza della Musica) dell’artista tunisina di nascita ma tedesca d’adozione,  Nevin Aladag . Potrebbe sembrare inappropriato come titolo, non fosse che ogni mobile suona alla",
-      "author": "natasha barbieri",
-      "published": "2017-05-12T11:55:00+02:00",
-      "modified": "2017-05-12T11:55:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5903ba832e69cf367cd69d63/1494582939285/NA_S_76.jpg?format=1500w",
-      "_hash": "e61a28d5ad3f6d036d2e91e36a488f9e3a35d21458b317d9c6f89b4c9d936d46",
-      "_fetched_at": "2025-10-25T05:33:23.215675+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-03-13T08:48:12.150041+00:00"
     },
     "https://www.artbooms.com/blog/claudia-fontes-padiglione-argentina-biennale-venezia-2017": {
       "url": "https://www.artbooms.com/blog/claudia-fontes-padiglione-argentina-biennale-venezia-2017",
@@ -12332,7 +12333,7 @@
       "_fetched_at": "2026-02-28T07:37:28.158982+00:00"
     }
   },
-  "cursor": 162,
+  "cursor": 243,
   "last_scan": "2026-02-27T09:47:29.472015+00:00",
   "links_hash": "18c6de98f4f9802b6f3af6490c0dfd0f7790dda6cfc6bccf1739c14327abc78d"
 }
