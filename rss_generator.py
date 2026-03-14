@@ -48,7 +48,9 @@ def build_rss(items: list, meta: dict):
             raw_title = "(senza titolo)"
         title = escape(unescape(raw_title))
 
-        guid = escape(it.get("url") or "")
+        raw_url = (it.get("url") or "").strip()
+        guid = escape(raw_url)
+        link = escape(raw_url)
 
         raw_desc = (it.get("description") or "")
         if "&" in raw_desc:
@@ -57,7 +59,6 @@ def build_rss(items: list, meta: dict):
             raw_desc = re.sub(r"&(?=[\s.,;:!?])", "&amp;", raw_desc)
             raw_desc = re.sub(r"&amp;([A-Z][a-z]+)", r"&amp; \1", raw_desc)
 
-        # 🩹 Inserisci CDATA per soddisfare W3C (nessun impatto su contenuto)
         desc = f"<![CDATA[{raw_desc.strip()}]]>"
 
         author = escape(it.get("author") or "")
@@ -76,6 +77,7 @@ def build_rss(items: list, meta: dict):
         item_xml = [
             "<item>",
             f"<title>{title}</title>",
+            f"<link>{link}</link>",
             f"<guid isPermaLink=\"true\">{guid}</guid>",
             f"<description>{desc}</description>",
             f"<dc:creator>{author}</dc:creator>",
