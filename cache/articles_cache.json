@@ -1520,14 +1520,15 @@
     },
     "https://www.artbooms.com/blog/hubert-duprat-sculture": {
       "url": "https://www.artbooms.com/blog/hubert-duprat-sculture",
-      "title": "Hubert Duprat che si fa aiutare dagli insetti per creare sculture d’oro, perle, corallo e pietre preziose — ARTBOOMS",
-      "description": "Le sculture dell’artista Hubert Duprat, sono piccole e preziose. Sono fatte di scaglie d’oro, perle, turchesi, corallo e pietre. A costruirle materialmente sono le larve di un minuscolo insetto acquarico",
-      "author": "natasha barbieri",
-      "published": "2016-10-14T11:15:00+02:00",
-      "modified": "2016-10-14T11:15:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/57b657e8440243047463a9c0/1481150541202/hubert-duprat%281%29.jpg?format=1500w",
-      "_hash": "8a19f72a63c92e97f729fbb7dfc2c2c13e6a6b22b5d79a701cefee71e940af2e",
-      "_fetched_at": "2025-10-25T04:21:50.750028+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-03-18T22:59:20.760926+00:00"
     },
     "https://www.artbooms.com/blog/motoi-yamamoto-triennale-setouchi-2016": {
       "url": "https://www.artbooms.com/blog/motoi-yamamoto-triennale-setouchi-2016",
@@ -12343,7 +12344,7 @@
       "_fetched_at": "2026-03-17T04:27:18.120061+00:00"
     }
   },
-  "cursor": 108,
+  "cursor": 147,
   "last_scan": "2026-03-13T09:41:27.383107+00:00",
   "links_hash": "d83d319adefd2c3f72fcc68ae15a1bbcb38a59ecf65224fdaef8a33e956de2d6"
 }
