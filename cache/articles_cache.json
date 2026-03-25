@@ -607,15 +607,14 @@
     },
     "https://www.artbooms.com/blog/thomas-blanchard-memories-of-paitings": {
       "url": "https://www.artbooms.com/blog/thomas-blanchard-memories-of-paitings",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-03-25T02:00:01.905680+00:00"
+      "title": "Thomas Blanchard mixa latte, colore, olio e sapone liquido per creare degli psichedelici video — ARTBOOMS",
+      "description": "Il procedimento usato dal regista francese, Thomas Blanchard, per girare i suoi spettacolari video, sembra opera di un alchimista. O di un cuoco. Perché prima di mettersi davanti alla macchina da presa gli servono dei colori ma anche latte, olio e sapone liquido",
+      "author": "natasha barbieri",
+      "published": "2016-04-08T00:09:00+02:00",
+      "modified": "2016-04-08T00:09:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5707105960b5e990b70bd575/1584395987422/26075996051_f5e14a4fd6_h.jpg?format=1500w",
+      "_hash": "23bef49d9b6d44083fb758886b33774739bd663a6f9a1ddf8ae071b608c03201",
+      "_fetched_at": "2026-03-25T16:06:05.042129+00:00"
     },
     "https://www.artbooms.com/blog/posting-tail-vestito-cani-che-fotografa-e-posta": {
       "url": "https://www.artbooms.com/blog/posting-tail-vestito-cani-che-fotografa-e-posta",
@@ -12344,7 +12343,7 @@
       "_fetched_at": "2026-03-17T04:27:18.120061+00:00"
     }
   },
-  "cursor": 1065,
+  "cursor": 66,
   "last_scan": "2026-03-13T09:41:27.383107+00:00",
   "links_hash": "d83d319adefd2c3f72fcc68ae15a1bbcb38a59ecf65224fdaef8a33e956de2d6"
 }
