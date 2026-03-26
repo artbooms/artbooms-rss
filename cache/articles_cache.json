@@ -3236,27 +3236,25 @@
     },
     "https://www.artbooms.com/blog/kehinde-wiley-ritratto-obama-alla-galleria-dei-presidenti-smithsonian": {
       "url": "https://www.artbooms.com/blog/kehinde-wiley-ritratto-obama-alla-galleria-dei-presidenti-smithsonian",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-03-25T18:59:47.114898+00:00"
+      "title": "Chi è Kehinde Wiley, l’artista scelto da Obama per il suo ritratto ufficiale — ARTBOOMS",
+      "description": "Sarà l’artista afro-americano  Kehinde Wiley  a dipingere  Barack Obama  per la  Smithsonian National Gallery of Portraits  (cioè il museo di Washington dove sono conservati i ritratti ufficiali dei 44 presidenti degli Stati Uniti). Una scelta che è stata salutata con interesse da molti perché Wiley",
+      "author": "natasha barbieri",
+      "published": "2017-10-18T11:14:00+02:00",
+      "modified": "2017-10-18T11:14:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/59e6b91b4c0dbf75e8c756a5/1510540120896/KW-PA12-021-Princess-Victoire-of-Saxe-Coburg-Gotha-789x1024.jpg?format=1500w",
+      "_hash": "2d1a7ba4631d07e9b436b8bab74ab826d549e9410f387c4bdc042d236bcf7da3",
+      "_fetched_at": "2026-03-26T08:19:43.331414+00:00"
     },
     "https://www.artbooms.com/blog/maria-svarbova-serie-fotografie-in-the-swimming-pool": {
       "url": "https://www.artbooms.com/blog/maria-svarbova-serie-fotografie-in-the-swimming-pool",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-03-25T18:59:50.145615+00:00"
+      "title": "Le atmosfere sospese e i colori vibranti delle fotografie di Maria Svarbova. Tra piscine sovietiche e nuotatrici vintage — ARTBOOMS",
+      "description": "Le immagini scattate (e adeguatamente photoshoppate) della fotografa slovacca  Maria Svarbova  regalano all’osservatore una sensazione di assoluta tranquillità. Ritraggono delle nuotatrici, uguali tra loro e intente a fare gli stessi movimenti in piscine d’epoca sovietica.  Come graziosi automi abbi",
+      "author": "natasha barbieri",
+      "published": "2017-10-19T10:29:00+02:00",
+      "modified": "2017-10-19T10:29:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/59cc4291bce176de86ee218f/1531183747358/maria-svarbova-swimming-pool-01-768x768.jpg?format=1500w",
+      "_hash": "6ddee57b6f0d0af19d24d0b882fcf50fffdc6552cc567993fb847ef78025163c",
+      "_fetched_at": "2026-03-26T08:19:44.551091+00:00"
     },
     "https://www.artbooms.com/blog/kraken-in-rete-metallica-in-parco-scultoreo-subacqueo-isole-vergini": {
       "url": "https://www.artbooms.com/blog/kraken-in-rete-metallica-in-parco-scultoreo-subacqueo-isole-vergini",
@@ -12345,7 +12343,7 @@
       "_fetched_at": "2026-03-17T04:27:18.120061+00:00"
     }
   },
-  "cursor": 276,
+  "cursor": 375,
   "last_scan": "2026-03-13T09:41:27.383107+00:00",
   "links_hash": "d83d319adefd2c3f72fcc68ae15a1bbcb38a59ecf65224fdaef8a33e956de2d6"
 }
