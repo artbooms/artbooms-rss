@@ -4512,15 +4512,14 @@
     },
     "https://www.artbooms.com/blog/philippe-echaroux-central-park-new-york-fotografia-street-art": {
       "url": "https://www.artbooms.com/blog/philippe-echaroux-central-park-new-york-fotografia-street-art",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-03-28T16:58:00.745649+00:00"
+      "title": "Philippe Echaroux ritrae i passanti sulle chiome degli alberi di Central Park — ARTBOOMS",
+      "description": "Secondo  Philippe Echaroux  si tratta di street-art 2.0, anche se in realtà il suo è un processo a basso impatto tecnologico. Il nocciolo sono fotografia e luci. Mezzi con cui l’artista francese riesce a creare scenografici progetti d’arte pubblica. Come quello dello scorso anno nella foresta amazzo",
+      "author": "natasha barbieri",
+      "published": "2018-06-29T11:46:00+02:00",
+      "modified": "2018-06-29T11:46:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5b356569352f5320a9707a44/1579394822909/A-World-First-in-New-york-0-Little-Defition-5b1654ce7255b__880+%281%29.jpg?format=1500w",
+      "_hash": "7feaf81a5abc517c5cb6f85154ade4bef61680e9fe61d54f8d1545c9d03a117d",
+      "_fetched_at": "2026-03-29T06:26:38.343774+00:00"
     },
     "https://www.artbooms.com/blog/trashbird-street-art-valley-of-secret-values": {
       "url": "https://www.artbooms.com/blog/trashbird-street-art-valley-of-secret-values",
@@ -12355,7 +12354,7 @@
       "_fetched_at": "2026-03-26T10:06:55.159083+00:00"
     }
   },
-  "cursor": 330,
+  "cursor": 435,
   "last_scan": "2026-03-26T10:06:55.069447+00:00",
   "links_hash": "db9a48129f1122bd68c9eb4ba5c36f106637b52269dd6828c5ed0bf7d21fc11e"
 }
