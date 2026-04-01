@@ -3645,14 +3645,15 @@
     },
     "https://www.artbooms.com/blog/ian-berry-installazione-jeans-secret-garden-children-museum-of-the-arts": {
       "url": "https://www.artbooms.com/blog/ian-berry-installazione-jeans-secret-garden-children-museum-of-the-arts",
-      "title": "L’artista Ian Berry ha creato un giardino inglese con fiori, piante farfalle e lepri usando solo vecchie paia di jeans — ARTBOOMS",
-      "description": "L’artista britannico  Ian Berry  (di cui ho parlato  qui ), famoso per gli incredibilmente realistici ritratti dipinti con il denim, ha recentemente ultimato l’installazione ‘ Secret Garden ’ al  Children’s Museum of the Arts  di New York. Un giardino, con fiori, piante, farfalle e persino leprotti.",
-      "author": "natasha barbieri",
-      "published": "2018-01-16T11:27:00+01:00",
-      "modified": "2018-01-16T11:27:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5a5bd9770d9297bb7c8b77f9/1531083741292/iqnberry.jpg?format=1500w",
-      "_hash": "16ab6ad465eef842ff8e6a46033e5d430615b286fa929c94d82fcce3248691a5",
-      "_fetched_at": "2025-10-25T06:37:00.550966+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-04-01T15:00:02.197586+00:00"
     },
     "https://www.artbooms.com/blog/kenji-toma-fotografia-iperrealista-fiori-the-most-beautiful-flowers": {
       "url": "https://www.artbooms.com/blog/kenji-toma-fotografia-iperrealista-fiori-the-most-beautiful-flowers",
@@ -12356,7 +12357,7 @@
       "_fetched_at": "2026-03-30T04:12:06.184031+00:00"
     }
   },
-  "cursor": 258,
+  "cursor": 393,
   "last_scan": "2026-03-26T10:06:55.069447+00:00",
   "links_hash": "db9a48129f1122bd68c9eb4ba5c36f106637b52269dd6828c5ed0bf7d21fc11e"
 }
