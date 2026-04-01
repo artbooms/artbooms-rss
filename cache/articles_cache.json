@@ -2290,14 +2290,15 @@
     },
     "https://www.artbooms.com/blog/shen-shaomin-klein-sun-gallery-keep-upright": {
       "url": "https://www.artbooms.com/blog/shen-shaomin-klein-sun-gallery-keep-upright",
-      "title": "I dipinti iperrealisti di Shen Shaomin che riproducono i capolavori del MoMa impacchettati nel pluriball e scocciati per benino — ARTBOOMS",
-      "description": "Le opere di  Shen Shomin  sembrano capolavori del passato avvolti nel pluriball ed assicurati all’imballaggio con qualche striscia di nastro adesivo. Invece sono dipinti  iperrealisti  in cui tutto è stato riprodotto a mano dall’artista cinese. Pluriball compreso ovviamente.  Questa serie di lavori",
-      "author": "natasha barbieri",
-      "published": "2017-03-15T10:08:00+01:00",
-      "modified": "2017-03-15T10:08:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/58c88617cd0f684b3affabfc/1489590231218/bubble-wrapped-masterpieces-shen-shaomin-keep-upright-klein-sun-gallery-09.jpg?format=1500w",
-      "_hash": "8d8442560f0ced0c94012d4b91e17b15562657ca3dc0d5f55e5203aab2b3a09c",
-      "_fetched_at": "2025-10-25T05:09:13.740486+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-04-01T13:31:28.268341+00:00"
     },
     "https://www.artbooms.com/blog/detector-lock-john-wilkes-albert-and-victoria-museum-rijksmuseum": {
       "url": "https://www.artbooms.com/blog/detector-lock-john-wilkes-albert-and-victoria-museum-rijksmuseum",
@@ -2312,14 +2313,15 @@
     },
     "https://www.artbooms.com/blog/julie-cockburn-fotografie-vintage-ricamate-a-mano": {
       "url": "https://www.artbooms.com/blog/julie-cockburn-fotografie-vintage-ricamate-a-mano",
-      "title": "Julie Cockburn, l’artista che ricama le fotografie vintage con fili d’arcobaleno — ARTBOOMS",
-      "description": "L’artista inglese  Julie Cockburn  recupera vecchie fotografie, prevalentemente ritratti, e le ricopre di pois o altri motivi decorativi semplici e multicolore. Il tutto è ricamato a mano con punti minutissimi.  Le opere della Cockburn richiedono pazienza e un lavoro minuzioso che si dipana nell’arc",
-      "author": "natasha barbieri",
-      "published": "2017-03-17T10:43:00+01:00",
-      "modified": "2017-03-17T10:43:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/58c73cafb8a79bf5b53a9a46/1489743815840/cockburn.jpg?format=1500w",
-      "_hash": "43a8cfb974b41293cf16ea708cc53e8185ed25dece81c79d4d713b8069484d73",
-      "_fetched_at": "2025-10-25T05:11:17.190380+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-04-01T13:33:56.334914+00:00"
     },
     "https://www.artbooms.com/blog/ai-weiwei-law-of-the-journey-galleria-nazionale-praga": {
       "url": "https://www.artbooms.com/blog/ai-weiwei-law-of-the-journey-galleria-nazionale-praga",
@@ -12354,7 +12356,7 @@
       "_fetched_at": "2026-03-30T04:12:06.184031+00:00"
     }
   },
-  "cursor": 84,
+  "cursor": 258,
   "last_scan": "2026-03-26T10:06:55.069447+00:00",
   "links_hash": "db9a48129f1122bd68c9eb4ba5c36f106637b52269dd6828c5ed0bf7d21fc11e"
 }
