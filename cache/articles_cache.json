@@ -10058,14 +10058,15 @@
     },
     "https://www.artbooms.com/blog/jessie-homer-french-paesaggi-dipinti": {
       "url": "https://www.artbooms.com/blog/jessie-homer-french-paesaggi-dipinti",
-      "title": "I paesaggi onirici e indifferenti dipinti  da Jessie Homer French — ARTBOOMS",
-      "description": "I paesaggi dipinti dall'artista statunitense Jessi Homer French sono onirici  e silenziosi. Ritraggono la natura della West Cost e i pericoli dell'inquinamento.",
-      "author": "natasha barbieri",
-      "published": "2022-11-24T10:59:00+01:00",
-      "modified": "2022-11-24T10:59:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/637d3f23478c444a49efbd6e/1669283946987/RM_Arsenale_37+Jessie+Homer+French_5816.jpg?format=1500w",
-      "_hash": "56c1bb34122b418221109f8080738e4a96c8a7b7decae96f9ad624d824dd125f",
-      "_fetched_at": "2025-10-25T13:31:12.145014+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-04-08T18:15:24.163367+00:00"
     },
     "https://www.artbooms.com/blog/bharti-kher-ancestor-scultura-bronzo-policromo": {
       "url": "https://www.artbooms.com/blog/bharti-kher-ancestor-scultura-bronzo-policromo",
@@ -12356,7 +12357,7 @@
       "_fetched_at": "2026-03-30T04:12:06.184031+00:00"
     }
   },
-  "cursor": 843,
+  "cursor": 960,
   "last_scan": "2026-03-26T10:06:55.069447+00:00",
   "links_hash": "db9a48129f1122bd68c9eb4ba5c36f106637b52269dd6828c5ed0bf7d21fc11e"
 }
