@@ -7130,14 +7130,15 @@
     },
     "https://www.artbooms.com/blog/monterey-bay-aquarium-live-cams-acquario-genova-video-3d": {
       "url": "https://www.artbooms.com/blog/monterey-bay-aquarium-live-cams-acquario-genova-video-3d",
-      "title": "Guarda gli animali nei video degli acquari di Monterey e Genova — ARTBOOMS",
-      "description": "Chiusi per l’emergenza sia l’Acquario di Monterey Bay che quello di Genova permettono al pubblico di godere degli splendidi pesci e animali attraverso una live cam e video 3d.",
-      "author": "natasha barbieri",
-      "published": "2020-03-19T10:15:00+01:00",
-      "modified": "2020-03-19T10:15:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5e72ab8d89c868691b561c6b/1587683164616/Senza+titolo-1.jpg?format=1500w",
-      "_hash": "d33becfcaaf1f851f4a5993c467a92ca6fe65cf42f95d3c6291e4b4cdf607a5a",
-      "_fetched_at": "2025-10-25T10:25:23.487578+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-04-08T13:37:20.787985+00:00"
     },
     "https://www.artbooms.com/blog/tour-virtuale-kathleen-ryan-bad-fruits": {
       "url": "https://www.artbooms.com/blog/tour-virtuale-kathleen-ryan-bad-fruits",
@@ -7306,14 +7307,15 @@
     },
     "https://www.artbooms.com/blog/ragazza-col-timpaano-perforato-di-banksy-con-mascherina": {
       "url": "https://www.artbooms.com/blog/ragazza-col-timpaano-perforato-di-banksy-con-mascherina",
-      "title": "\"Ragazza col timpano perforato\" di Banksy mette la mascherina — ARTBOOMS",
-      "description": "Sul graffito “Girl with the Pierced Eardrum'“  di Banksy a Bristol, durante l’epidemia di coronavirus, ha fatto la sua comparsa una mascherina. A intervenire sul murale potrebbe essere stato lo stesso artista.",
-      "author": "natasha barbieri",
-      "published": "2020-04-23T10:18:00+02:00",
-      "modified": "2020-04-23T10:18:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5ea0c2d561bed428d92d8b62/1590021879628/banksy-face-mask.jpeg?format=1500w",
-      "_hash": "baf78782e1aab68f4e93323109267bee8af61d5085a14d9e19d1d865323a332d",
-      "_fetched_at": "2025-10-25T10:35:46.980458+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-04-08T13:47:50.925555+00:00"
     },
     "https://www.artbooms.com/blog/oggetti-inquietanti-musei": {
       "url": "https://www.artbooms.com/blog/oggetti-inquietanti-musei",
@@ -12354,7 +12356,7 @@
       "_fetched_at": "2026-03-30T04:12:06.184031+00:00"
     }
   },
-  "cursor": 576,
+  "cursor": 714,
   "last_scan": "2026-03-26T10:06:55.069447+00:00",
   "links_hash": "db9a48129f1122bd68c9eb4ba5c36f106637b52269dd6828c5ed0bf7d21fc11e"
 }
