@@ -10826,14 +10826,15 @@
     },
     "https://www.artbooms.com/blog/michelangelo-pistoletto-quadri-specchianti": {
       "url": "https://www.artbooms.com/blog/michelangelo-pistoletto-quadri-specchianti",
-      "title": "I quadri specchianti per il 90esimo di Michelangelo Pistoletto — ARTBOOMS",
-      "description": "Michelangelo Pistoletto compie 90 anni e con lui si celebrano i suoi famosi quadri specchianti . Selfie ante litteram ed emblemi di un abbraccio dell'arte al  mondo, sono in mostra a San Gimignano, sui colli senesi.",
-      "author": "natasha barbieri",
-      "published": "2023-06-07T10:58:00+02:00",
-      "modified": "2023-06-07T10:58:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/t/647e6b8e1a02a37bf155bd56/1686006670845/2BIG_MIPI2023_QSdr.jpg?format=1500w",
-      "_hash": "cc7fb7f038b7b383fdc021f89ed90d33219631a264b225fffe0f32d8ee963d12",
-      "_fetched_at": "2025-10-25T01:18:47.134436+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-04-16T14:38:13.869215+00:00"
     },
     "https://www.artbooms.com/blog/yan-pei-ming-pittore-di-storie": {
       "url": "https://www.artbooms.com/blog/yan-pei-ming-pittore-di-storie",
@@ -12376,7 +12377,7 @@
       "_fetched_at": "2026-04-16T08:51:58.827018+00:00"
     }
   },
-  "cursor": 831,
+  "cursor": 1014,
   "last_scan": "2026-04-16T08:51:58.728115+00:00",
   "links_hash": "1f3560c0cf80c5f480b3620d54919efde3214e42d6d1c70d439c8b4c36422997"
 }
