@@ -3049,14 +3049,15 @@
     },
     "https://www.artbooms.com/blog/casett-per-uccelli-architettura-ottomana-turchia": {
       "url": "https://www.artbooms.com/blog/casett-per-uccelli-architettura-ottomana-turchia",
-      "title": "Le casette per gli uccelli degli ottomani che sembrano palazzi riccamente ornati — ARTBOOMS",
-      "description": "Un elemento curioso e non molto conosciuto dell’ architettura ottomana  in Turchia è l’abitudine di inserire una casa per uccelli sulla facciata degli edifici simbolo delle città. Moschee, ponti, locande e biblioteche possedevano una loro casetta per i volatili. Sulle fontane poi erano inseriti anch",
-      "author": "natasha barbieri",
-      "published": "2017-08-01T11:05:00+02:00",
-      "modified": "2017-08-01T11:05:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/597fc5da6b8f5b693bd7bd07/1501578326102/house-4.jpg?format=1500w",
-      "_hash": "0e93aa5e269267cfd5cad96118d6b8f95c73880f737107da938dfdbc73f45d6d",
-      "_fetched_at": "2026-04-08T09:16:00.234340+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-04-23T15:58:49.570626+00:00"
     },
     "https://www.artbooms.com/blog/toshihiko-shibuya-installazione-white-generation-2-foresta-di-hobetsu": {
       "url": "https://www.artbooms.com/blog/toshihiko-shibuya-installazione-white-generation-2-foresta-di-hobetsu",
@@ -12376,7 +12377,7 @@
       "_fetched_at": "2026-04-16T08:51:58.827018+00:00"
     }
   },
-  "cursor": 117,
+  "cursor": 294,
   "last_scan": "2026-04-16T08:51:58.728115+00:00",
   "links_hash": "1f3560c0cf80c5f480b3620d54919efde3214e42d6d1c70d439c8b4c36422997"
 }
