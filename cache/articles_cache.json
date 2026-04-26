@@ -9133,14 +9133,15 @@
     },
     "https://www.artbooms.com/blog/oliver-beer": {
       "url": "https://www.artbooms.com/blog/oliver-beer",
-      "title": "Oliver Beer che fa cantare vasi, pentole ed edifici — ARTBOOMS",
-      "description": "Nelle sue installazioni l'artista Oliver Beer fa cantare oggetti o edifici.  Si è infatti convinto presto che dentro ogni oggetto inanimato si nasconda un suono. E talvolta una nota perfetta.",
-      "author": "natasha barbieri",
-      "published": "2022-01-21T10:55:00+01:00",
-      "modified": "2022-01-21T10:55:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/61e9def9e9bacc0844fc8580/1642758948816/Oliver+Beer_Simple+Rights+_+Unattained+Goals_photo+by+Hedi+Jaansoo_7.jpg?format=1500w",
-      "_hash": "559bd8a916aa81f53b9e90eb9e91575c2f8470fd048fe45e33caa08c2f93ce60",
-      "_fetched_at": "2025-10-25T12:31:35.530431+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-04-26T04:12:14.709946+00:00"
     },
     "https://www.artbooms.com/blog/jakob-kudsk-steensen": {
       "url": "https://www.artbooms.com/blog/jakob-kudsk-steensen",
@@ -9177,14 +9178,15 @@
     },
     "https://www.artbooms.com/blog/emanuelle-maureaux-installazioni-colorate": {
       "url": "https://www.artbooms.com/blog/emanuelle-maureaux-installazioni-colorate",
-      "title": "La colorata installazione di Emanuelle Moureaux in washi tape — ARTBOOMS",
-      "description": "Emanuelle Moureaux usato 6000 strisce di nastro adesivoi per realizzare la sua ultima colorata installazione. E' arrivata quasi al soffitto della fabbrica. Ma senza dimenticare di lasciare una galleria dove le persone potevano passare immergendosi nel colore.",
-      "author": "natasha barbieri",
-      "published": "2022-01-28T10:52:00+01:00",
-      "modified": "2022-01-28T10:52:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/61f3294e4ab5ef4e7e2d06b7/1643363572220/4_emmanuelle_moureaux_100_colors_35_mt-960x640%402x.jpg?format=1500w",
-      "_hash": "186c111921bfd7286e94a474e8c590e1b78e330203c84dd58e561bf899b7cc59",
-      "_fetched_at": "2025-10-25T12:35:42.429238+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-04-26T04:16:27.138146+00:00"
     },
     "https://www.artbooms.com/blog/precious-okoyomon": {
       "url": "https://www.artbooms.com/blog/precious-okoyomon",
@@ -9221,14 +9223,15 @@
     },
     "https://www.artbooms.com/blog/mehmet-al-uysal-su": {
       "url": "https://www.artbooms.com/blog/mehmet-al-uysal-su",
-      "title": "Mehmet Alì Uysal ha creato dei giganteschi iceberg fluttuanti — ARTBOOMS",
-      "description": "Per Le Bon Marché Rive Gauche di Parigi l'artista Mehmet Alì Uysal, ha creato l'installazione Su. Tra le opere che la compongono dei giganteschi iceberg fluttuanti che danno l'impressione di camminare sul fondo del mare.",
-      "author": "natasha barbieri",
-      "published": "2022-02-08T10:53:00+01:00",
-      "modified": "2022-02-08T10:53:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/61fdbc7486a24f709528c6b5/1646521110647/11-0S6A4831+copie.jpg?format=1500w",
-      "_hash": "1e311e40705c2d355877688a83cb7d4ecd4738f2991a2fc411d1c19fa286829c",
-      "_fetched_at": "2025-10-25T12:37:48.407333+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-04-26T04:18:36.939318+00:00"
     },
     "https://www.artbooms.com/blog/hugh-hayden-brier-patch": {
       "url": "https://www.artbooms.com/blog/hugh-hayden-brier-patch",
@@ -12377,7 +12380,7 @@
       "_fetched_at": "2026-04-16T08:51:58.827018+00:00"
     }
   },
-  "cursor": 807,
+  "cursor": 1002,
   "last_scan": "2026-04-16T08:51:58.728115+00:00",
   "links_hash": "1f3560c0cf80c5f480b3620d54919efde3214e42d6d1c70d439c8b4c36422997"
 }
