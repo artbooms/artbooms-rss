@@ -8286,15 +8286,14 @@
     },
     "https://www.artbooms.com/blog/kim-tschang-yeul-pittore-coreano-gocce-acqua": {
       "url": "https://www.artbooms.com/blog/kim-tschang-yeul-pittore-coreano-gocce-acqua",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-04-26T03:19:28.754631+00:00"
+      "title": "Kim Tschang-Yeul che per tutta la vita ha dipinto gocce d'acqua — ARTBOOMS",
+      "description": "Kim Tschang-Yeul considerato uno dei padri dell’arte coreana contemporanea per tutta la vita ha dipinto gocce d’acqua.  Fedele ai principi  del buddismo zen, Il suo obbiettivo era diluire in loro, attraverso la pratica paziente della pittura, il suo ego.",
+      "author": "natasha barbieri",
+      "published": "2021-02-26T11:13:00+01:00",
+      "modified": "2021-02-26T11:13:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6036ebb09ac9547db0d72d61/1642983836490/Kim+Tschang-Yeul-01.jpg?format=1500w",
+      "_hash": "14b89e9eb8d3fe7d29510a69d571a70b2eef431a7c694fa020b3bbcaa0f2b375",
+      "_fetched_at": "2026-04-26T17:27:06.714919+00:00"
     },
     "https://www.artbooms.com/blog/prune-nourry-le-bon-marche-parigi-l-amazone-erogene": {
       "url": "https://www.artbooms.com/blog/prune-nourry-le-bon-marche-parigi-l-amazone-erogene",
@@ -12381,7 +12380,7 @@
       "_fetched_at": "2026-04-16T08:51:58.827018+00:00"
     }
   },
-  "cursor": 711,
+  "cursor": 786,
   "last_scan": "2026-04-16T08:51:58.728115+00:00",
   "links_hash": "1f3560c0cf80c5f480b3620d54919efde3214e42d6d1c70d439c8b4c36422997"
 }
