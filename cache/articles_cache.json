@@ -7207,14 +7207,15 @@
     },
     "https://www.artbooms.com/blog/stormi-di-uccelli-video-e-foto-xavi-bou": {
       "url": "https://www.artbooms.com/blog/stormi-di-uccelli-video-e-foto-xavi-bou",
-      "title": "Stormi di uccelli come ipnotici disegni del fotografo Xavi Bou — ARTBOOMS",
-      "description": "Stormi di uccelli  ma anche singoli volatili nella serie Ornitographies del fotografo Xavi Bou. si tramutano, quando in lievi tratti di matita, quando in energici segni d’inchiostro.",
-      "author": "natasha barbieri",
-      "published": "2020-04-08T11:08:00+02:00",
-      "modified": "2020-04-08T11:08:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5e87c1e7a562815d2ecb3029/1587681808988/bou.gif?format=1500w",
-      "_hash": "d0b84be9b292a7c6e9e810b0548a2817a4aea8fb8a02863a4c45d08b7a7717e5",
-      "_fetched_at": "2025-10-25T10:29:33.684803+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-04-26T16:18:36.614959+00:00"
     },
     "https://www.artbooms.com/blog/y-z-kami-night-paintings-gagosian-roma": {
       "url": "https://www.artbooms.com/blog/y-z-kami-night-paintings-gagosian-roma",
@@ -12380,7 +12381,7 @@
       "_fetched_at": "2026-04-16T08:51:58.827018+00:00"
     }
   },
-  "cursor": 627,
+  "cursor": 711,
   "last_scan": "2026-04-16T08:51:58.728115+00:00",
   "links_hash": "1f3560c0cf80c5f480b3620d54919efde3214e42d6d1c70d439c8b4c36422997"
 }
