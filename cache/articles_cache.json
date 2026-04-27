@@ -5814,14 +5814,15 @@
     },
     "https://www.artbooms.com/blog/sebastian-errazuriz-sculture-the-beginning-of-the-end": {
       "url": "https://www.artbooms.com/blog/sebastian-errazuriz-sculture-the-beginning-of-the-end",
-      "title": "Le sculture di Sebastian Errazuriz compongono il pantheon dei nuovi Dei. Da Jobs a Zuckerberg, da Putin a Trump — ARTBOOMS",
-      "description": "Nella sua ultima serie di opere l’artista, designer e attivista  Sebastian Errazuriz  rispolvera la scultura neoclassica e il simbolismo, usando i titoli come fossero didascalie, per raccontare una storia di oggi. Un pantheon di nuovi Dei della tecnologia, la cui religione porterà a una disoccupazio",
-      "author": "natasha barbieri",
-      "published": "2019-05-17T10:44:00+02:00",
-      "modified": "2019-05-17T10:44:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5cbf9eb39b747a2d68d44016/1579220664260/sebastian-errazuris-sculture-5.jpg?format=1500w",
-      "_hash": "2bb00bea88b7831aab915f15013f2b204df37a60911e83615a1c39e8f2370abd",
-      "_fetched_at": "2025-10-25T08:56:24.680044+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-04-27T21:18:21.232873+00:00"
     },
     "https://www.artbooms.com/blog/martin-puryear-padiglione-stati-uniti-biennale-arte-venezia-2109-martin-puryear-liberty-liberta": {
       "url": "https://www.artbooms.com/blog/martin-puryear-padiglione-stati-uniti-biennale-arte-venezia-2109-martin-puryear-liberty-liberta",
@@ -5869,15 +5870,14 @@
     },
     "https://www.artbooms.com/blog/banksy-rivendica-murale-venezia-naufrago-bambino": {
       "url": "https://www.artbooms.com/blog/banksy-rivendica-murale-venezia-naufrago-bambino",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-04-27T04:16:46.293682+00:00"
+      "title": "A Venezia qualcuno ha vinto la lotteria di Banksy. Rivendicato Naufrago Bambino — ARTBOOMS",
+      "description": "Banksy  ha rivendicato attraverso il suo  account instagram  il murale realizzato a Venezia nella notte  tra il 9 e il 10 di maggio, durante la pre-inaugurazionne della   Biennale  2019 . L’opera immediatamente ribattezzata dalla  stampa Naufrago Bambino si trova su Rio Novo, in Campiello Mosca e si",
+      "author": "natasha barbieri",
+      "published": "2019-05-25T09:45:00+02:00",
+      "modified": "2019-05-25T09:45:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5ce811b1c830256f7e605749/1563921398886/banksy-migrant-child-mural-venice-designboom-1.jpg?format=1500w",
+      "_hash": "23cb731a25c5a05c06352176ef89d364dc327d47bfae748bfb533aab4762af03",
+      "_fetched_at": "2026-04-27T21:22:33.109429+00:00"
     },
     "https://www.artbooms.com/blog/tomas-saraceno-biennale-venezia-2109-spiderweb-pavilion-7": {
       "url": "https://www.artbooms.com/blog/tomas-saraceno-biennale-venezia-2109-spiderweb-pavilion-7",
@@ -12393,7 +12393,7 @@
       "_fetched_at": "2026-04-16T08:51:58.827018+00:00"
     }
   },
-  "cursor": 519,
+  "cursor": 600,
   "last_scan": "2026-04-16T08:51:58.728115+00:00",
   "links_hash": "1f3560c0cf80c5f480b3620d54919efde3214e42d6d1c70d439c8b4c36422997"
 }
