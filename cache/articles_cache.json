@@ -5869,14 +5869,15 @@
     },
     "https://www.artbooms.com/blog/banksy-rivendica-murale-venezia-naufrago-bambino": {
       "url": "https://www.artbooms.com/blog/banksy-rivendica-murale-venezia-naufrago-bambino",
-      "title": "A Venezia qualcuno ha vinto la lotteria di Banksy. Rivendicato Naufrago Bambino — ARTBOOMS",
-      "description": "Banksy  ha rivendicato attraverso il suo  account instagram  il murale realizzato a Venezia nella notte  tra il 9 e il 10 di maggio, durante la pre-inaugurazionne della   Biennale  2019 . L’opera immediatamente ribattezzata dalla  stampa Naufrago Bambino si trova su Rio Novo, in Campiello Mosca e si",
-      "author": "natasha barbieri",
-      "published": "2019-05-25T09:45:00+02:00",
-      "modified": "2019-05-25T09:45:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5ce811b1c830256f7e605749/1563921398886/banksy-migrant-child-mural-venice-designboom-1.jpg?format=1500w",
-      "_hash": "23cb731a25c5a05c06352176ef89d364dc327d47bfae748bfb533aab4762af03",
-      "_fetched_at": "2025-10-25T09:00:36.175720+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-04-27T04:16:46.293682+00:00"
     },
     "https://www.artbooms.com/blog/tomas-saraceno-biennale-venezia-2109-spiderweb-pavilion-7": {
       "url": "https://www.artbooms.com/blog/tomas-saraceno-biennale-venezia-2109-spiderweb-pavilion-7",
@@ -7222,15 +7223,14 @@
     },
     "https://www.artbooms.com/blog/stormi-di-uccelli-video-e-foto-xavi-bou": {
       "url": "https://www.artbooms.com/blog/stormi-di-uccelli-video-e-foto-xavi-bou",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-04-26T16:18:36.614959+00:00"
+      "title": "Stormi di uccelli come ipnotici disegni del fotografo Xavi Bou — ARTBOOMS",
+      "description": "Stormi di uccelli  ma anche singoli volatili nella serie Ornitographies del fotografo Xavi Bou. si tramutano, quando in lievi tratti di matita, quando in energici segni d’inchiostro.",
+      "author": "natasha barbieri",
+      "published": "2020-04-08T11:08:00+02:00",
+      "modified": "2020-04-08T11:08:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5e87c1e7a562815d2ecb3029/1587681808988/bou.gif?format=1500w",
+      "_hash": "d0b84be9b292a7c6e9e810b0548a2817a4aea8fb8a02863a4c45d08b7a7717e5",
+      "_fetched_at": "2026-04-27T05:42:19.326212+00:00"
     },
     "https://www.artbooms.com/blog/y-z-kami-night-paintings-gagosian-roma": {
       "url": "https://www.artbooms.com/blog/y-z-kami-night-paintings-gagosian-roma",
@@ -12392,7 +12392,7 @@
       "_fetched_at": "2026-04-16T08:51:58.827018+00:00"
     }
   },
-  "cursor": 495,
+  "cursor": 726,
   "last_scan": "2026-04-16T08:51:58.728115+00:00",
   "links_hash": "1f3560c0cf80c5f480b3620d54919efde3214e42d6d1c70d439c8b4c36422997"
 }
