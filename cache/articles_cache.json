@@ -563,14 +563,15 @@
     },
     "https://www.artbooms.com/blog/design-3d-balletto-levitation": {
       "url": "https://www.artbooms.com/blog/design-3d-balletto-levitation",
-      "title": "IL BALLERINO CHE SFIDA LA GRAVITA’ IN UNA STUPEFACENTE COREOGRAFIA 3D — ARTBOOMS",
-      "description": "Si chiama “Levitation” ed è un progetto di danza, in cui il ballerino sembra muoversi in assenza di gravità. Dei magnifici effetti 3D della performance si è occupata la società Sila Sveta, la coreografia è opera della famosa artista e ballerina, Anna Abalikhina",
-      "author": "natasha barbieri",
-      "published": "2016-04-06T10:04:00+02:00",
-      "modified": "2016-04-06T10:04:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5704644aab48de4f154ee378/1482012227447/Wki0YcQ+-+Imgur.gif?format=1500w",
-      "_hash": "c00a8cc290486c1fba818601a9eadcb99b0d4ac5d920a7e5072e109312c45b9e",
-      "_fetched_at": "2025-10-25T03:21:37.406069+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-04-27T15:11:43.601904+00:00"
     },
     "https://www.artbooms.com/blog/artista-kim-keever": {
       "url": "https://www.artbooms.com/blog/artista-kim-keever",
@@ -11612,14 +11613,15 @@
     },
     "https://www.artbooms.com/blog/serban-savu-padiglione-romania": {
       "url": "https://www.artbooms.com/blog/serban-savu-padiglione-romania",
-      "title": "Biennale di Venezia| il Padiglione Romania di Șerban Savu  — ARTBOOMS",
-      "description": "Dipinti figurativi e mosaici sono le opere scelte da Șerban Savu per “What Work Is” il Padiglione Romania alla Biennale di Venezia.2024.  Savu li usa per riferirsi agli strumenti di propaganda del realismo socialista che però sovverte in maniera sottile.",
-      "author": "natasha barbieri",
-      "published": "2024-06-05T10:51:00+02:00",
-      "modified": "2024-06-05T10:51:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/t/665fa5ad27608e2564d8f86c/1717544365938/img-2.jpg?format=1500w",
-      "_hash": "a104236a1067ea7283189d848a4a8a2d55b3f6b7a2193ea92a4a3b51d55801b8",
-      "_fetched_at": "2026-04-01T10:17:34.605110+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-04-27T13:46:22.223725+00:00"
     },
     "https://www.artbooms.com/blog/john-akomfrah-padiglione-gran-bretagna": {
       "url": "https://www.artbooms.com/blog/john-akomfrah-padiglione-gran-bretagna",
@@ -12392,7 +12394,7 @@
       "_fetched_at": "2026-04-16T08:51:58.827018+00:00"
     }
   },
-  "cursor": 996,
+  "cursor": 57,
   "last_scan": "2026-04-16T08:51:58.728115+00:00",
   "links_hash": "1f3560c0cf80c5f480b3620d54919efde3214e42d6d1c70d439c8b4c36422997"
 }
