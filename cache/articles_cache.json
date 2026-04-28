@@ -11612,15 +11612,14 @@
     },
     "https://www.artbooms.com/blog/serban-savu-padiglione-romania": {
       "url": "https://www.artbooms.com/blog/serban-savu-padiglione-romania",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-04-27T13:46:22.223725+00:00"
+      "title": "Biennale di Venezia| il Padiglione Romania di Șerban Savu  — ARTBOOMS",
+      "description": "Dipinti figurativi e mosaici sono le opere scelte da Șerban Savu per “What Work Is” il Padiglione Romania alla Biennale di Venezia.2024.  Savu li usa per riferirsi agli strumenti di propaganda del realismo socialista che però sovverte in maniera sottile.",
+      "author": "natasha barbieri",
+      "published": "2024-06-05T10:51:00+02:00",
+      "modified": "2024-06-05T10:51:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/t/665fa5ad27608e2564d8f86c/1717544365938/img-2.jpg?format=1500w",
+      "_hash": "a104236a1067ea7283189d848a4a8a2d55b3f6b7a2193ea92a4a3b51d55801b8",
+      "_fetched_at": "2026-04-28T03:27:44.482720+00:00"
     },
     "https://www.artbooms.com/blog/john-akomfrah-padiglione-gran-bretagna": {
       "url": "https://www.artbooms.com/blog/john-akomfrah-padiglione-gran-bretagna",
@@ -12393,7 +12392,7 @@
       "_fetched_at": "2026-04-16T08:51:58.827018+00:00"
     }
   },
-  "cursor": 768,
+  "cursor": 1113,
   "last_scan": "2026-04-16T08:51:58.728115+00:00",
   "links_hash": "1f3560c0cf80c5f480b3620d54919efde3214e42d6d1c70d439c8b4c36422997"
 }
