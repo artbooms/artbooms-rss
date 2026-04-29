@@ -9220,14 +9220,15 @@
     },
     "https://www.artbooms.com/blog/mehmet-al-uysal-su": {
       "url": "https://www.artbooms.com/blog/mehmet-al-uysal-su",
-      "title": "Mehmet Alì Uysal ha creato dei giganteschi iceberg fluttuanti — ARTBOOMS",
-      "description": "Per Le Bon Marché Rive Gauche di Parigi l'artista Mehmet Alì Uysal, ha creato l'installazione Su. Tra le opere che la compongono dei giganteschi iceberg fluttuanti che danno l'impressione di camminare sul fondo del mare.",
-      "author": "natasha barbieri",
-      "published": "2022-02-08T10:53:00+01:00",
-      "modified": "2022-02-08T10:53:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/61fdbc7486a24f709528c6b5/1646521110647/11-0S6A4831+copie.jpg?format=1500w",
-      "_hash": "1e311e40705c2d355877688a83cb7d4ecd4738f2991a2fc411d1c19fa286829c",
-      "_fetched_at": "2026-04-26T18:25:33.772304+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-04-29T20:51:55.947025+00:00"
     },
     "https://www.artbooms.com/blog/hugh-hayden-brier-patch": {
       "url": "https://www.artbooms.com/blog/hugh-hayden-brier-patch",
@@ -12376,7 +12377,7 @@
       "_fetched_at": "2026-04-16T08:51:58.827018+00:00"
     }
   },
-  "cursor": 783,
+  "cursor": 897,
   "last_scan": "2026-04-16T08:51:58.728115+00:00",
   "links_hash": "1f3560c0cf80c5f480b3620d54919efde3214e42d6d1c70d439c8b4c36422997"
 }
