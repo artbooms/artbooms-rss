@@ -4545,15 +4545,14 @@
     },
     "https://www.artbooms.com/blog/tanabe-chikuunsai-domaine-de-chaumont-sur-loire": {
       "url": "https://www.artbooms.com/blog/tanabe-chikuunsai-domaine-de-chaumont-sur-loire",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-04-28T11:19:31.036001+00:00"
+      "title": "Le incredibili sculture site-specific di bambu intrecciato di Tanabe Chikuunsai IV — ARTBOOMS",
+      "description": "Le sculture dell’artista giapponese Tanabe Chikuunsai IV sono enormi. Si estendono dal pavimento al soffitto e spesso danno l’impressione di&nbsp; uscire nelle pareti delle stanze adiacenti. Fatte di pezzi di bambù intrecciati a mano (dopo essere stato inumiditi per fargli prendere la curvatura",
+      "author": "natasha barbieri",
+      "published": "2018-07-18T10:38:00+02:00",
+      "modified": "2018-07-18T10:38:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5b4a97a08a922da49b895fb9/1579390957324/TanabeChikuunsaiIV_02.jpg?format=1500w",
+      "_hash": "188dab7e8053d5c1fd8fa658b055c75ff505281455113c3e02ca4ea75178cf4b",
+      "_fetched_at": "2026-04-29T01:05:09.376656+00:00"
     },
     "https://www.artbooms.com/blog/carl-warner-foodscape-fotografia-food-art": {
       "url": "https://www.artbooms.com/blog/carl-warner-foodscape-fotografia-food-art",
@@ -4788,15 +4787,14 @@
     },
     "https://www.artbooms.com/blog/johnson-tsang-sculture-lucid-dream-ii-series": {
       "url": "https://www.artbooms.com/blog/johnson-tsang-sculture-lucid-dream-ii-series",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-04-28T11:36:30.842738+00:00"
+      "title": "I nuovi Lucid Dream di Johnson Tsang , l’ex-poliziotto che nasconde la scena del crimine nell’arte — ARTBOOMS",
+      "description": "Le ultime sculture di J ohnson Tsang  (ne ho già parlato  qui ) fanno parte di un carosello di maschere che l’artista di Hong Kong ha trasformato da cliché in opere complesse. Si chiamano  Lucid Dream II Series  e giocano con il materiale (ceramica), che da solido diventa come plastica, tessuto o si",
+      "author": "natasha barbieri",
+      "published": "2018-11-07T11:05:00+01:00",
+      "modified": "2018-11-07T11:05:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5bdf7b4b88251b7ccba4e94e/1579386048297/j-tsang2.jpg?format=1500w",
+      "_hash": "c05093547b29ed4e6c284cc4380bf95974b65903a4005c6fe8bb834e9b572024",
+      "_fetched_at": "2026-04-29T01:21:50.696967+00:00"
     },
     "https://www.artbooms.com/blog/fotografie-nasa-iceberg-rettangolare": {
       "url": "https://www.artbooms.com/blog/fotografie-nasa-iceberg-rettangolare",
@@ -12388,7 +12386,7 @@
       "_fetched_at": "2026-04-16T08:51:58.827018+00:00"
     }
   },
-  "cursor": 291,
+  "cursor": 441,
   "last_scan": "2026-04-16T08:51:58.728115+00:00",
   "links_hash": "1f3560c0cf80c5f480b3620d54919efde3214e42d6d1c70d439c8b4c36422997"
 }
