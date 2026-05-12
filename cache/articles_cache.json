@@ -2191,15 +2191,14 @@
     },
     "https://www.artbooms.com/blog/teamlab-jungle-festival-installazioni-di-luce": {
       "url": "https://www.artbooms.com/blog/teamlab-jungle-festival-installazioni-di-luce",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-05-11T16:21:51.629891+00:00"
+      "title": "“TeamLab Jungle” la sfavillante foresta di luci ultra-tech che suonano e ballano — ARTBOOMS",
+      "description": "TeamLab ha annunciato per l’inverno prossimo un festival di musica sperimentale. Si chiamerà “TeamLab Jungle”, e sarà uno spazio 4D (!) creato da milioni di linee di luce mobili ed interattive.",
+      "author": "natasha barbieri",
+      "published": "2017-02-28T11:21:00+01:00",
+      "modified": "2017-02-28T11:21:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/58a90f5559cc68ccc5f8b9c5/1516316970301/teamlab-jungle-interactive-light-installation-japan-002.jpg?format=1500w",
+      "_hash": "514538c534381803d3d2c68b1b0cf6d98caf7dffe939e096c6175efafa3c2306",
+      "_fetched_at": "2026-05-12T05:24:41.262745+00:00"
     },
     "https://www.artbooms.com/blog/rachel-sussman-sidewalk-kintsukuroi-e-the-oldest-living-things-in-the-world": {
       "url": "https://www.artbooms.com/blog/rachel-sussman-sidewalk-kintsukuroi-e-the-oldest-living-things-in-the-world",
@@ -12388,7 +12387,7 @@
       "_fetched_at": "2026-05-04T00:28:37.846444+00:00"
     }
   },
-  "cursor": 171,
+  "cursor": 432,
   "last_scan": "2026-05-01T09:04:05.090274+00:00",
   "links_hash": "be5e99c142647e54e3dd281ff60f6c152a129e8833aa96bf986ef67213666fa7"
 }
