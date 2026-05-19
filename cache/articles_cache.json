@@ -1366,15 +1366,14 @@
     },
     "https://www.artbooms.com/blog/lor-k-scultura-eat-me-mini-intervista": {
       "url": "https://www.artbooms.com/blog/lor-k-scultura-eat-me-mini-intervista",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-05-18T14:53:16.374157+00:00"
+      "title": "Le nuove opere di Lor-K l’artista che trasforma i materassi abbandonati in sculture che dicono “mangiami!” — ARTBOOMS",
+      "description": "Le nuove sculture site-specific della serie \"Eat me\"di Lor-k , come sempre ricavate dai materassi abbandonati ai lati delle strade di Parigi.",
+      "author": "natasha barbieri",
+      "published": "2016-07-14T11:06:00+02:00",
+      "modified": "2016-07-14T11:06:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5785574ce6f2e141827b503c/1579133992361/13620876_1082876571766735_8793468527710050931_n.jpg?format=1500w",
+      "_hash": "15bb1f369a375192a8002363ab0e9d85fc3004982216738d36be4f3d34ec2a67",
+      "_fetched_at": "2026-05-19T03:57:07.259410+00:00"
     },
     "https://www.artbooms.com/blog/han-meilin-grande-scultura-dio-della-guerra-guan-yu-cina": {
       "url": "https://www.artbooms.com/blog/han-meilin-grande-scultura-dio-della-guerra-guan-yu-cina",
@@ -12399,7 +12398,7 @@
       "_fetched_at": "2026-05-17T05:57:10.786408+00:00"
     }
   },
-  "cursor": 1041,
+  "cursor": 282,
   "last_scan": "2026-05-15T09:04:22.357276+00:00",
   "links_hash": "f687c176f62d3612153dae5c63b43df5c56ddff5dea98d31a8ac4f29d335e6ca"
 }
