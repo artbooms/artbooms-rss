@@ -2411,27 +2411,25 @@
     },
     "https://www.artbooms.com/blog/ai-weiwei-installazione-ruyi-path-chateau-la-coste-provenza": {
       "url": "https://www.artbooms.com/blog/ai-weiwei-installazione-ruyi-path-chateau-la-coste-provenza",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-06-02T23:38:52.051434+00:00"
+      "title": "Ai Weiwei crea un sentiero a forma di scettro Ruyi in mezzo ai vigneti di Château la Coste — ARTBOOMS",
+      "description": "Realizzata nel cuore del parco di  Château la Coste , in mezzo ai pini marittimi e ai vigneti, “ Ruyi Path ” è un opera a cavallo tra installazione e architettura, firmata  Ai Weiwei . Un sentiero in pietra che è quasi una scultura. Beneaugurante, per giunta.  E’ un periodo di intenso lavoro per  Ai",
+      "author": "natasha barbieri",
+      "published": "2017-04-04T11:15:00+02:00",
+      "modified": "2017-04-04T11:15:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/58e1a24a86e6c029f7cf9b82/1491311060858/ai-weiwei-ruyi-path-chateau-la-coste-02.jpg?format=1500w",
+      "_hash": "68ba392d3a2ada8d23809f0b7e39b93d7896be1c994463d43b122c3ab1f73708",
+      "_fetched_at": "2026-06-03T16:17:44.104807+00:00"
     },
     "https://www.artbooms.com/blog/kelsey-mcclellan-michelle-maguire-wardrobe-snacks": {
       "url": "https://www.artbooms.com/blog/kelsey-mcclellan-michelle-maguire-wardrobe-snacks",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-06-02T23:38:53.053592+00:00"
+      "title": "In una serie di fotografie Kelsey McClellan e Michelle Maguire svelano il guardaroba perfetto per ogni snack — ARTBOOMS",
+      "description": "\" Wardrobe Snacks \" è una serie di immagini leggera e curata, nata dalla collaborazione di  Kelsey McClellan  e  Michelle Maguir e, che ha molto più a che fare con fotografia e design di quanto non abbia con moda e cibo.  Una serie di immagini che si beve in un sorso, anzi che si mangia in",
+      "author": "natasha barbieri",
+      "published": "2017-04-05T11:50:00+02:00",
+      "modified": "2017-04-05T11:50:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/58e2fbef86e6c03d861ad867/1491385809359/WEB_Wardrobe_Snacks_MG_4161.jpg?format=1500w",
+      "_hash": "47e030571a6288804874c70aef8993c61f9005ce891389d868b37f3f88703cd9",
+      "_fetched_at": "2026-06-03T16:17:45.304825+00:00"
     },
     "https://www.artbooms.com/blog/boa-mistura-luz-nas-vielas-anamorfosi-brasile": {
       "url": "https://www.artbooms.com/blog/boa-mistura-luz-nas-vielas-anamorfosi-brasile",
@@ -12422,7 +12420,7 @@
       "_fetched_at": "2026-05-29T09:04:12.439632+00:00"
     }
   },
-  "cursor": 135,
+  "cursor": 465,
   "last_scan": "2026-05-29T09:04:12.327757+00:00",
   "links_hash": "3adcff3a81bea718abf8563eaf4de628fcc60615a288cc8ac93aea8f52cb25cc"
 }
