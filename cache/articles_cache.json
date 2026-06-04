@@ -5679,14 +5679,15 @@
     },
     "https://www.artbooms.com/blog/notre-dame-de-paris-british-pathe": {
       "url": "https://www.artbooms.com/blog/notre-dame-de-paris-british-pathe",
-      "title": "I vigili del fuoco salgono sul tetto di Notre Dame, in un video del 1934. Guarda questa raccolta di riprese d'epoca della cattedrale di Parigi! — ARTBOOMS",
-      "description": "Notre Dame  di Parigi  è andata a  fuoco ieri  di fronte agli occhi attoniti del mondo. Guglia  e tetto sono perduti, sulle opere d’arte conservate all’interno si saprà di più oggi . Il presidente francese Emmanuel Macron ha detto: “Ricostruremo Notre Dame!”   La possibilità di restaurare ciò che è",
-      "author": "natasha barbieri",
-      "published": "2019-04-16T10:34:00+02:00",
-      "modified": "2019-04-16T10:34:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5cb5311ffa0d601195088c2a/1593646247352/notre+dame.jpg?format=1500w",
-      "_hash": "91a0384bffe21f2d510b9ec17fe21d2eef4a19ea78ebe7abb41659b657a257e4",
-      "_fetched_at": "2025-10-25T08:50:07.810893+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-06-04T21:54:04.292318+00:00"
     },
     "https://www.artbooms.com/blog/kimsooja-yorkshire-sculpture-park": {
       "url": "https://www.artbooms.com/blog/kimsooja-yorkshire-sculpture-park",
@@ -12421,7 +12422,7 @@
       "_fetched_at": "2026-05-29T09:04:12.439632+00:00"
     }
   },
-  "cursor": 402,
+  "cursor": 543,
   "last_scan": "2026-05-29T09:04:12.327757+00:00",
   "links_hash": "3adcff3a81bea718abf8563eaf4de628fcc60615a288cc8ac93aea8f52cb25cc"
 }
