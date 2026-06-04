@@ -2554,14 +2554,15 @@
     },
     "https://www.artbooms.com/blog/maria-assunta-karini-steam-of-the-black-grass-fabrikacci-mosca": {
       "url": "https://www.artbooms.com/blog/maria-assunta-karini-steam-of-the-black-grass-fabrikacci-mosca",
-      "title": "Il frigorifero a contatori geiger e le sculture da indossare in ferro. Che sembrano strumenti di tortura medioevali. by Maria Assunta Karini — ARTBOOMS",
-      "description": "La serie “Stem of the Black Grass” (Filo d'Erba Nera) dell’artista e filmmaker indipendente italiana  Maria Assunta Karini  è un po’ un viaggio onirico e un po’ un esperienza concreta. C’è di tutto: fotografia, installazione, scultura una spruzzata di performance; e tutto è capace di dare un calcio",
-      "author": "natasha barbieri",
-      "published": "2017-04-27T11:10:00+02:00",
-      "modified": "2017-04-27T11:10:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/58fea21ae6f2e1cc6b85bf4d/1493284212147/_DSC1752+copia+di+copia.jpg?format=1500w",
-      "_hash": "bd16cc2eff20a31fffb6409c031acfeca1dc524a34c8fa2e7bafb01f5f4a5d47",
-      "_fetched_at": "2025-10-25T05:27:09.420673+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-06-04T18:36:27.130136+00:00"
     },
     "https://www.artbooms.com/blog/jonty-hurwitz-sculture-anamorfiche-2016-17": {
       "url": "https://www.artbooms.com/blog/jonty-hurwitz-sculture-anamorfiche-2016-17",
@@ -12420,7 +12421,7 @@
       "_fetched_at": "2026-05-29T09:04:12.439632+00:00"
     }
   },
-  "cursor": 219,
+  "cursor": 402,
   "last_scan": "2026-05-29T09:04:12.327757+00:00",
   "links_hash": "3adcff3a81bea718abf8563eaf4de628fcc60615a288cc8ac93aea8f52cb25cc"
 }
