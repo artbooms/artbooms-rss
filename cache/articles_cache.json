@@ -12418,9 +12418,20 @@
       "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6a18ded0d379703ca8541731/1780044641512/_AGO4560.jpg?format=1500w",
       "_hash": "9e9d843ad8fe4a6f893345ed9cb61ed6f60b692a0f3536390b769ab4703ebc19",
       "_fetched_at": "2026-05-29T09:04:12.439632+00:00"
+    },
+    "https://www.artbooms.com/blog/biennale-venezia-2026-padiglione-australia": {
+      "url": "https://www.artbooms.com/blog/biennale-venezia-2026-padiglione-australia",
+      "title": "Biennale Venezia 2026: Khaled Sabsabi al Padiglione Australia — ARTBOOMS",
+      "description": "Al Padiglione Australia della Biennale Venezia 2026 Khaled Sabsabi fonde pittura, video e suono in un viaggio mistico nato dopo mesi di polemiche.",
+      "author": "natasha barbieri",
+      "published": "2026-06-06T10:50:00+02:00",
+      "modified": "2026-06-06T10:50:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6a2354ec101eb840df46b822/1780735843234/1.+Khaled+Sabsabi%2C+conference+of+one%27s+self%2C+2026%2C+Australia+Pavilion.+Photo+by+Andrea+Rossetti.jpg?format=1500w",
+      "_hash": "350238f96ea780c07440fc1c62871a53f1cf00932215795679c40c699f745638",
+      "_fetched_at": "2026-06-06T09:03:57.076756+00:00"
     }
   },
-  "cursor": 999,
-  "last_scan": "2026-05-29T09:04:12.327757+00:00",
-  "links_hash": "3adcff3a81bea718abf8563eaf4de628fcc60615a288cc8ac93aea8f52cb25cc"
+  "cursor": 1113,
+  "last_scan": "2026-06-06T09:03:56.987254+00:00",
+  "links_hash": "6a97f83623b633a31f931315d252721425780f1d31f9af45d0a915b463ff1740"
 }
