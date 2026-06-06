@@ -12393,9 +12393,9 @@
       "author": "natasha barbieri",
       "published": "2026-05-15T10:55:00+02:00",
       "modified": "2026-05-15T10:55:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6a06743c47fc3f37bca41f0d/1778980881961/padiglione-austria3.jpg?format=1500w",
-      "_hash": "b80e74de57f42fcb64a0e8bf34dad1630173cd59eabf6ff60d095a70b444d83f",
-      "_fetched_at": "2026-05-17T05:57:10.786408+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6a06743c47fc3f37bca41f0d/1780705161816/padiglione-austria3.jpg?format=1500w",
+      "_hash": "3bf0b8f11ad86353c48d1c023b8356ab8a7489e97b305f3a6103a560a40c8f88",
+      "_fetched_at": "2026-06-06T10:34:08.112013+00:00"
     },
     "https://www.artbooms.com/blog/biennale-venezia-2026-in-minor-keys-recensione": {
       "url": "https://www.artbooms.com/blog/biennale-venezia-2026-in-minor-keys-recensione",
@@ -12431,7 +12431,7 @@
       "_fetched_at": "2026-06-06T09:03:57.076756+00:00"
     }
   },
-  "cursor": 1113,
+  "cursor": 114,
   "last_scan": "2026-06-06T09:03:56.987254+00:00",
   "links_hash": "6a97f83623b633a31f931315d252721425780f1d31f9af45d0a915b463ff1740"
 }
