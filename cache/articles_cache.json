@@ -3203,14 +3203,15 @@
     },
     "https://www.artbooms.com/blog/ai-weiwei-good-fences-make-good-neighbours-mostra-arte-pubblica-ny-public-art-fund": {
       "url": "https://www.artbooms.com/blog/ai-weiwei-good-fences-make-good-neighbours-mostra-arte-pubblica-ny-public-art-fund",
-      "title": "Ai Weiwei alza più di 300 recinti per tutta New York. Apre oggi la mega mostra d‘arte pubblica ‘Good fences make good neighbors’ — ARTBOOMS",
-      "description": "Le opere di Ai Weiwei sono talmente tante che il Public Art Fund ha dovuto prevedere anche una mappa interattiva per aiutare il visitatore di ‘Good fences make good neighbors’ a trovarle tutte. Ci sono grandi installazioni ma anche lavori bidimensionali che hanno semplicemente sostituito le pubblici",
-      "author": "natasha barbieri",
-      "published": "2017-10-12T09:15:00+02:00",
-      "modified": "2017-10-12T09:15:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/59debeeaccc5c5ab68b00634/1510527446473/10.-GoodFencesPhoto_JasonWyche_4153_ed.jpg.jpg?format=1500w",
-      "_hash": "26951ebedf611621061fb117cb128846a4aa2a0e5d2066feeb35a9bf02c17e74",
-      "_fetched_at": "2026-06-11T09:43:37.259187+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-06-12T17:04:51.446414+00:00"
     },
     "https://www.artbooms.com/blog/azuma-makoto-performace-bloom": {
       "url": "https://www.artbooms.com/blog/azuma-makoto-performace-bloom",
@@ -12464,7 +12465,7 @@
       "_fetched_at": "2026-06-12T14:37:26.319463+00:00"
     }
   },
-  "cursor": 195,
+  "cursor": 390,
   "last_scan": "2026-06-12T14:37:26.225159+00:00",
   "links_hash": "4f622eff620ec0277fe7d0b383a6702397a7815039e1406c20e194ada73cde09"
 }
