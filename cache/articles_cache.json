@@ -8914,15 +8914,14 @@
     },
     "https://www.artbooms.com/blog/faig-ahmed-tappeti-glitch": {
       "url": "https://www.artbooms.com/blog/faig-ahmed-tappeti-glitch",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-06-16T19:30:34.102551+00:00"
+      "title": "Tra glitch, pixel e colature i tappeti azeri di Faig Ahmed — ARTBOOMS",
+      "description": "L’artista Faig Ahmed crea degli spledidi tappeti che reinventano l’antica arte tradizione dell'Azerbaigian, inserendo elementi come glitch, pixel o banali colature, tra i motivi che usualmente li decorano.",
+      "author": "natasha barbieri",
+      "published": "2021-11-25T10:51:00+01:00",
+      "modified": "2021-11-25T10:51:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/t/619aced2b1e1f03512c52414/1637535442903/ahmed-1-960x1146%402x.jpg?format=1500w",
+      "_hash": "6597709f1086b06b97eb9141893e310d86ddeb49db28797d164d9271a8f497b5",
+      "_fetched_at": "2026-06-17T13:12:26.744236+00:00"
     },
     "https://www.artbooms.com/blog/biennale-riga-film": {
       "url": "https://www.artbooms.com/blog/biennale-riga-film",
@@ -11830,15 +11829,14 @@
     },
     "https://www.artbooms.com/blog/nan-goldin-berlino-polemiche": {
       "url": "https://www.artbooms.com/blog/nan-goldin-berlino-polemiche",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-06-16T22:33:34.154804+00:00"
+      "title": "A Berlino per una mostra Nan Goldin innesca polemiche — ARTBOOMS",
+      "description": "All'inaugurazione della sua mostra a Berlino, Nan Goldin ha fatto un lungo discorso  pro-palestinese con tanto di manifestanti, che non è piaciuto per niente alle autorità tedesche. Ma la mostra ne ha beneficiato.",
+      "author": "natasha barbieri",
+      "published": "2024-11-27T10:51:00+01:00",
+      "modified": "2024-11-27T10:51:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/674689293891f772071ab335/1736467696270/csm_Nan-Goldin-Selfportrait-with-eyes-turned-inward-Boston1989_xl_854d41a665.jpg?format=1500w",
+      "_hash": "0a4738259bda2ed0eb654db18b180045557598f9363d51cf8c8db2ad0bb61266",
+      "_fetched_at": "2026-06-17T16:15:42.519994+00:00"
     },
     "https://www.artbooms.com/blog/koyo-kouoh-curatrice-biennale-venezia-2026": {
       "url": "https://www.artbooms.com/blog/koyo-kouoh-curatrice-biennale-venezia-2026",
@@ -12468,7 +12466,7 @@
       "_fetched_at": "2026-06-15T17:31:12.916938+00:00"
     }
   },
-  "cursor": 795,
+  "cursor": 1116,
   "last_scan": "2026-06-12T14:37:26.225159+00:00",
   "links_hash": "4f622eff620ec0277fe7d0b383a6702397a7815039e1406c20e194ada73cde09"
 }
