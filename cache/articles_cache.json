@@ -11512,15 +11512,14 @@
     },
     "https://www.artbooms.com/blog/padiglione-senegal-alioune-diagne": {
       "url": "https://www.artbooms.com/blog/padiglione-senegal-alioune-diagne",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-06-22T17:04:31.543081+00:00"
+      "title": "Biennale di Venezia| Il Padiglione Senegal di Alioune Diagne — ARTBOOMS",
+      "description": "“Bokk – Bounds”, il Padiglione Senegal di Alioune Diagne per la Biennale di Venezia 2024 è piccolo ma merita di sicuro una visita.. E la  prima volta  tra l'altro che il paese africano partecipa alla kermesse lagunare.",
+      "author": "natasha barbieri",
+      "published": "2024-05-15T10:56:00+02:00",
+      "modified": "2024-05-15T10:56:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6642b209c440c87e93ba64ac/1716842862144/AVZ-SENEGAL-7840.jpg?format=1500w",
+      "_hash": "184e40e686786a69a311cbcd158a1cfbb6fcf43976d4e52b855bde9def1fb78b",
+      "_fetched_at": "2026-06-23T09:04:12.418856+00:00"
     },
     "https://www.artbooms.com/blog/julian-charriere-calls-for-action": {
       "url": "https://www.artbooms.com/blog/julian-charriere-calls-for-action",
@@ -12469,7 +12468,7 @@
       "_fetched_at": "2026-06-15T17:31:12.916938+00:00"
     }
   },
-  "cursor": 1044,
+  "cursor": 1131,
   "last_scan": "2026-06-12T14:37:26.225159+00:00",
   "links_hash": "4f622eff620ec0277fe7d0b383a6702397a7815039e1406c20e194ada73cde09"
 }
