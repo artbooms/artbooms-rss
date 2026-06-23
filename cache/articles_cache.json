@@ -1190,15 +1190,14 @@
     },
     "https://www.artbooms.com/blog/gregory-halili-sculture-in-corallo": {
       "url": "https://www.artbooms.com/blog/gregory-halili-sculture-in-corallo",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-06-22T19:22:08.911690+00:00"
+      "title": "L'artista Gregory Halili ricostruisce uno scheletro a grandezza naturale con i rami di corallo — ARTBOOMS",
+      "description": "L'artistaGregory Halili ha ricreato uno scheletro umano a grandezza naturale. La scultura è fatta di corallo bianco raccolto da Gregory Halili.",
+      "author": "natasha barbieri",
+      "published": "2016-06-17T10:20:00+02:00",
+      "modified": "2016-06-17T10:20:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/576352126a4963913a340274/1481241286364/coral-1.jpg?format=1500w",
+      "_hash": "c018568379a777d200974d029c81b3f4bab9097dd0269f6687352ed8d32389c6",
+      "_fetched_at": "2026-06-23T11:21:17.882369+00:00"
     },
     "https://www.artbooms.com/blog/christo-the-floating-piers-installazion-lago-iseo": {
       "url": "https://www.artbooms.com/blog/christo-the-floating-piers-installazion-lago-iseo",
@@ -12468,7 +12467,7 @@
       "_fetched_at": "2026-06-15T17:31:12.916938+00:00"
     }
   },
-  "cursor": 1131,
+  "cursor": 234,
   "last_scan": "2026-06-12T14:37:26.225159+00:00",
   "links_hash": "4f622eff620ec0277fe7d0b383a6702397a7815039e1406c20e194ada73cde09"
 }
