@@ -5304,14 +5304,15 @@
     },
     "https://www.artbooms.com/blog/giorgio-andreotta-calo-hangar-bicocca-cittadimilano": {
       "url": "https://www.artbooms.com/blog/giorgio-andreotta-calo-hangar-bicocca-cittadimilano",
-      "title": "Giorgio Andreotta Calò fa nuotare l'Hangar Bicocca negli abissi di un sogno di mare e  di pianura — ARTBOOMS",
-      "description": "E’ un po’ un percorso sottomarino, un po’ un sogno ad occhi aperti, la mostra personale  di    Giorgio Andreotta Calò   ,     CITTADIMILANO   , che inaugura domani all’   Hangar Bicocca    (fino al 21 Luglio 2019) . Si tratta di un viaggio in cui le opere di oggi e di ieri dell’artista veneziano ric",
-      "author": "natasha barbieri",
-      "published": "2019-02-13T10:57:00+01:00",
-      "modified": "2019-02-13T10:57:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5c62136e6e9a7f2f1c032d94/1653356062764/05.La+scultura+lingua+morta.jpg?format=1500w",
-      "_hash": "44443b9f22210bab9951802dd5454007c590a71b0c5b7b966303d607c838119d",
-      "_fetched_at": "2025-10-25T08:23:11.296965+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-06-23T15:39:31.481331+00:00"
     },
     "https://www.artbooms.com/blog/lost-and-founf-corto-animazione-in-stop-motion-2018": {
       "url": "https://www.artbooms.com/blog/lost-and-founf-corto-animazione-in-stop-motion-2018",
@@ -12467,7 +12468,7 @@
       "_fetched_at": "2026-06-15T17:31:12.916938+00:00"
     }
   },
-  "cursor": 234,
+  "cursor": 501,
   "last_scan": "2026-06-12T14:37:26.225159+00:00",
   "links_hash": "4f622eff620ec0277fe7d0b383a6702397a7815039e1406c20e194ada73cde09"
 }
