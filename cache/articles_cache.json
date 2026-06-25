@@ -1971,15 +1971,14 @@
     },
     "https://www.artbooms.com/blog/small-wonders-mostra-miniature-gotiche-rijksmuseum-amsterdam": {
       "url": "https://www.artbooms.com/blog/small-wonders-mostra-miniature-gotiche-rijksmuseum-amsterdam",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-06-25T04:29:20.270175+00:00"
+      "title": "La cinquecentesca “Miniatura intagliata in legno di bosso” che sta nel palmo di una mano — ARTBOOMS",
+      "description": "\"Small Wonders: Gothic Boxwood Miniatures” è un esposizione dell' Art Gallery of Ontario (AGO) in collaborazione con il Metropolitan Museum of Art e il Rijksmuseum. Che permetterà di vedere la collezione di miniature gotiche dell’AGO oltre ad altre 50 opere provenienti da musei e collezioni pri",
+      "author": "natasha barbieri",
+      "published": "2017-01-13T11:04:00+01:00",
+      "modified": "2017-01-13T11:04:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/586c7478cd0f683a8aed95ad/1490744133316/BoxwoodMiniatures_05.jpg?format=1500w",
+      "_hash": "c3d48416dc4aef8aee141e46c067790532d051fc9226815e55362a9d4f0436d5",
+      "_fetched_at": "2026-06-25T20:54:50.499332+00:00"
     },
     "https://www.artbooms.com/blog/kip-omolade-iperrealismo-serie-diovadiova-chrome": {
       "url": "https://www.artbooms.com/blog/kip-omolade-iperrealismo-serie-diovadiova-chrome",
@@ -2027,27 +2026,25 @@
     },
     "https://www.artbooms.com/blog/matt-shlian-scultura-in-carta": {
       "url": "https://www.artbooms.com/blog/matt-shlian-scultura-in-carta",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-06-25T04:33:40.839019+00:00"
+      "title": "Matt Shlian che mixa l’antica arte dell’origami alla moderna ingegneria per creare stupefacenti sculture di carta — ARTBOOMS",
+      "description": "L’artista Matt Shlian si ispira a pollini, cellule e altre forme naturali per creare delle enormi sculture di carta. Le opere hanno attirato l’attenzione degli scienziati dell’Università del Michigan, che cercano di tradurre la sua esperienza nel piegare la carta in chiave microscopica.",
+      "author": "natasha barbieri",
+      "published": "2017-01-24T10:34:00+01:00",
+      "modified": "2017-01-24T10:34:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5886a13759cc68121825c102/1490746191914/paper-1.jpg?format=1500w",
+      "_hash": "83c78f7320c9ad70b585a1efd4a5726785b45f6d7da40958dbe0615b52d4b82a",
+      "_fetched_at": "2026-06-25T20:58:58.755019+00:00"
     },
     "https://www.artbooms.com/blog/diana-scherer-arte-radici-interwoven": {
       "url": "https://www.artbooms.com/blog/diana-scherer-arte-radici-interwoven",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-06-25T04:33:41.838163+00:00"
+      "title": "Diana Scherer , l’artista che costringe le radici delle piante a crescere sotto forma di pizzi e motivi decorativi vari — ARTBOOMS",
+      "description": "L’artista Diana Scherer ha sviluppato un processo di crescita che forza le radici delle piante a svilupparsi seguendo dei motivi decorativi, in collaborazione con i biologi della Radboud University di Nijmegen.",
+      "author": "natasha barbieri",
+      "published": "2017-01-25T11:19:00+01:00",
+      "modified": "2017-01-25T11:19:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5887dc52a5790acfd73cee5d/1490747257591/diana-scherer-root-manipulation-08.jpg?format=1500w",
+      "_hash": "2baf34826820dc835ef679e14d3c011b4acebf9cd3b6f7af0d9a81dd99e905b3",
+      "_fetched_at": "2026-06-25T20:58:59.837906+00:00"
     },
     "https://www.artbooms.com/blog/matt-johnson-artista-opere": {
       "url": "https://www.artbooms.com/blog/matt-johnson-artista-opere",
@@ -12468,7 +12465,7 @@
       "_fetched_at": "2026-06-15T17:31:12.916938+00:00"
     }
   },
-  "cursor": 54,
+  "cursor": 207,
   "last_scan": "2026-06-12T14:37:26.225159+00:00",
   "links_hash": "4f622eff620ec0277fe7d0b383a6702397a7815039e1406c20e194ada73cde09"
 }
