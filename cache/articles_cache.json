@@ -2180,15 +2180,14 @@
     },
     "https://www.artbooms.com/blog/fred-herzog-modern-color-fotografia": {
       "url": "https://www.artbooms.com/blog/fred-herzog-modern-color-fotografia",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-06-26T10:58:07.454001+00:00"
+      "title": "La Vancouver degli anni’50-‘60 del fotografo Fred Herzog e le sue strade vuote ma tutte a colori — ARTBOOMS",
+      "description": "Per tanti anni l'opera del fotografo Fred Herzog è stata considerata secondaria. Adesso si sa che invece è stato un pioniere capace di anticipare la ventata di colore della “New color photography” degli anni '70.",
+      "author": "natasha barbieri",
+      "published": "2017-02-24T10:21:00+01:00",
+      "modified": "2017-02-24T10:21:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/58acd99e9de4bb4776353e88/1490305328921/herzogs.jpg?format=1500w",
+      "_hash": "d8cf2dea91a2542e0f8fb16b044a0dbb55ac081995e1923e053d316dcd8064ef",
+      "_fetched_at": "2026-06-27T00:06:40.167595+00:00"
     },
     "https://www.artbooms.com/blog/teamlab-jungle-festival-installazioni-di-luce": {
       "url": "https://www.artbooms.com/blog/teamlab-jungle-festival-installazioni-di-luce",
@@ -2203,15 +2202,14 @@
     },
     "https://www.artbooms.com/blog/rachel-sussman-sidewalk-kintsukuroi-e-the-oldest-living-things-in-the-world": {
       "url": "https://www.artbooms.com/blog/rachel-sussman-sidewalk-kintsukuroi-e-the-oldest-living-things-in-the-world",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-06-26T10:58:10.624875+00:00"
+      "title": "Rachel Sussman l’artista che fotografa gli organismi viventi più vecchi al mondo e ripara le strade con l’oro — ARTBOOMS",
+      "description": "In “The oldest living things in the word” l’artistaRachel Sussman, ha fotografato le forme di vita più vecchie del mondo. Mentre in “Sidewalk kintsukuroi”&nbsp; si è dedicata all’antica arte giapponese del kintsugi. Ma lei ci ha rattoppato strade e pavimenti.",
+      "author": "natasha barbieri",
+      "published": "2017-03-01T11:10:00+01:00",
+      "modified": "2017-03-01T11:10:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/58b0cd491b10e3069c8b2920/1489967256865/oldest-11.jpg?format=1500w",
+      "_hash": "2573ef4b71cbaad3e8d93cc419f9227312efdb4fc72a82a4e17a0e02bf475030",
+      "_fetched_at": "2026-06-27T00:06:42.658906+00:00"
     },
     "https://www.artbooms.com/blog/juliette-clovis-scultura-in-porcellana-limoges": {
       "url": "https://www.artbooms.com/blog/juliette-clovis-scultura-in-porcellana-limoges",
@@ -12466,7 +12464,7 @@
       "_fetched_at": "2026-06-15T17:31:12.916938+00:00"
     }
   },
-  "cursor": 84,
+  "cursor": 207,
   "last_scan": "2026-06-12T14:37:26.225159+00:00",
   "links_hash": "4f622eff620ec0277fe7d0b383a6702397a7815039e1406c20e194ada73cde09"
 }
