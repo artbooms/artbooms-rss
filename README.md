@@ -10,7 +10,7 @@ Generato e aggiornato automaticamente tramite GitHub Actions + Render.
 
 ## 🌐 Feed pubblico
 
-👉 [https://artbooms-rss.onrender.com/rss](https://artbooms-rss.onrender.com/rss)
+👉 [https://rss.artbooms.com/rss](https://rss.artbooms.com/rss)
 
 Validato per Google News e compatibile con tutti i lettori RSS.
 
