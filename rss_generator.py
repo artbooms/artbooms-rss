@@ -103,7 +103,7 @@ def build_rss(items: list, meta: dict):
         f"<link>https://www.artbooms.com</link>\n"
         f"<description>{feed_description}</description>\n"
         f"<language>{feed_language}</language>\n"
-        f"<atom:link href=\"https://artbooms-rss-x6pc.onrender.com/rss\" rel=\"self\" type=\"application/rss+xml\" />\n"
+        f"<atom:link href=\"https://rss.artbooms.com/rss\" rel=\"self\" type=\"application/rss+xml\" />\n"
         f"<lastBuildDate>{build_time_rfc}</lastBuildDate>\n"
         f"{body}\n"
         "</channel>\n"
