@@ -228,7 +228,7 @@ def news_sitemap():
 def wake():
     """
     Risveglia manualmente Render e forza un aggiornamento del feed.
-    Puoi chiamare: https://artbooms-rss-x6pc.onrender.com/wake
+    Puoi chiamare: https://rss.artbooms.com/wake
     """
     try:
         threading.Thread(target=background_populator, daemon=True).start()
