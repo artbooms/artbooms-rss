@@ -27,7 +27,7 @@ jobs:
       - name: Download cache from Render
         run: |
           mkdir -p cache
-          curl -fsSL https://artbooms-rss-x6pc.onrender.com/cache/download -o cache/articles_cache.json
+          curl -fsSL https://rss.artbooms.com/cache/download -o cache/articles_cache.json
           test -s cache/articles_cache.json || (echo "Cache vuota, skip" && exit 0)
 
       # 3) FIX: se items è una LISTA, avvolgila in {items:{...}} per evitare l'errore .get()
