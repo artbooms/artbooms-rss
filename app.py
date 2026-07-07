@@ -21,7 +21,7 @@ POPULATE_INTERVAL = 120
 FORCE_REBUILD_AFTER = 900
 MAX_BATCH = 3
 
-FEED_SELF_URL = "https://artbooms-rss-x6pc.onrender.com/rss"
+FEED_SELF_URL = "https://rss.artbooms.com/rss"
 
 PING_URLS = [
     f"https://www.google.com/ping?sitemap={FEED_SELF_URL}",
