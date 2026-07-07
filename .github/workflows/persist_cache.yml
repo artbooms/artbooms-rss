@@ -20,7 +20,7 @@ jobs:
       - name: Wake up Render instance
         run: |
           echo "Ping per riattivare Render..."
-          curl -fsSL https://artbooms-rss-x6pc.onrender.com/healthz || true
+          curl -fsSL https://rss.artbooms.com/healthz || true
           sleep 30
 
       # 2) Scarica la cache dall'istanza online
