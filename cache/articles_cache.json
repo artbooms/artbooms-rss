@@ -9913,14 +9913,15 @@
     },
     "https://www.artbooms.com/blog/candida-hofer-serie-liechtenstein": {
       "url": "https://www.artbooms.com/blog/candida-hofer-serie-liechtenstein",
-      "title": "I misteriosi i musei della serie Liechtenstein di Candida Hofer — ARTBOOMS",
-      "description": "L'ultima serie di fotografie Liechtensten di Candida Hofer, è stata scattata nel paese dell'Europa Centrale nel 2021.  Le opere, che ritraggono angoli di musei, sono raffinate ed inquietanti.",
-      "author": "natasha barbieri",
-      "published": "2022-10-28T10:50:00+02:00",
-      "modified": "2022-10-28T10:50:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6359cc92cd535410ac427c9a/1666947038765/63285f9be1c6021e21ad113e_01_Candida+H%C3%B6fer_Kunstmuseum+Liechtenstein+Vaduz+VII+2021.jpg?format=1500w",
-      "_hash": "e464a0a098fb627aa50cb83414c10086ffc683a4b4c2e00cff6402698f3b2b25",
-      "_fetched_at": "2025-10-25T13:22:52.850338+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-07-09T15:05:14.424583+00:00"
     },
     "https://www.artbooms.com/blog/the-mastaba-christo-jeanne-claude-nft": {
       "url": "https://www.artbooms.com/blog/the-mastaba-christo-jeanne-claude-nft",
@@ -12475,7 +12476,7 @@
       "_fetched_at": "2026-07-06T00:39:13.768805+00:00"
     }
   },
-  "cursor": 816,
+  "cursor": 1041,
   "last_scan": "2026-07-04T09:04:00.190938+00:00",
   "links_hash": "da2be00718d71ec8a8ae091329e9724294ccaa8a79972ce28b8ed1308509955a"
 }
