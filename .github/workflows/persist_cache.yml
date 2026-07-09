@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: persist-rss-cache-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   persist:
     runs-on: ubuntu-latest
