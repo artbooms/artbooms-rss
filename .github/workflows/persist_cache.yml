@@ -2,7 +2,7 @@ name: Persist RSS cache
 
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "11,26,41,56 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -27,7 +27,7 @@ jobs:
       - name: Download cache from Render
         run: |
           mkdir -p cache
-          curl -fsSL https://rss.artbooms.com/cache/download -o cache/articles_cache.json
+          curl --retry 3 --retry-delay 10 --retry-connrefused --max-time 30 -fsSL https://rss.artbooms.com/cache/download -o cache/articles_cache.json
           test -s cache/articles_cache.json || (echo "Cache vuota, skip" && exit 0)
 
       # 3) FIX: se items è una LISTA, avvolgila in {items:{...}} per evitare l'errore .get()
