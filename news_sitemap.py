@@ -45,7 +45,7 @@ def news_sitemap_view():
     - Usa solo i campi: url, title, published
     - Finestra temporale: ultimi DAYS_WINDOW giorni
     - news:keywords = "arte contemporanea, arte e cultura"
-    - news:title = "<titolo> — ARTBOOMS"
+    - news:title = "<titolo>"
     """
     try:
         resp = requests.get(
@@ -123,7 +123,7 @@ def news_sitemap_view():
         parts.append("      </news:publication>")
         parts.append(f"      <news:keywords>{_escape_xml(KEYWORDS)}</news:keywords>")
         parts.append(f"      <news:publication_date>{pub_iso}</news:publication_date>")
-        parts.append(f"      <news:title>{title} — {_escape_xml(SITE_NAME)}</news:title>")
+        parts.append(f"      <news:title>{title}</news:title>")
         parts.append("    </news:news>")
         parts.append("  </url>")
 
