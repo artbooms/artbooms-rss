@@ -4091,6 +4091,42 @@
       "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/60513455f30d7a7c24aba6e8/1642982014313/Serge+Attukwei+Clottey+-03.jpg?format=1500w",
       "_hash": "9f3f37969fe4f10b7da34ea3625acd787367ca1b753d2e7187f6cf077837f92a",
       "_fetched_at": "2026-07-11T11:33:22.803599+00:00"
+<<<<<<< Updated upstream
+=======
+    },
+    "https://www.artbooms.com/blog/snow-pallet-13-di-toshihiko-shibuya": {
+      "url": "https://www.artbooms.com/blog/snow-pallet-13-di-toshihiko-shibuya",
+      "title": "Snow Pallet di Toshihiko Shibuya: diario un paesaggio innevato — ARTBOOMS",
+      "description": "Si chiama semplicemente “Snow Pallet 13”, il tredicesimo capitolo della serie di arte invernale di Toshihiko Shibuya. Quasi un diario per immagini dell’impatto delle mutazioni del clima sull'estremo nord del Giappone.",
+      "author": "natasha barbieri",
+      "published": "2021-03-10T10:49:00+01:00",
+      "modified": "2021-03-10T10:49:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/604671c6ebf70a30ffb9f2c6/1642982833162/2021+February+27th%289%29best100.jpg?format=1500w",
+      "_hash": "a95e790d170e7e3b8846f4700fd3375a7ffa123aff5480667987c21181238b8c",
+      "_fetched_at": "2026-07-11T11:35:24.850334+00:00"
+    },
+    "https://www.artbooms.com/blog/same-energy-motore-di-ricerca-visuale": {
+      "url": "https://www.artbooms.com/blog/same-energy-motore-di-ricerca-visuale",
+      "title": "Il motore di ricerca visuale Same Energy compara foto e non parole — ARTBOOMS",
+      "description": "La ricerca per immagini è ancora lontana dall’essere perfetta. Il motore di ricerca visuale “Same Energy”, cerca di raddrizzare  il tiro e offrire immagi simili per modelli, pattern, composizioni e non solo per oggetti rappresentato",
+      "author": "natasha barbieri",
+      "published": "2021-03-11T11:14:00+01:00",
+      "modified": "2021-03-11T11:14:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6028795f400c6f3e5b7e3746/1642982627916/same-5-960x523%402x.jpg?format=1500w",
+      "_hash": "3625ed0314ab1a741e5a644d03ee7421aaf8586790a3bb6d89958163d87cd1ae",
+      "_fetched_at": "2026-07-11T11:35:26.030463+00:00"
+    },
+    "https://www.artbooms.com/blog/alberonero-monte-immagine-vallo-di-nera": {
+      "url": "https://www.artbooms.com/blog/alberonero-monte-immagine-vallo-di-nera",
+      "title": "Il paesaggio umbro di Alberonero colorato e minimale — ARTBOOMS",
+      "description": "Lo scorso autunno Alberonero ha realizzato una serie di installazioni nel comune di Vallo di Nera. Le opere, con le loro sfumature di colori vivi, fuse in un paesaggio malinconico, erano  una celebrazione alla natura attraverso sottii artifici.",
+      "author": "natasha barbieri",
+      "published": "2021-03-12T11:09:00+01:00",
+      "modified": "2021-03-12T11:09:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5fac6f2ec2244972c6fef4e4/1642982487972/Alberonero_Monte+Immagine+%C2%A9+Roberto+Conte_4.jpg?format=1500w",
+      "_hash": "b361bfa61cfe3e794a878e37b103c77809c93d7dfc87d02b3852b26cc1b709e5",
+      "_fetched_at": "2026-07-11T11:35:27.443758+00:00"
+>>>>>>> Stashed changes
     }
   },
   "cursor": 0,
