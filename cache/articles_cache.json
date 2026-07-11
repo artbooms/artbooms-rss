@@ -1748,6 +1748,39 @@
       "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6462b0f6342ef839fbae45e9/1686697573271/maurizio-cattelan-banana-comedian.png?format=1500w",
       "_hash": "6e04f4a27816e1a1c8b105f5c71327a2c14ebc8fb586320c84bbec3dd9891f8f",
       "_fetched_at": "2026-07-11T08:57:19.460123+00:00"
+    },
+    "https://www.artbooms.com/blog/leandro-erlich-palazzo-reale-milano": {
+      "url": "https://www.artbooms.com/blog/leandro-erlich-palazzo-reale-milano",
+      "title": "Oltre la Soglia: Leandro Erlich a Palazzo Reale di Milano — ARTBOOMS",
+      "description": "Il famoso artista Leandro Erlich, capace di stupire e divertire i visitatori, sarà a Palazzo Reale di Milano con la grande mostra \"Oltre la Soglia\".",
+      "author": "natasha barbieri",
+      "published": "2023-04-21T10:57:00+02:00",
+      "modified": "2023-04-21T10:57:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/643c822d01788c5ec8e16d61/1686698438466/15_LE_Batiment_01.jpg?format=1500w",
+      "_hash": "8daf23d648d70449e046e5a3ae491e38a5a8d7b8fd12856696fd9d0d6824398e",
+      "_fetched_at": "2026-07-11T09:03:58.325929+00:00"
+    },
+    "https://www.artbooms.com/blog/warsaw-1945-1949-rising-from-rubble": {
+      "url": "https://www.artbooms.com/blog/warsaw-1945-1949-rising-from-rubble",
+      "title": "Come Varsavia venne ricostruita riciclando le rovine — ARTBOOMS",
+      "description": "La mostra \"Warsaw 1945-1949: Rising from Rubble\", in corso al Museo di Varsavia, racconta come la città venne ricostruita riciclando le rovine.  Sono esposti reperti eterogenei, comprese opere d'arte contemporanea.",
+      "author": "natasha barbieri",
+      "published": "2023-04-26T10:53:00+02:00",
+      "modified": "2023-04-26T10:53:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6447087510ec280b8b4702f6/1686698226838/Rising+from+Rubble_cover.jpg?format=1500w",
+      "_hash": "d130eb5bb9424047c60595e2bcd5358b5a8c974f28e0a13bf27b5a323f8cec31",
+      "_fetched_at": "2026-07-11T09:03:59.252152+00:00"
+    },
+    "https://www.artbooms.com/blog/david-popa-graffiti-ghiaccio": {
+      "url": "https://www.artbooms.com/blog/david-popa-graffiti-ghiaccio",
+      "title": "David Popa, che realizza giganteschi graffiti sul ghiaccio alla deriva — ARTBOOMS",
+      "description": "David Popa,  ha sviluppato un suo modo  di fare street-art. Realizza,  dei grandi graffiti in mezzo alla natura. Spesso su lastre di ghiaccio alla deriva..",
+      "author": "natasha barbieri",
+      "published": "2023-04-27T10:58:00+02:00",
+      "modified": "2023-04-27T10:58:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/64485b1b297e0874af819401/1686698084742/1popa-1-scaled.jpg?format=1500w",
+      "_hash": "e13d99b4945e650d83743c4945307e40e40354f16876e6719da7617299a6e798",
+      "_fetched_at": "2026-07-11T09:04:00.229631+00:00"
     }
   },
   "cursor": 0,
