@@ -8777,6 +8777,42 @@
       "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5a4ff299e4966bf98193e049/1531008669520/AdelaAndea-ico.jpg?format=1500w",
       "_hash": "9b02dd8f1ba613b960b53cbb4ef403919e5839f8779cb2a5d04b5b867eda8027",
       "_fetched_at": "2026-07-13T07:33:33.737192+00:00"
+<<<<<<< Updated upstream
+=======
+    },
+    "https://www.artbooms.com/blog/kenji-toma-fotografia-iperrealista-fiori-the-most-beautiful-flowers": {
+      "url": "https://www.artbooms.com/blog/kenji-toma-fotografia-iperrealista-fiori-the-most-beautiful-flowers",
+      "title": "I fiori fotografati da Kenji Toma così iperrealisti da sembrare irreali — ARTBOOMS",
+      "description": "La serie ‘The Most Beautiful Flowers’ del famoso fotografo giapponese  Kenji Toma  sembra una sequenza di illustrazioni botaniche.&nbsp; Riproduzioni dettagliate certo, ma pur sempre trasfigurate. E invece altro non sono che fotografie. Immagini di fiori talmente realiste da sembrare irreali.  “",
+      "author": "natasha barbieri",
+      "published": "2018-01-17T10:23:00+01:00",
+      "modified": "2018-01-17T10:23:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5a4fecbe24a6940f4a39822d/1531013038105/beautiful-flowers-01.jpg?format=1500w",
+      "_hash": "60d52a30ba2fa8844dc9b4217b8567a8975211d72881d786cbc17109de03ed2a",
+      "_fetched_at": "2026-07-13T07:35:36.066997+00:00"
+    },
+    "https://www.artbooms.com/blog/tadashi-kawamata-installazione-the-nest-parigi-kamel-mennour": {
+      "url": "https://www.artbooms.com/blog/tadashi-kawamata-installazione-the-nest-parigi-kamel-mennour",
+      "title": "Tadashi Kawamata invade un antico edificio parigino con un enorme nido fatto di… bacchette — ARTBOOMS",
+      "description": "Per fare ‘The Nest’ nell’antico palazzo parigino che ospita la galleria  Kamel Mennour  a  Tadashi Kawamata  ci sono volute 100 mila bacchette di legno. Comprensibilmente, visto che l’opera non si limita a riempire tre grandi stanze ma si estende anche sulla facciata dell’edificio. Tra un angolo di",
+      "author": "natasha barbieri",
+      "published": "2018-01-18T10:12:00+01:00",
+      "modified": "2018-01-18T10:12:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5a5acab7085229afb814c6d9/1647990665377/tadashi-kawamata-nest-kamel-mennour-015.jpg?format=1500w",
+      "_hash": "cc264baf2f149f0334731c19a2299308d0f676039e05ff1a10c86f0fc6542efe",
+      "_fetched_at": "2026-07-13T07:35:37.529481+00:00"
+    },
+    "https://www.artbooms.com/blog/leandro-elrich-le-bon-marche-parigi-sous-le-ciel": {
+      "url": "https://www.artbooms.com/blog/leandro-elrich-le-bon-marche-parigi-sous-le-ciel",
+      "title": "Sous le Ciel: Le installazioni di Leandro Erlich che ingannano i visitatori de Le Bon Marché di Parigi ma con poesia — ARTBOOMS",
+      "description": "Concettuale ma poetica la mostra “Sous le Ciel” di  Leandro Erlich  invita lo spettatore a non fidarsi di uno sguardo frettoloso. E lo fa trasformando le scale mobili di  Le Bon Marché  in un nastro di moebius e gli ascensori in un gioco di specchi. Senza dimenticarsi di disseminare le vetrine di nu",
+      "author": "natasha barbieri",
+      "published": "2018-01-19T10:26:00+01:00",
+      "modified": "2018-01-19T10:26:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5a6157588165f505d98712ff/1531011225254/bonmarche.jpg?format=1500w",
+      "_hash": "9246c31b67f72cf775da5a2bd0d3cebf1929894fb518735a4ba4593f452a4159",
+      "_fetched_at": "2026-07-13T07:35:38.861381+00:00"
+>>>>>>> Stashed changes
     }
   },
   "cursor": 0,
