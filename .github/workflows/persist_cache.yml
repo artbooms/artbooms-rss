@@ -61,9 +61,68 @@ jobs:
           git config user.email "rss-bot@users.noreply.github.com"
 
           git fetch origin main
-          git stash || true
-          git pull --rebase --autostash
-          git stash pop || true
+          if ! git diff --quiet -- cache/articles_cache.json; then
+            git stash push -- cache/articles_cache.json
+            git pull --rebase --autostash
+            if ! git stash pop; then
+              echo "::error::Conflitto nel ripristino della cache; commit annullato."
+              exit 1
+            fi
+          else
+            git pull --rebase --autostash
+          fi
+
+          python3 - <<'PY'
+          import json, re, subprocess
+          from pathlib import Path
+
+          def load_cache(text, label):
+              marker = r"(?m)^(?:<<<<<<<(?: .*)?|=======|>>>>>>>(?: .*)?)\s*$"
+              if re.search(marker, text):
+                  raise SystemExit(f"{label}: marcatori di conflitto Git")
+              try:
+                  data = json.loads(text)
+              except json.JSONDecodeError as exc:
+                  raise SystemExit(f"{label}: JSON non valido: {exc}")
+              if not isinstance(data, dict) or not isinstance(data.get("items"), dict):
+                  raise SystemExit(f"{label}: struttura items non valida")
+
+              urls = []
+              for key, item in data["items"].items():
+                  if not isinstance(item, dict) or item.get("url") != key:
+                      raise SystemExit(f"{label}: chiave/URL non coerente: {key}")
+                  urls.append(key)
+              if len(urls) != len(set(urls)):
+                  raise SystemExit(f"{label}: URL duplicati")
+              return urls
+
+          path = Path("cache/articles_cache.json")
+          previous = load_cache(subprocess.check_output(
+              ["git", "show", "origin/main:cache/articles_cache.json"],
+              encoding="utf-8",
+          ), "cache precedente")
+          candidate = load_cache(
+              path.read_text(encoding="utf-8"),
+              "cache candidata",
+          )
+
+          if len(candidate) < len(previous):
+              raise SystemExit("cache candidata: numero articoli diminuito")
+          previous_set, candidate_set = set(previous), set(candidate)
+          missing = [url for url in previous if url not in candidate_set]
+          if missing:
+              raise SystemExit(
+                  f"cache candidata: URL precedente mancante: {missing[0]}"
+              )
+          if [url for url in candidate if url in previous_set] != previous:
+              raise SystemExit(
+                  "cache candidata: ordine degli URL esistenti modificato"
+              )
+          print(
+              f"Cache valida: {len(previous)} precedenti, "
+              f"{len(candidate) - len(previous)} nuovi."
+          )
+          PY
 
           if ! git diff --quiet -- cache/articles_cache.json; then
             git add cache/articles_cache.json
