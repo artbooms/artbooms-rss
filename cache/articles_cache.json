@@ -5095,27 +5095,25 @@
     },
     "https://www.artbooms.com/blog/banksy-game-changer-covid-19": {
       "url": "https://www.artbooms.com/blog/banksy-game-changer-covid-19",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-07-17T01:44:22.569976+00:00"
+      "title": "'Game Changer' l'opera di Banksy  per un ospedale  COVID — ARTBOOMS",
+      "description": "Banksy ha realizzato una nuova opera per dare il suo contributo durante  l’epidemia di COVID-19. Si chiama “Game Changer” ee è stato donato dall’artista all’ospedale di Sauthampton.",
+      "author": "natasha barbieri",
+      "published": "2020-05-07T09:54:00+02:00",
+      "modified": "2020-05-07T09:54:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5eb35c33db86a212e3fcfbb2/1616545475778/banksy-game-changer-01.jpg?format=1500w",
+      "_hash": "410a14ecc55a9a965527300a258d13e4a65472252028d865dac82bb61728a986",
+      "_fetched_at": "2026-07-17T15:27:41.893131+00:00"
     },
     "https://www.artbooms.com/blog/jim-bachor-mosaici-buche-stradali-covid": {
       "url": "https://www.artbooms.com/blog/jim-bachor-mosaici-buche-stradali-covid",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-07-17T01:44:23.604384+00:00"
+      "title": "Jim Bachor riempie con mosaici a tema COVID le buche stradali  — ARTBOOMS",
+      "description": "L' artista statunitense Jim Bachor fa street art rattoppando le buche  stradali con dei colorati mosaici. Durante la pandemia si è concentrato sulla sua città e sui prodotti irrinunciabili in tempo di coranovirus.",
+      "author": "natasha barbieri",
+      "published": "2020-05-08T09:50:00+02:00",
+      "modified": "2020-05-08T09:50:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5eacc3d18c56be195235d036/1590016765437/bachor-5-960x1020%402x.jpg?format=1500w",
+      "_hash": "35656e53be7328fabf4a0c9cff5860890fedb6c167979b14eab6f3813809ff7c",
+      "_fetched_at": "2026-07-17T15:27:43.329074+00:00"
     },
     "https://www.artbooms.com/blog/saype-beyond-crisis-murale-leysin": {
       "url": "https://www.artbooms.com/blog/saype-beyond-crisis-murale-leysin",
@@ -12477,7 +12475,7 @@
       "_fetched_at": "2026-07-13T21:17:41.879653+00:00"
     }
   },
-  "cursor": 660,
+  "cursor": 681,
   "last_scan": "2026-07-13T08:44:25.197324+00:00",
   "links_hash": "9f565433f186a0174c48eb98a179e08e7e72086c9a2a6751f30c830ed2a0308e"
 }
