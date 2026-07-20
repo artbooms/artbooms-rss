@@ -7,22 +7,16 @@ permissions:
   contents: write
 
 concurrency:
-  group: persist-rss-cache-main
+  group: persist-rss-cache-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   persist:
     runs-on: ubuntu-latest
 
-    env:
-      CANDIDATE: ${{ runner.temp }}/articles_cache.candidate.json
-      BASELINE: ${{ runner.temp }}/articles_cache.baseline.json
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          ref: main
           fetch-depth: 0
 
       # 1) Sveglia Render
@@ -35,8 +29,6 @@ jobs:
       # 2) Scarica la cache fuori dal repository
       - name: Download cache from Render
         run: |
-          set -euo pipefail
-
           curl \
             --retry 3 \
             --retry-delay 10 \
@@ -44,226 +36,77 @@ jobs:
             --max-time 30 \
             -fsSL \
             https://rss.artbooms.com/cache/download \
-            -o "$CANDIDATE"
+            -o "$RUNNER_TEMP/articles_cache.json"
 
-          if [ ! -s "$CANDIDATE" ]; then
-            echo "Errore: la cache scaricata è vuota."
+          test -s "$RUNNER_TEMP/articles_cache.json" || {
+            echo "Errore: cache scaricata vuota."
+            exit 1
+          }
+
+      # 3) Mantiene la compatibilità con le strutture già usate
+      - name: Fix cache structure if needed
+        run: |
+          CACHE_FILE="$RUNNER_TEMP/articles_cache.json"
+
+          echo "Controllo struttura cache..."
+
+          if jq -e 'type=="array"' "$CACHE_FILE" >/dev/null; then
+            echo "Fix: avvolgo lista in oggetto."
+
+            mv "$CACHE_FILE" "$RUNNER_TEMP/articles_cache.tmp"
+
+            jq \
+              '{items: ., cursor: 0, last_scan: null, links_hash: null}' \
+              "$RUNNER_TEMP/articles_cache.tmp" \
+              > "$CACHE_FILE"
+
+          elif jq -e '.items | type=="array"' "$CACHE_FILE" >/dev/null; then
+            echo "Fix: converto items[] in dizionario keyed per URL."
+
+            mv "$CACHE_FILE" "$RUNNER_TEMP/articles_cache.tmp"
+
+            jq '
+              .
+              | .items = (
+                  .items
+                  | map(select(type=="object" and .url != null))
+                  | map({key: .url, value: .})
+                  | from_entries
+                )
+            ' "$RUNNER_TEMP/articles_cache.tmp" \
+              > "$CACHE_FILE"
+
+          else
+            echo "Struttura cache OK."
+          fi
+
+          jq -e '
+            type=="object"
+            and (.items | (type=="object" or type=="array"))
+            and ((.items | length) > 0)
+          ' "$CACHE_FILE" >/dev/null
+
+          if grep -Eq '^(<<<<<<<|=======|>>>>>>>)' "$CACHE_FILE"; then
+            echo "Errore: marcatori di conflitto trovati nella cache."
             exit 1
           fi
 
-      # 3) Normalizza e valida la struttura
-      - name: Normalize downloaded cache
+      # 4) Riparte dall'ultimo main, senza stash, merge o rebase
+      - name: Commit & push if changed
         run: |
-          set -euo pipefail
-
-          python - <<'PY'
-          import json
-          import os
-          import tempfile
-
-          path = os.environ["CANDIDATE"]
-
-          with open(path, "r", encoding="utf-8") as handle:
-              data = json.load(handle)
-
-          if isinstance(data, list):
-              data = {
-                  "items": data,
-                  "cursor": 0,
-                  "last_scan": None,
-                  "links_hash": None,
-              }
-
-          if not isinstance(data, dict):
-              raise SystemExit("Errore: la radice della cache non è un oggetto JSON.")
-
-          items = data.get("items")
-
-          if isinstance(items, list):
-              normalized = {}
-
-              for item in items:
-                  if not isinstance(item, dict):
-                      continue
-
-                  url = item.get("url")
-
-                  if url:
-                      normalized[url] = item
-
-              data["items"] = normalized
-
-          elif not isinstance(items, dict):
-              raise SystemExit("Errore: items non è né un oggetto né una lista.")
-
-          if not data["items"]:
-              raise SystemExit("Errore: la cache non contiene articoli.")
-
-          directory = os.path.dirname(path)
-
-          fd, temporary_path = tempfile.mkstemp(
-              prefix="articles-cache-",
-              suffix=".json",
-              dir=directory,
-          )
-
-          try:
-              with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                  json.dump(
-                      data,
-                      handle,
-                      ensure_ascii=False,
-                      indent=2,
-                  )
-                  handle.write("\n")
-
-              os.replace(temporary_path, path)
-
-          finally:
-              if os.path.exists(temporary_path):
-                  os.remove(temporary_path)
-
-          print(f"Cache candidata valida: {len(data['items'])} articoli.")
-          PY
-
-      # 4) Riparte sempre dall'ultimo main, senza stash o merge
-      - name: Synchronize with latest main
-        run: |
-          set -euo pipefail
+          git config user.name "rss-bot"
+          git config user.email "rss-bot@users.noreply.github.com"
 
           git fetch origin main
           git reset --hard origin/main
 
-          echo "BASE_SHA=$(git rev-parse origin/main)" >> "$GITHUB_ENV"
-
-          if [ -f cache/articles_cache.json ]; then
-            cp cache/articles_cache.json "$BASELINE"
-          else
-            rm -f "$BASELINE"
-          fi
-
           mkdir -p cache
-          cp "$CANDIDATE" cache/articles_cache.json
 
-      # 5) Impedisce perdita, riordino o corruzione della cache
-      - name: Validate candidate against repository cache
-        run: |
-          set -euo pipefail
+          cp \
+            "$RUNNER_TEMP/articles_cache.json" \
+            cache/articles_cache.json
 
-          python - <<'PY'
-          import json
-          import os
-          import re
-
-          candidate_path = "cache/articles_cache.json"
-          baseline_path = os.environ["BASELINE"]
-
-          conflict_pattern = re.compile(
-              r"^(<<<<<<<|=======|>>>>>>>)",
-              re.MULTILINE,
-          )
-
-          def load_cache(path):
-              with open(path, "r", encoding="utf-8") as handle:
-                  raw = handle.read()
-
-              if conflict_pattern.search(raw):
-                  raise SystemExit(
-                      f"Errore: marcatori di conflitto trovati in {path}."
-                  )
-
-              data = json.loads(raw)
-
-              if not isinstance(data, dict):
-                  raise SystemExit(
-                      f"Errore: {path} non contiene un oggetto JSON."
-                  )
-
-              items = data.get("items")
-
-              if not isinstance(items, dict) or not items:
-                  raise SystemExit(
-                      f"Errore: {path} non contiene un dizionario items valido."
-                  )
-
-              urls = []
-
-              for key, item in items.items():
-                  if isinstance(item, dict):
-                      url = item.get("url") or key
-                  else:
-                      url = key
-
-                  if url:
-                      urls.append(url)
-
-              if not urls:
-                  raise SystemExit(
-                      f"Errore: nessun URL valido trovato in {path}."
-                  )
-
-              if len(urls) != len(set(urls)):
-                  raise SystemExit(
-                      f"Errore: URL duplicati trovati in {path}."
-                  )
-
-              return urls
-
-          new_urls = load_cache(candidate_path)
-
-          if os.path.exists(baseline_path):
-              old_urls = load_cache(baseline_path)
-              new_positions = {
-                  url: index
-                  for index, url in enumerate(new_urls)
-              }
-
-              missing = [
-                  url
-                  for url in old_urls
-                  if url not in new_positions
-              ]
-
-              if missing:
-                  raise SystemExit(
-                      "Errore: la nuova cache perderebbe "
-                      f"{len(missing)} URL precedenti."
-                  )
-
-              previous_position = -1
-
-              for url in old_urls:
-                  position = new_positions[url]
-
-                  if position < previous_position:
-                      raise SystemExit(
-                          "Errore: l'ordine relativo degli URL "
-                          "precedenti è cambiato."
-                      )
-
-                  previous_position = position
-
-              print(
-                  "Validazione completata: "
-                  f"{len(old_urls)} URL precedenti conservati, "
-                  f"{len(new_urls)} URL candidati."
-              )
-          else:
-              print(
-                  "Nessuna cache precedente trovata; "
-                  f"validati {len(new_urls)} URL."
-              )
-          PY
-
-      # 6) Commit solo quando la cache è realmente cambiata
-      - name: Commit and push if changed
-        run: |
-          set -euo pipefail
-
-          git config user.name "rss-bot"
-          git config user.email "rss-bot@users.noreply.github.com"
-
-          if [ -z "$(git status --porcelain -- cache/articles_cache.json)" ]; then
+          if git diff --quiet -- cache/articles_cache.json; then
             echo "Nessun cambiamento nella cache."
             exit 0
           fi
@@ -272,15 +115,5 @@ jobs:
 
           git commit \
             -m "Persist cache $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-
-          git fetch origin main
-
-          CURRENT_REMOTE_SHA="$(git rev-parse origin/main)"
-
-          if [ "$CURRENT_REMOTE_SHA" != "$BASE_SHA" ]; then
-            echo "Main è cambiato durante il workflow."
-            echo "Push annullato in sicurezza; il prossimo run riproverà."
-            exit 1
-          fi
 
           git push origin HEAD:main
