@@ -9506,14 +9506,15 @@
     },
     "https://www.artbooms.com/blog/lee-wan-padiglione-corea-biennale-arte-venezia-2017": {
       "url": "https://www.artbooms.com/blog/lee-wan-padiglione-corea-biennale-arte-venezia-2017",
-      "title": "Biennale di Venezia 2017| Lee Wan che si è inventato un’equazione per calcolare esattamente quanti minuti al giorno lavoriamo per mangiare — ARTBOOMS",
-      "description": "Entrando nella sala che il  Padiglione Corea  della  Biennale di Venezia  ha dedicato all'installazione \"Proper Time\" dell’artista  Lee Wan , si resta catturati nel vedere le pareti tappezzate da dicine di orologi.  Sono tutti uguali ma su ognuno è scritto un nome, un anno, una professione",
-      "author": "natasha barbieri",
-      "published": "2017-07-21T10:41:00+02:00",
-      "modified": "2017-07-21T10:41:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/596e726fb8a79be779553d0b/1510524049222/padiglione-corea-lee-wan-04.jpg?format=1500w",
-      "_hash": "de7dfcd1bf5e5cd1f5d9744608a4294addb49e4648b72b3634256bfa4e480439",
-      "_fetched_at": "2026-07-13T18:03:56.378779+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-07-23T02:55:11.983914+00:00"
     },
     "https://www.artbooms.com/blog/short-story-dispenser-il-distributore-automatico-di-racconti-che-piace-ai-francesi": {
       "url": "https://www.artbooms.com/blog/short-story-dispenser-il-distributore-automatico-di-racconti-che-piace-ai-francesi",
@@ -9539,14 +9540,15 @@
     },
     "https://www.artbooms.com/blog/design-metro-taipei-per-universiadi-taiwan": {
       "url": "https://www.artbooms.com/blog/design-metro-taipei-per-universiadi-taiwan",
-      "title": "A Taiwan hanno trasformato la metropolitana in un campo sportivo in occasione delle Universiadi — ARTBOOMS",
-      "description": "Le Universiadi, sono la manifestazione sportiva più importante dopo le Olimpiadi e quest’anno si svolgeranno a Taipei. Per celebrare questo evento storico per la capitale di Taiwan, la città, ha trasformato il design dei vagoni della metropolitana, in modo da renderli simili in tutto e per tutto a d",
-      "author": "natasha barbieri",
-      "published": "2017-07-18T10:48:00+02:00",
-      "modified": "2017-07-18T10:48:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/596d4cf04402430bb8664184/1500367721891/taiwan-1.jpg?format=1500w",
-      "_hash": "02a4483accb1f8c29571bd1984187c0be85d3e3c2b2faebc54d0a9af4fda9c6f",
-      "_fetched_at": "2026-07-13T18:06:25.976554+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-07-23T02:52:58.350974+00:00"
     },
     "https://www.artbooms.com/blog/ai-weiwei-kunsthal-charlottenborg-soleil-levant": {
       "url": "https://www.artbooms.com/blog/ai-weiwei-kunsthal-charlottenborg-soleil-levant",
@@ -12489,7 +12491,7 @@
       "_fetched_at": "2026-07-13T21:17:41.879653+00:00"
     }
   },
-  "cursor": 264,
+  "cursor": 285,
   "last_scan": "2026-07-13T08:44:25.197324+00:00",
   "links_hash": "9f565433f186a0174c48eb98a179e08e7e72086c9a2a6751f30c830ed2a0308e"
 }
