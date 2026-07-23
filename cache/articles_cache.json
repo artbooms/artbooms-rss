@@ -9893,15 +9893,14 @@
     },
     "https://www.artbooms.com/blog/damien-hirst-treasures-from-the-wreck-of-the-unbelievable-tesori-dal-relitto-delll-incredibile-venezia": {
       "url": "https://www.artbooms.com/blog/damien-hirst-treasures-from-the-wreck-of-the-unbelievable-tesori-dal-relitto-delll-incredibile-venezia",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-07-23T02:29:42.326743+00:00"
+      "title": "Dentro le stanze di “Treasures from the wreck of the unbelivable” la super-mostra di Damien Hirst a Palazzo Grassi. Tutte le foto — ARTBOOMS",
+      "description": "A  Palazzo Grassi  va in scena il discusso e multi-milionario artista inglese  Damien Hirst . Che abbandonate le provocazioni della gioventù mette in scena una fiaba, fatta di miti, scultura, corallo. E false opere d’arte dell’antichità.  La mostra, sviluppata da Hirst in 5mila metri quadri tra Pala",
+      "author": "natasha barbieri",
+      "published": "2017-05-04T10:32:00+02:00",
+      "modified": "2017-05-04T10:32:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/590a68ee197aea2c7d6f8e38/1493886775403/damien-hirst-treasures-from-the-wreck-of-the-unbelievable-palazzo-grassi--01.jpg?format=1500w",
+      "_hash": "e0845690e6e5241a7b1291a9607b712ffdcb2d9eca1dd62373212516dc0f7432",
+      "_fetched_at": "2026-07-23T16:14:14.130855+00:00"
     },
     "https://www.artbooms.com/blog/tombini-diapponesi-tessere-da-collezione": {
       "url": "https://www.artbooms.com/blog/tombini-diapponesi-tessere-da-collezione",
@@ -12479,7 +12478,7 @@
       "_fetched_at": "2026-07-13T21:17:41.879653+00:00"
     }
   },
-  "cursor": 222,
+  "cursor": 243,
   "last_scan": "2026-07-13T08:44:25.197324+00:00",
   "links_hash": "9f565433f186a0174c48eb98a179e08e7e72086c9a2a6751f30c830ed2a0308e"
 }
