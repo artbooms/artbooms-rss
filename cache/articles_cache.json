@@ -10166,15 +10166,14 @@
     },
     "https://www.artbooms.com/blog/rone-street-art-the-alpha-project-melbourne": {
       "url": "https://www.artbooms.com/blog/rone-street-art-the-alpha-project-melbourne",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-07-23T15:54:55.517649+00:00"
+      "title": "La street-art di Rone che porta mega ritratti di giovani donne su edifici che stanno per essere abbattuti — ARTBOOMS",
+      "description": "Il progetto, realizzato in una cartiera abbandonata di Melbourne dallo street-artist  Rone , si intitola “The Alpha Project” e ha richiesto oltre 3 mesi di lavoro. In questo lasso di tempo l’artista australiano, armato di rulli e bombolette spray, ha dipinto ben cinque ritratti femminili. Ovviamente",
+      "author": "natasha barbieri",
+      "published": "2017-03-14T10:15:00+01:00",
+      "modified": "2017-03-14T10:15:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/58c208b8b8a79bc99b016ea6/1579133992316/RONE-The-Alpha-Project-6.jpg?format=1500w",
+      "_hash": "601b0eba717ac54f7dafb7023eb5d7ee3d745abf494aa019016fb85e858d688d",
+      "_fetched_at": "2026-07-24T05:25:01.928322+00:00"
     },
     "https://www.artbooms.com/blog/shen-shaomin-klein-sun-gallery-keep-upright": {
       "url": "https://www.artbooms.com/blog/shen-shaomin-klein-sun-gallery-keep-upright",
@@ -12476,7 +12475,7 @@
       "_fetched_at": "2026-07-13T21:17:41.879653+00:00"
     }
   },
-  "cursor": 201,
+  "cursor": 222,
   "last_scan": "2026-07-13T08:44:25.197324+00:00",
   "links_hash": "9f565433f186a0174c48eb98a179e08e7e72086c9a2a6751f30c830ed2a0308e"
 }
