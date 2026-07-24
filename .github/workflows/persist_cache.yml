@@ -15,105 +15,316 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout main
+        uses: actions/checkout@v6
         with:
+          ref: main
           fetch-depth: 0
 
-      # 1) Sveglia Render
       - name: Wake up Render instance
         run: |
           echo "Ping per riattivare Render..."
-          curl -fsSL https://rss.artbooms.com/healthz || true
+          curl --connect-timeout 10 --max-time 45 -fsSL https://rss.artbooms.com/healthz >/dev/null 2>&1 || true
           sleep 30
 
-      # 2) Scarica la cache fuori dal repository
       - name: Download cache from Render
+        id: download
+        shell: bash
         run: |
-          curl \
+          CANDIDATE="$RUNNER_TEMP/articles_cache.json"
+          rm -f "$CANDIDATE"
+
+          if curl \
             --retry 3 \
             --retry-delay 10 \
             --retry-connrefused \
+            --connect-timeout 10 \
             --max-time 30 \
             -fsSL \
             https://rss.artbooms.com/cache/download \
-            -o "$RUNNER_TEMP/articles_cache.json"
+            -o "$CANDIDATE" \
+            && [ -s "$CANDIDATE" ]; then
 
-          test -s "$RUNNER_TEMP/articles_cache.json" || {
-            echo "Errore: cache scaricata vuota."
-            exit 1
-          }
-
-      # 3) Mantiene la compatibilità con le strutture già usate
-      - name: Fix cache structure if needed
-        run: |
-          CACHE_FILE="$RUNNER_TEMP/articles_cache.json"
-
-          echo "Controllo struttura cache..."
-
-          if jq -e 'type=="array"' "$CACHE_FILE" >/dev/null; then
-            echo "Fix: avvolgo lista in oggetto."
-
-            mv "$CACHE_FILE" "$RUNNER_TEMP/articles_cache.tmp"
-
-            jq \
-              '{items: ., cursor: 0, last_scan: null, links_hash: null}' \
-              "$RUNNER_TEMP/articles_cache.tmp" \
-              > "$CACHE_FILE"
-
-          elif jq -e '.items | type=="array"' "$CACHE_FILE" >/dev/null; then
-            echo "Fix: converto items[] in dizionario keyed per URL."
-
-            mv "$CACHE_FILE" "$RUNNER_TEMP/articles_cache.tmp"
-
-            jq '
-              .
-              | .items = (
-                  .items
-                  | map(select(type=="object" and .url != null))
-                  | map({key: .url, value: .})
-                  | from_entries
-                )
-            ' "$RUNNER_TEMP/articles_cache.tmp" \
-              > "$CACHE_FILE"
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Cache scaricata correttamente."
 
           else
-            echo "Struttura cache OK."
+            rm -f "$CANDIDATE"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Cache Render temporaneamente non disponibile. Nessuna modifica; il prossimo cron riproverà."
           fi
 
-          jq -e '
-            type=="object"
-            and (.items | (type=="object" or type=="array"))
-            and ((.items | length) > 0)
-          ' "$CACHE_FILE" >/dev/null
-
-          if grep -Eq '^(<<<<<<<|=======|>>>>>>>)' "$CACHE_FILE"; then
-            echo "Errore: marcatori di conflitto trovati nella cache."
-            exit 1
-          fi
-
-      # 4) Riparte dall'ultimo main, senza stash, merge o rebase
-      - name: Commit & push if changed
+      - name: Normalize and validate candidate
+        id: normalize
+        if: steps.download.outputs.ready == 'true'
+        shell: bash
         run: |
+          python - <<'PY'
+          import json
+          import os
+          import tempfile
+
+          source = os.path.join(os.environ["RUNNER_TEMP"], "articles_cache.json")
+          output = os.environ["GITHUB_OUTPUT"]
+          valid = False
+
+          try:
+              with open(source, "r", encoding="utf-8") as f:
+                  data = json.load(f)
+
+              if isinstance(data, list):
+                  data = {
+                      "items": data,
+                      "cursor": 0,
+                      "last_scan": None,
+                      "links_hash": None,
+                  }
+
+              if not isinstance(data, dict):
+                  raise ValueError("la radice JSON non è un oggetto")
+
+              items = data.get("items")
+
+              if isinstance(items, list):
+                  converted = {}
+
+                  for item in items:
+                      if isinstance(item, dict) and item.get("url"):
+                          converted[item["url"]] = item
+
+                  data["items"] = converted
+                  items = converted
+
+              if not isinstance(items, dict) or not items:
+                  raise ValueError("items non è un dizionario non vuoto")
+
+              raw = json.dumps(
+                  data,
+                  ensure_ascii=False,
+                  indent=2
+              ) + "\n"
+
+              if any(
+                  marker in raw
+                  for marker in (
+                      "<<<<<<<",
+                      "=======",
+                      ">>>>>>>"
+                  )
+              ):
+                  raise ValueError(
+                      "sono presenti marcatori di conflitto Git"
+                  )
+
+              fd, temp_path = tempfile.mkstemp(
+                  dir=os.environ["RUNNER_TEMP"],
+                  prefix="articles_cache_",
+                  suffix=".json",
+              )
+
+              try:
+                  with os.fdopen(
+                      fd,
+                      "w",
+                      encoding="utf-8"
+                  ) as f:
+                      f.write(raw)
+
+                  os.replace(
+                      temp_path,
+                      source
+                  )
+
+              finally:
+                  if os.path.exists(temp_path):
+                      os.remove(temp_path)
+
+              print(
+                  f"Cache candidata valida: "
+                  f"{len(items)} articoli"
+              )
+
+              valid = True
+
+          except Exception as exc:
+              print(
+                  f"::warning::Cache candidata non valida: "
+                  f"{exc}. Nessuna modifica; "
+                  "il prossimo cron riproverà."
+              )
+
+          with open(
+              output,
+              "a",
+              encoding="utf-8"
+          ) as f:
+              f.write(
+                  f"valid={'true' if valid else 'false'}\n"
+              )
+          PY
+
+      - name: Commit and push cache safely
+        if: steps.normalize.outputs.valid == 'true'
+        shell: bash
+        run: |
+          CANDIDATE="$RUNNER_TEMP/articles_cache.json"
+          PUSH_LOG="$RUNNER_TEMP/git-push.log"
+
           git config user.name "rss-bot"
           git config user.email "rss-bot@users.noreply.github.com"
 
-          git fetch origin main
-          git reset --hard origin/main
+          if ! git fetch origin main; then
+            echo "::warning::GitHub non raggiungibile durante fetch. Nessuna modifica; il prossimo cron riproverà."
+            exit 0
+          fi
+
+          if ! git reset --hard origin/main; then
+            echo "::warning::Impossibile riallineare il runner a origin/main. Nessuna modifica; il prossimo cron riproverà."
+            exit 0
+          fi
+
+          # Protezione contro un nuovo collasso della cache:
+          # la candidata non può perdere URL già persistiti.
+          if [ -f cache/articles_cache.json ]; then
+
+            if ! OLD_CACHE="cache/articles_cache.json" \
+                 NEW_CACHE="$CANDIDATE" \
+                 python - <<'PY'
+          import json
+          import os
+          import sys
+
+          def urls(path):
+              with open(
+                  path,
+                  "r",
+                  encoding="utf-8"
+              ) as f:
+                  data = json.load(f)
+
+              items = (
+                  data.get("items", {})
+                  if isinstance(data, dict)
+                  else {}
+              )
+
+              if isinstance(items, dict):
+                  result = set()
+
+                  for key, value in items.items():
+                      if (
+                          isinstance(value, dict)
+                          and value.get("url")
+                      ):
+                          result.add(value["url"])
+                      elif key:
+                          result.add(key)
+
+                  return result
+
+              if isinstance(items, list):
+                  return {
+                      item["url"]
+                      for item in items
+                      if (
+                          isinstance(item, dict)
+                          and item.get("url")
+                      )
+                  }
+
+              return set()
+
+          old_urls = urls(
+              os.environ["OLD_CACHE"]
+          )
+
+          new_urls = urls(
+              os.environ["NEW_CACHE"]
+          )
+
+          missing = old_urls - new_urls
+
+          if missing:
+              print(
+                  f"::warning::La cache candidata "
+                  f"perderebbe {len(missing)} URL "
+                  "già presenti. Commit saltato."
+              )
+
+              sys.exit(1)
+
+          print(
+              f"Protezione URL OK: "
+              f"{len(old_urls)} precedenti, "
+              f"{len(new_urls)} candidati."
+          )
+          PY
+            then
+              exit 0
+            fi
+          fi
 
           mkdir -p cache
 
           cp \
-            "$RUNNER_TEMP/articles_cache.json" \
+            "$CANDIDATE" \
             cache/articles_cache.json
 
-          if git diff --quiet -- cache/articles_cache.json; then
+          if [ -z "$(git status --porcelain -- cache/articles_cache.json)" ]; then
             echo "Nessun cambiamento nella cache."
             exit 0
           fi
 
           git add cache/articles_cache.json
 
-          git commit \
-            -m "Persist cache $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          if ! git commit \
+            -m "Persist cache $(date -u +'%Y-%m-%dT%H:%M:%SZ')"; then
 
-          git push origin HEAD:main
+            echo "::warning::Nessun commit creato. Nessuna modifica remota."
+            exit 0
+          fi
+
+          for attempt in 1 2 3 4 5; do
+            echo "Push GitHub: tentativo $attempt/5"
+
+            rm -f "$PUSH_LOG"
+
+            set +e
+
+            git push origin HEAD:main \
+              2>&1 | tee "$PUSH_LOG"
+
+            PUSH_STATUS=${PIPESTATUS[0]}
+
+            set -e
+
+            if [ "$PUSH_STATUS" -eq 0 ]; then
+              echo "Cache persistita correttamente."
+              exit 0
+            fi
+
+            if grep -Eqi \
+              'Internal Server Error|Service Unavailable|Bad Gateway|Gateway Timeout|HTTP (500|502|503|504)|returned error: 50[0234]|no healthy upstream|Connection reset|Connection timed out|Could not resolve host|Failed to connect' \
+              "$PUSH_LOG"; then
+
+              if [ "$attempt" -lt 5 ]; then
+                echo "::warning::Errore temporaneo GitHub durante il push; riprovo."
+                sleep $((attempt * 15))
+                continue
+              fi
+
+              echo "::warning::GitHub resta temporaneamente indisponibile. Nessuna modifica remota; il prossimo cron riproverà."
+              exit 0
+            fi
+
+            if grep -Eqi \
+              'non-fast-forward|fetch first|remote contains work|rejected.*main' \
+              "$PUSH_LOG"; then
+
+              echo "::warning::main è cambiato durante il run. Nessun merge, rebase o stash: il prossimo cron riproverà dal nuovo main."
+              exit 0
+            fi
+
+            echo "Errore Git non transitorio durante il push."
+            exit "$PUSH_STATUS"
+          done
