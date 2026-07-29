@@ -8417,15 +8417,14 @@
     },
     "https://www.artbooms.com/blog/jennik-deslaurier-sculture-iperrealiste-in-tessuto-artmur-montreal": {
       "url": "https://www.artbooms.com/blog/jennik-deslaurier-sculture-iperrealiste-in-tessuto-artmur-montreal",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-07-27T17:38:02.113258+00:00"
+      "title": "Jannick Deslauriers che scolpisce auto distrutte, barconi e container con tulle, seta e altri tessuti più o meno preziosi — ARTBOOMS",
+      "description": "La canadese  Jannick Deslauriers  è un’artista tessile. Usa ago e filo come fossero tratti netti di contorno in un disegno, seta, tulle e rete di alluminio come sfumature diverse dello stesso colore. Impresa già di per se difficile, che si complica ulteriormente perché Jannick Deslauriers non lavora",
+      "author": "natasha barbieri",
+      "published": "2018-03-30T10:40:00+02:00",
+      "modified": "2018-03-30T10:40:00+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5aac802b758d463a220dfa64/1530798591790/JannickDeslauriers_02.jpg?format=1500w",
+      "_hash": "a2c238aab3a42871072426972f148a21cdec63ad09bddd2aeb102f17ec7203ae",
+      "_fetched_at": "2026-07-29T18:50:58.554568+00:00"
     },
     "https://www.artbooms.com/blog/meng-du-scultura-in-vetro-colorato-con-te": {
       "url": "https://www.artbooms.com/blog/meng-du-scultura-in-vetro-colorato-con-te",
@@ -12487,7 +12486,7 @@
       "_fetched_at": "2026-07-24T08:22:51.827179+00:00"
     }
   },
-  "cursor": 366,
+  "cursor": 387,
   "last_scan": "2026-07-24T08:22:51.730829+00:00",
   "links_hash": "6098b72fc298be235b2b02bf92f268e36700e6986d864f862864716e9f6aacb3"
 }
