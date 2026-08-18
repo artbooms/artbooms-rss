@@ -5128,14 +5128,15 @@
     },
     "https://www.artbooms.com/blog/yoan-capote-pittura-ami-da-pesca": {
       "url": "https://www.artbooms.com/blog/yoan-capote-pittura-ami-da-pesca",
-      "title": "Yoan Capote l'artista che dipinge il mare inchiodando ami da pesca — ARTBOOMS",
-      "description": "L’artista Yoan Capote crea dei paesaggi marini verosimili  ed evocativi. Dipinge ad olio. E per tracciare il profilo irrequieto delle onde fissa migliaia di ami da pesca con dei minuscoli chiodi metallici.",
-      "author": "natasha barbieri",
-      "published": "2020-04-30T10:21:00+02:00",
-      "modified": "2020-04-30T10:21:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5e8e6a796828da1393e5448d/1590020962092/BIG_YOCA2019_12da.jpg?format=1500w",
-      "_hash": "d2af2fbd499031775764fa544ae53dc7a8c5b043209f8e71eeb2001705fa9b83",
-      "_fetched_at": "2026-07-13T13:18:58.660150+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-08-18T07:22:50.403911+00:00"
     },
     "https://www.artbooms.com/blog/fabio-viale-tatoo-sculture-marmo": {
       "url": "https://www.artbooms.com/blog/fabio-viale-tatoo-sculture-marmo",
@@ -12497,7 +12498,7 @@
       "_fetched_at": "2026-08-06T09:03:33.338144+00:00"
     }
   },
-  "cursor": 663,
+  "cursor": 684,
   "last_scan": "2026-08-06T09:03:33.243805+00:00",
   "links_hash": "8be8309f6efc2419fd2e29a15fa70d77fcb06ccb9792b8dac665d40891b48936"
 }
