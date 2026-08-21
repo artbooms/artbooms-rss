@@ -5480,14 +5480,15 @@
     },
     "https://www.artbooms.com/blog/banksy-murale-san-valentino-bristol-vandalizzato": {
       "url": "https://www.artbooms.com/blog/banksy-murale-san-valentino-bristol-vandalizzato",
-      "title": "Il murale di San Valentino di Banksy è stato barricato — ARTBOOMS",
-      "description": "Il murale di San Valentino di Banksy è durato 2 giorni. L' opera di Bristol è stata vandalizzata in tempi record ma per fortuna il danno sembra recuperabile. Nel frattempo però, una tavola  di legno copre l’immagine e delle barriere impediscono a tutti di avvicinarsi.",
-      "author": "natasha barbieri",
-      "published": "2020-02-18T10:50:00+01:00",
-      "modified": "2020-02-18T10:50:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5e49aafc3be8c0066deabb9f/1587693112844/banksy-murale-san-valentino-bristol-1.jpg?format=1500w",
-      "_hash": "b030d45981a3057286010295e441e9a29efa573e0a1811be36c63ef8cae80624",
-      "_fetched_at": "2026-07-13T13:43:46.681999+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-08-21T16:59:09.130936+00:00"
     },
     "https://www.artbooms.com/blog/tomas-saraceno-mongolfiera-aerosolare-aerocene-pacha": {
       "url": "https://www.artbooms.com/blog/tomas-saraceno-mongolfiera-aerosolare-aerocene-pacha",
@@ -12497,7 +12498,7 @@
       "_fetched_at": "2026-08-06T09:03:33.338144+00:00"
     }
   },
-  "cursor": 621,
+  "cursor": 642,
   "last_scan": "2026-08-06T09:03:33.243805+00:00",
   "links_hash": "8be8309f6efc2419fd2e29a15fa70d77fcb06ccb9792b8dac665d40891b48936"
 }
