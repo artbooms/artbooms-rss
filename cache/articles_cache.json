@@ -4171,14 +4171,15 @@
     },
     "https://www.artbooms.com/blog/prune-nourry-le-bon-marche-parigi-l-amazone-erogene": {
       "url": "https://www.artbooms.com/blog/prune-nourry-le-bon-marche-parigi-l-amazone-erogene",
-      "title": "Prune Nourry fa volare 888 frecce a Le Bon Marché di Parigi — ARTBOOMS",
-      "description": "Colpita da un cancro al seno a soli 31 anni, l'artista francese Prune Nourry, ha dedicato alle donne afflitte come lei dalla malattia, una mostra ai grandi magazzini Le Bon Marché di Parigi. L'esposizione era giocata sul mito greco delle amazzoni.",
-      "author": "natasha barbieri",
-      "published": "2021-03-02T10:34:00+01:00",
-      "modified": "2021-03-02T10:34:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6014a9aa2496082898c59385/1666661652735/prune-nourry-lamazone-erogene-le-bon-marche-2.jpg?format=1500w",
-      "_hash": "9e2cc97def8ef75efa17fba36a0c9d6be6ab58d49a5b56415eabd90b0f9fc838",
-      "_fetched_at": "2026-07-13T12:16:36.594950+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-08-22T07:57:26.888962+00:00"
     },
     "https://www.artbooms.com/blog/daniel-kordan-fotografie-lucciole-stagione-amori-giappone": {
       "url": "https://www.artbooms.com/blog/daniel-kordan-fotografie-lucciole-stagione-amori-giappone",
@@ -12498,7 +12499,7 @@
       "_fetched_at": "2026-08-06T09:03:33.338144+00:00"
     }
   },
-  "cursor": 744,
+  "cursor": 765,
   "last_scan": "2026-08-06T09:03:33.243805+00:00",
   "links_hash": "8be8309f6efc2419fd2e29a15fa70d77fcb06ccb9792b8dac665d40891b48936"
 }
