@@ -12495,9 +12495,20 @@
       "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6a73a2438b5aa94430e90c83/1786006219741/PXL_20260507_143430358%7E2.jpg?format=1500w",
       "_hash": "ced4e994d1aaddbf19985885e1b48bf103354dbd14902dc72b188cbdd76132a8",
       "_fetched_at": "2026-08-06T09:03:33.338144+00:00"
+    },
+    "https://www.artbooms.com/blog/yayoi-kusama-morta": {
+      "url": "https://www.artbooms.com/blog/yayoi-kusama-morta",
+      "title": "E' morta Yoyoi Kusama. Aveva 97 anni — ARTBOOMS",
+      "description": "Yayoi Kusama è morta all'ospedale di Tokyo: aveva 97 anni. Ne ha annunciato oggi la scomparsa con un comunicato la fondazione omonima; il motivo del decesso non è stato per ora reso noto.",
+      "author": "natasha barbieri",
+      "published": "2026-08-27T16:22:05+02:00",
+      "modified": "2026-08-27T16:22:05+02:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6a90401a2c2db423c721c7c4/1787840525788/Kusama.webp?format=1500w",
+      "_hash": "4394a830c1b589a5624fe0e494c48201554da6fd932ecf38dd47868c5fba30c7",
+      "_fetched_at": "2026-08-27T14:22:55.981002+00:00"
     }
   },
-  "cursor": 1029,
-  "last_scan": "2026-08-06T09:03:33.243805+00:00",
-  "links_hash": "8be8309f6efc2419fd2e29a15fa70d77fcb06ccb9792b8dac665d40891b48936"
+  "cursor": 1047,
+  "last_scan": "2026-08-27T14:22:55.883129+00:00",
+  "links_hash": "e9f3edfca0792b87519baea4de76592ca6152742f469a0177f81df26133d0249"
 }
