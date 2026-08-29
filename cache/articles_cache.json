@@ -8528,15 +8528,14 @@
     },
     "https://www.artbooms.com/blog/don-komarechka-macrofotografia-fiocchi-di-neve-colorati": {
       "url": "https://www.artbooms.com/blog/don-komarechka-macrofotografia-fiocchi-di-neve-colorati",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-08-28T23:14:07.328441+00:00"
+      "title": "Le macrofotografie (non photoshoppate) dei fiocchi di neve che nascono con nel cuore strani e coloratissimi disegni — ARTBOOMS",
+      "description": "Il fotografo canadese  Don Komarechka  lavora con diversi tipi di tecniche, dagli ultravioletti agli infrarossi, ma uno dei suoi cavalli di battaglia è la  macrofotografia  e il suo soggetto prediletto sono i fiocchi di neve. Li fotografa uno per uno. svelandone l’inaspettata, geometrica, bellezza e",
+      "author": "natasha barbieri",
+      "published": "2018-03-02T10:33:00+01:00",
+      "modified": "2018-03-02T10:33:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5a9614eae2c483e8c9d3915d/1530836247321/macro-snowflake.jpg?format=1500w",
+      "_hash": "4e326439a2fb6f18c93da61989439cc811b3dbe155e0a0da9ded2566a65e114a",
+      "_fetched_at": "2026-08-29T12:59:07.563078+00:00"
     },
     "https://www.artbooms.com/blog/berndnaut-smilde-nuvole-the-armory-show-ronchini-gallery": {
       "url": "https://www.artbooms.com/blog/berndnaut-smilde-nuvole-the-armory-show-ronchini-gallery",
@@ -8584,27 +8583,25 @@
     },
     "https://www.artbooms.com/blog/janet-echelman-madrid-scultura-1-78": {
       "url": "https://www.artbooms.com/blog/janet-echelman-madrid-scultura-1-78",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-08-28T23:09:56.267452+00:00"
+      "title": "Janet Echelman fa volare su Madrid un’enorme scultura intrecciata a mano per celebrare i 400 anni di Plaza Mayor — ARTBOOMS",
+      "description": "Le sculture monumentali dell’artista statunitense  Janet Echelman  (ne ho già parlato  qui ) fondono semplicità e ricerche all’avanguardia. D’altra parte sono fatte per essere installate in cielo.&nbsp; ‘ 1.78 ’ posizionata nella Plaza Mayor di Madrid (fino al 19 febbraio 2018) fluttuava come le",
+      "author": "natasha barbieri",
+      "published": "2018-02-20T11:04:00+01:00",
+      "modified": "2018-02-20T11:04:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5a8b662953450a6552730cd6/1530839042810/janet-echelman-010-768x570.jpg?format=1500w",
+      "_hash": "201499dc8ebf22b4de974601d228f35a1a6aa6e2e29a4bbb5d06a769fd6bc7fe",
+      "_fetched_at": "2026-08-29T12:54:57.416422+00:00"
     },
     "https://www.artbooms.com/blog/anja-niemi-serie-fotografie-she-could-have-been-a-cowboy": {
       "url": "https://www.artbooms.com/blog/anja-niemi-serie-fotografie-she-could-have-been-a-cowboy",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-08-28T23:09:57.351182+00:00"
+      "title": "Anja Niemi ha fatto il coast to coast degli States vestita da cowgirl per realizzare la sua ultima serie di spettacolari fotografie — ARTBOOMS",
+      "description": "La fotografa di origini norvegesi  Anja Niemi  (di cui ho già parlato, per esempio,  qui ) lavora rigorosamente da sola. Inventa una storia, realizza i costumi, sceglie le locations, scatta le immagini e fa da modella a se stessa. Spesso si sofferma sul tema del doppio. Ma anche se al centro della f",
+      "author": "natasha barbieri",
+      "published": "2018-02-21T11:16:00+01:00",
+      "modified": "2018-02-21T11:16:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5a8ce4a3c83025bb097aac68/1530838415725/anja-niemi.jpg?format=1500w",
+      "_hash": "dc429494626638136a6c4e786d66b8f70fdd16b781928f47272a00778478dea9",
+      "_fetched_at": "2026-08-29T12:54:58.453318+00:00"
     },
     "https://www.artbooms.com/blog/amok-island-street-art-flora-fauna": {
       "url": "https://www.artbooms.com/blog/amok-island-street-art-flora-fauna",
@@ -12512,7 +12509,7 @@
       "_fetched_at": "2026-08-28T05:12:04.766303+00:00"
     }
   },
-  "cursor": 345,
+  "cursor": 366,
   "last_scan": "2026-08-27T14:22:55.883129+00:00",
   "links_hash": "e9f3edfca0792b87519baea4de76592ca6152742f469a0177f81df26133d0249"
 }
