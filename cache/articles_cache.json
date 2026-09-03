@@ -8846,14 +8846,15 @@
     },
     "https://www.artbooms.com/blog/banksy-danny-boyle-the-alternativity-spettacolo": {
       "url": "https://www.artbooms.com/blog/banksy-danny-boyle-the-alternativity-spettacolo",
-      "title": "The Alternativity: la Natività Alternativa di Banksy e Danny Boyle, a Betlemme, in Cisgiordania — ARTBOOMS",
-      "description": "Si tratta di uno spettacolo teatrale sovversivo e apparentemente innocente. 'The Alternativity' ideato dall'artista britannico  Banksy  e diretto dal regista  Danny Boyle  ('Trainspotting', premio Oscar nel 2009 per 'The Millionaire') in collaborazione alla regista palestinese  Riham Isaac ,&nbs",
-      "author": "natasha barbieri",
-      "published": "2017-12-22T10:47:00+01:00",
-      "modified": "2017-12-22T10:47:00+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5a3c645753450a581d85a228/1579133992278/Nuova+immagine.jpg?format=1500w",
-      "_hash": "e5e1ad9e43a4aede07e1829ae73c42256156e5ececb83a57714ed82d76a8ff70",
-      "_fetched_at": "2026-07-13T17:23:19.678815+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-09-03T15:40:01.113820+00:00"
     },
     "https://www.artbooms.com/blog/fotografie-funghi-scienza-ecuador-reserva-los-cedros": {
       "url": "https://www.artbooms.com/blog/fotografie-funghi-scienza-ecuador-reserva-los-cedros",
@@ -12508,7 +12509,7 @@
       "_fetched_at": "2026-08-28T05:12:04.766303+00:00"
     }
   },
-  "cursor": 321,
+  "cursor": 342,
   "last_scan": "2026-08-27T14:22:55.883129+00:00",
   "links_hash": "e9f3edfca0792b87519baea4de76592ca6152742f469a0177f81df26133d0249"
 }
