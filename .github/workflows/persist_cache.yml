@@ -164,6 +164,7 @@ jobs:
           PY
 
       - name: Commit and push cache safely
+        id: persist_cache
         if: steps.normalize.outputs.valid == 'true'
         shell: bash
         run: |
@@ -300,6 +301,7 @@ jobs:
 
             if [ "$PUSH_STATUS" -eq 0 ]; then
               echo "Cache persistita correttamente."
+              echo "updated=true" >> "$GITHUB_OUTPUT"
               exit 0
             fi
 
@@ -328,3 +330,29 @@ jobs:
             echo "Errore Git non transitorio durante il push."
             exit "$PUSH_STATUS"
           done
+
+      - name: Trigger PWA memory update
+        if: steps.persist_cache.outputs.updated == 'true'
+        shell: bash
+        env:
+          PWA_DISPATCH_TOKEN: ${{ secrets.PWA_DISPATCH_TOKEN }}
+        run: |
+          echo "Cache RSS aggiornata: avvio Update PWA Memory."
+
+          curl \
+            --retry 3 \
+            --retry-delay 5 \
+            --retry-all-errors \
+            --connect-timeout 10 \
+            --max-time 30 \
+            --fail-with-body \
+            -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $PWA_DISPATCH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -H "Content-Type: application/json" \
+            https://api.github.com/repos/artbooms/artbooms-pwa-memory/actions/workflows/update-memory.yml/dispatches \
+            -d '{"ref":"main"}'
+
+          echo "Update PWA Memory richiesto correttamente."
