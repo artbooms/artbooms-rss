@@ -9,8 +9,8 @@ USER_AGENT = (
     "Chrome/123.0.0.0 Safari/537.36"
 )
 
-# 🔹 finestra attuale (come il tuo): 29 giorni
-DAYS_WINDOW = 29
+# 🔹 finestra Google News: 2 giorni
+DAYS_WINDOW = 2
 
 SITE_NAME = "ARTBOOMS"
 LANG = "it"
