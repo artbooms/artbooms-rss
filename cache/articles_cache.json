@@ -8879,15 +8879,14 @@
     },
     "https://www.artbooms.com/blog/lorenzo-quinn-a-dangerous-game-miami-art-week-art-basel": {
       "url": "https://www.artbooms.com/blog/lorenzo-quinn-a-dangerous-game-miami-art-week-art-basel",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-09-04T19:01:13.388497+00:00"
+      "title": "Riappare a Miami una manona di Lorenzo Quinn. Questa volta lancia un missile sugli States — ARTBOOMS",
+      "description": "Dopo il successo di ‘ Support ’ posizionata in occasione della  Biennale di Venezia  (in cui due enormi mani si levavano dal Canal Grande per sostenere la città, minacciata dal riscaldamento climatico),  Lorenzo Quinn  è tornato a far parlare le sue mani giganti con la scultura ‘ A Dangerous Game ’",
+      "author": "natasha barbieri",
+      "published": "2017-12-19T10:56:00+01:00",
+      "modified": "2017-12-19T10:56:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5a36f63fe2c4836296b0a28a/1766533816958/lorenzo-quinn-a-dangerous-game-miami-art-week-designboom-1-1.jpg?format=1500w",
+      "_hash": "a589bebb496180ea39245189eb24048074ec81360062bb8ec953c31b1f1e91e7",
+      "_fetched_at": "2026-09-05T08:33:20.287553+00:00"
     },
     "https://www.artbooms.com/blog/elsa-bleda-fotografia-luci-fluorescenti": {
       "url": "https://www.artbooms.com/blog/elsa-bleda-fotografia-luci-fluorescenti",
@@ -12509,7 +12508,7 @@
       "_fetched_at": "2026-08-28T05:12:04.766303+00:00"
     }
   },
-  "cursor": 306,
+  "cursor": 327,
   "last_scan": "2026-08-27T14:22:55.883129+00:00",
   "links_hash": "e9f3edfca0792b87519baea4de76592ca6152742f469a0177f81df26133d0249"
 }
