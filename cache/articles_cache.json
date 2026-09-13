@@ -11662,14 +11662,15 @@
     },
     "https://www.artbooms.com/blog/performance-monte-fuji-droni-sky-magic": {
       "url": "https://www.artbooms.com/blog/performance-monte-fuji-droni-sky-magic",
-      "title": "Sky Magic sono i 20 droni che hanno danzato nel cielo, illuminando il monte Fuji con i loro 16mila e 500 Leds — ARTBOOMS",
-      "description": "Una spettacolare e innovativa performance è stata organizzata ai piedi del monte Fuji. Si potrebbe definire uno spettacolo di luci e danza accompagnato dalla musica tradizionale dello  shamisen . Solo che a ballare erano 20 droni avveniristici.",
-      "author": "natasha barbieri",
-      "published": "2016-05-03T09:37:00+02:00",
-      "modified": "2016-05-03T09:37:00+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/5727fe2eab48de9c1e55e012/1481852828510/sky-magic.jpg?format=1500w",
-      "_hash": "3fb876ee863e737917e18972a516ac1063f984ddddeacad3994267365433e8a7",
-      "_fetched_at": "2026-07-13T20:25:25.959074+00:00"
+      "title": null,
+      "description": null,
+      "author": null,
+      "published": null,
+      "modified": null,
+      "content_text": "",
+      "image": null,
+      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "_fetched_at": "2026-09-13T05:03:16.454413+00:00"
     },
     "https://www.artbooms.com/blog/jet-capsule-ufo-barca-desing": {
       "url": "https://www.artbooms.com/blog/jet-capsule-ufo-barca-desing",
@@ -12508,7 +12509,7 @@
       "_fetched_at": "2026-09-10T07:57:19.611755+00:00"
     }
   },
-  "cursor": 54,
+  "cursor": 75,
   "last_scan": "2026-08-27T14:22:55.883129+00:00",
   "links_hash": "e9f3edfca0792b87519baea4de76592ca6152742f469a0177f81df26133d0249"
 }
