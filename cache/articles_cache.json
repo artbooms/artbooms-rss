@@ -12102,15 +12102,14 @@
     },
     "https://www.artbooms.com/blog/disegno-3d-stefan-pabst": {
       "url": "https://www.artbooms.com/blog/disegno-3d-stefan-pabst",
-      "title": null,
-      "description": null,
-      "author": null,
-      "published": null,
-      "modified": null,
-      "content_text": "",
-      "image": null,
-      "_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "_fetched_at": "2026-09-16T14:40:02.720750+00:00"
+      "title": "GLI INCREDIBILI DISEGNI 3D DI STEFAN PABST — ARTBOOMS",
+      "description": "E’ un mondo incantato, anche se non sempre incantevole, quello del pittore Stefan Pabst. Ci sono serpenti e ragni enormi ma anche coccinelle giganti e leggiadre farfalle. E tutti hanno in comune una cosa: sembrano veri, tridimensionali, ma non lo sono.",
+      "author": "natasha barbieri",
+      "published": "2016-03-16T12:09:00+01:00",
+      "modified": "2016-03-16T12:09:00+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/56e8a11d1d07c0fa63ae242c/1482099335145/maxresdefault.jpg?format=1500w",
+      "_hash": "4ed7eab78c60382db6c6956e5bbd21a7aaf10e761935443f1d925c1331693671",
+      "_fetched_at": "2026-09-17T04:12:10.378884+00:00"
     },
     "https://www.artbooms.com/blog/scandic-to-go-il-primo-hotel-mobile": {
       "url": "https://www.artbooms.com/blog/scandic-to-go-il-primo-hotel-mobile",
@@ -12509,7 +12508,7 @@
       "_fetched_at": "2026-09-10T07:57:19.611755+00:00"
     }
   },
-  "cursor": 24,
+  "cursor": 45,
   "last_scan": "2026-08-27T14:22:55.883129+00:00",
   "links_hash": "e9f3edfca0792b87519baea4de76592ca6152742f469a0177f81df26133d0249"
 }
