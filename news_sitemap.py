@@ -1,4 +1,6 @@
 import datetime
+import json
+import logging
 import requests
 from flask import Response
 
@@ -38,6 +40,23 @@ def _xml_response(xml: str) -> Response:
     return resp
 
 
+def _cache_items(data):
+    if not isinstance(data, dict):
+        raise ValueError("La cache non è un oggetto JSON")
+    raw = data.get("items")
+    items = list(raw.values()) if isinstance(raw, dict) else raw
+    if not isinstance(items, list) or not items:
+        raise ValueError("La cache non contiene articoli")
+    for item in items:
+        if not isinstance(item, dict) or not all(
+            isinstance(item.get(key), str) and item[key].strip()
+            for key in ("url", "title", "published")
+        ):
+            raise ValueError("Articolo incompleto nella cache")
+        datetime.datetime.fromisoformat(item["published"])
+    return items
+
+
 def news_sitemap_view():
     """
     Genera la News Sitemap leggendo la cache JSON su GitHub.
@@ -54,26 +73,24 @@ def news_sitemap_view():
             timeout=15,
         )
         resp.raise_for_status()
-        data = resp.json()
-    except Exception:
-        empty_xml = """<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
-</urlset>"""
-        return _xml_response(empty_xml)
-
-    raw_items = data.get("items", [])
-    if isinstance(raw_items, dict):
-        items = list(raw_items.values())
-    elif isinstance(raw_items, list):
-        items = raw_items
-    else:
-        items = []
+        items = _cache_items(resp.json())
+    except Exception as exc:
+        logging.warning("News sitemap: uso la cache locale; GitHub non disponibile: %s", exc)
+        try:
+            with open("cache/articles_cache.json", "r", encoding="utf-8") as f:
+                items = _cache_items(json.load(f))
+        except Exception as local_exc:
+            logging.error("News sitemap: nessuna cache valida: %s", local_exc)
+            response = Response("Sitemap temporaneamente non disponibile", status=503, mimetype="text/plain")
+            response.headers["Retry-After"] = "300"
+            response.headers["Cache-Control"] = "no-store"
+            return response
 
     now = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
     window = datetime.timedelta(days=DAYS_WINDOW)
 
     recent = []
+    newest = None
     for it in items:
         if not isinstance(it, dict):
             continue
@@ -92,6 +109,9 @@ def news_sitemap_view():
 
         if pub_dt.tzinfo is None:
             pub_dt = pub_dt.replace(tzinfo=datetime.timezone.utc)
+
+        if newest is None or pub_dt > newest[0]:
+            newest = (pub_dt, url)
 
         if now - pub_dt > window:
             continue
@@ -121,10 +141,16 @@ def news_sitemap_view():
         parts.append(f"        <news:name>{_escape_xml(SITE_NAME)}</news:name>")
         parts.append(f"        <news:language>{LANG}</news:language>")
         parts.append("      </news:publication>")
-        parts.append(f"      <news:keywords>{_escape_xml(KEYWORDS)}</news:keywords>")
         parts.append(f"      <news:publication_date>{pub_iso}</news:publication_date>")
         parts.append(f"      <news:title>{title}</news:title>")
+        parts.append(f"      <news:keywords>{_escape_xml(KEYWORDS)}</news:keywords>")
         parts.append("    </news:news>")
+        parts.append("  </url>")
+
+    # Fuori dalle 48 ore resta un URL standard, senza metadati Google News.
+    if not recent and newest is not None:
+        parts.append("  <url>")
+        parts.append(f"    <loc>{_escape_xml(newest[1])}</loc>")
         parts.append("  </url>")
 
     parts.append("</urlset>")

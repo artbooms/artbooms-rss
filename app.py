@@ -4,6 +4,9 @@ import threading
 import time
 import logging
 import requests
+import tempfile
+import xml.etree.ElementTree as ET
+from datetime import datetime
 from flask import Flask, Response, jsonify, send_file
 from article_processor import generate_items
 from rss_generator import build_rss
@@ -37,26 +40,73 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 # ============================================================
 # Cache persistente
 # ============================================================
+def _cache_entries(data):
+    if not isinstance(data, dict):
+        raise ValueError("La cache non è un oggetto JSON")
+    raw = data.get("items")
+    items = list(raw.values()) if isinstance(raw, dict) else raw
+    if not isinstance(items, list) or not items:
+        raise ValueError("La cache non contiene articoli")
+    entries = {}
+    for item in items:
+        if not isinstance(item, dict) or not all(
+            isinstance(item.get(key), str) and item[key].strip()
+            for key in ("url", "title", "published")
+        ):
+            raise ValueError("Articolo incompleto nella cache")
+        datetime.fromisoformat(item["published"])
+        entries[item["url"]] = item
+    return entries
+
+
+def _atomic_write(path, content):
+    folder = os.path.dirname(os.path.abspath(path))
+    fd, temporary = tempfile.mkstemp(prefix=".artbooms-", dir=folder)
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(content)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.remove(temporary)
+
+
+def _validate_rss(content):
+    root = ET.fromstring(content)
+    if root.tag != "rss" or not root.findall("./channel/item"):
+        raise ValueError("RSS non valido o privo di articoli")
+
+
 def bootstrap_cache():
     os.makedirs("cache", exist_ok=True)
-    if os.path.exists(CACHE_PATH) and os.path.getsize(CACHE_PATH) > 10:
-        logging.info("Cache locale trovata, salto bootstrap.")
-        return
+    local_entries = {}
     try:
-        logging.info("Scarico cache persistente da GitHub...")
+        with open(CACHE_PATH, "rb") as f:
+            local_entries = _cache_entries(json.load(f))
+    except Exception as exc:
+        logging.warning("Cache locale non disponibile o non valida: %s", exc)
+
+    try:
         r = requests.get(RAW_CACHE_URL, headers={"User-Agent": USER_AGENT}, timeout=15)
-        if r.ok and r.text.strip() not in ("", "{}", "null"):
-            with open(CACHE_PATH, "w", encoding="utf-8") as f:
-                f.write(r.text)
-            logging.info("Cache scaricata da GitHub (%s bytes).", len(r.text))
-        else:
-            with open(CACHE_PATH, "w", encoding="utf-8") as f:
-                json.dump({"items": {}}, f)
-    except Exception as e:
-        logging.error("Errore bootstrap cache: %s", e)
-        if not os.path.exists(CACHE_PATH):
-            with open(CACHE_PATH, "w", encoding="utf-8") as f:
-                json.dump({"items": {}}, f)
+        r.raise_for_status()
+        remote_entries = _cache_entries(json.loads(r.content))
+        missing = set(local_entries) - set(remote_entries)
+        if missing:
+            raise ValueError("La cache remota perderebbe %d URL" % len(missing))
+        for url, old in local_entries.items():
+            before = old.get("_fetched_at")
+            after = remote_entries[url].get("_fetched_at")
+            if before and (not after or datetime.fromisoformat(after) < datetime.fromisoformat(before)):
+                raise ValueError("La cache remota è meno recente della copia locale")
+        _atomic_write(CACHE_PATH, r.content)
+        logging.info("Cache di avvio verificata: %d articoli", len(remote_entries))
+    except Exception as exc:
+        if local_entries:
+            logging.warning("Mantengo la cache locale valida (%d articoli): %s", len(local_entries), exc)
+            return
+        raise RuntimeError("Avvio interrotto: nessuna cache valida disponibile") from exc
 
 # ============================================================
 # Feed RSS e ping automatico
@@ -129,8 +179,8 @@ def rebuild_feed():
             rss_xml = rss_xml[0]
         if isinstance(rss_xml, str):
             rss_xml = rss_xml.encode("utf-8")
-        with open("feed.xml", "wb") as f:
-            f.write(rss_xml)
+        _validate_rss(rss_xml)
+        _atomic_write("feed.xml", rss_xml)
         logging.info("✅ Feed ricostruito da cache: %s articoli", len(items_sorted))
 
         # 🔔 PING AUTOMATICO DOPO COSTRUZIONE
@@ -242,6 +292,8 @@ def wake():
 # ============================================================
 bootstrap_cache()
 rebuild_feed()
+with open("feed.xml", "rb") as _initial_feed:
+    _validate_rss(_initial_feed.read())
 
 if not any(t.name == "BackgroundPopulator" for t in threading.enumerate()):
     t = threading.Thread(target=background_populator, daemon=True, name="BackgroundPopulator")
