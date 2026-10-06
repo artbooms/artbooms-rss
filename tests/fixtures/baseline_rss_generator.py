@@ -4,8 +4,6 @@ from email.utils import format_datetime
 from xml.sax.saxutils import escape
 from html import unescape
 import re
-from cache_safety import valid_article, parsed_time, xml_text, with_editorial_author
-from editorial_taxonomy import categories_for
 
 logger = logging.getLogger("rss_generator")
 
@@ -21,20 +19,18 @@ def build_rss(items: list, meta: dict):
         n = 0
 
     try:
-        items = [with_editorial_author(it) for it in items]
-        items = [it for it in items if valid_article(it)]
-        items = sorted(items, key=lambda x: x["url"])
-        items = sorted(items, key=lambda x: parsed_time(x["published"]), reverse=True)
+        items = [it for it in items if it.get("published")]
+        items = sorted(items, key=lambda x: x["published"], reverse=True)
         logger.info("📊 DEBUG RSS: ordinati %d articoli per data di pubblicazione (solo 'published').", len(items))
         if items:
             logger.info("🕒 Ultimo pubblicato: %s", items[0].get("title"))
     except Exception as e:
         logger.exception("Errore ordinamento articoli: %s", e)
 
-    feed_title = escape(xml_text(meta.get("title", "ARTBOOMS – Archivio completo")))
-    feed_description = escape(xml_text(meta.get("description", "Tutti gli articoli di Artbooms")))
-    feed_language = escape(xml_text(meta.get("language", "it-IT")))
-    build_time = meta.get("build_time") or datetime.now(timezone.utc)
+    feed_title = escape(meta.get("title", "ARTBOOMS – Archivio completo"))
+    feed_description = escape(meta.get("description", "Tutti gli articoli di Artbooms"))
+    feed_language = meta.get("language", "it-IT")
+    build_time = datetime.utcnow().replace(tzinfo=timezone.utc)
     build_time_rfc = format_datetime(build_time)
 
     rss_items = []
@@ -47,33 +43,31 @@ def build_rss(items: list, meta: dict):
             logger.warning("Articolo senza titolo e descrizione: %s", it.get("url"))
             continue
 
-        raw_title = xml_text(it.get("title")).strip()
+        raw_title = (it.get("title") or "").strip()
         if not raw_title:
             raw_title = "(senza titolo)"
-        title = escape(xml_text(unescape(raw_title)))
+        title = escape(unescape(raw_title))
 
         raw_url = (it.get("url") or "").strip()
         guid = escape(raw_url)
         link = escape(raw_url)
 
-        raw_desc = xml_text(it.get("description"))
+        raw_desc = (it.get("description") or "")
         if "&" in raw_desc:
             raw_desc = re.sub(r"&[^;]{0,10}$", "", raw_desc)
             raw_desc = re.sub(r"&(?![A-Za-z0-9#]+;)", "&amp;", raw_desc)
             raw_desc = re.sub(r"&(?=[\s.,;:!?])", "&amp;", raw_desc)
             raw_desc = re.sub(r"&amp;([A-Z][a-z]+)", r"&amp; \1", raw_desc)
 
-        desc = "<![CDATA[" + raw_desc.strip().replace("]]>", "]]]]><![CDATA[>") + "]]>"
+        desc = f"<![CDATA[{raw_desc.strip()}]]>"
 
-        author = escape(xml_text(it.get("author")))
-        image = xml_text(it.get("image"))
+        author = escape(it.get("author") or "")
+        image = it.get("image")
         pub_iso = it.get("published")
 
         try:
             if pub_iso:
                 dt = datetime.fromisoformat(pub_iso.replace("Z", "+00:00"))
-                if dt.tzinfo is None:
-                    dt = dt.replace(tzinfo=timezone.utc)
                 pub_rfc = format_datetime(dt)
             else:
                 pub_rfc = build_time_rfc
@@ -91,11 +85,9 @@ def build_rss(items: list, meta: dict):
         ]
 
         if image:
-            safe_img = escape(image, {chr(34): "&quot;"})
+            safe_img = escape(image)
             item_xml.append(f'<enclosure url="{safe_img}" type="image/jpeg" length="0" />')
 
-        for category in categories_for(it):
-            item_xml.append(f"<category>{escape(xml_text(category))}</category>")
         item_xml.append("</item>")
         rss_items.append("\n".join(item_xml))
 

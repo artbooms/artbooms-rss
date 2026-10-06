@@ -1,1 +1,10 @@
 articles_cache.json
+# Generated local files (tracked cache/articles_cache.json stays tracked).
+feed.xml
+*.lock
+*.wake
+.artbooms-*
+__pycache__/
+*.py[cod]
+.venv/
+venv/
