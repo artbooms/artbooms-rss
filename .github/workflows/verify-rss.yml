@@ -1,0 +1,37 @@
+name: Verify RSS on Linux
+on:
+  push:
+    branches:
+      - codex/verifica-rss-2026-10-06
+permissions:
+  contents: read
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-26.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install project and test dependencies
+        run: python -m pip install -r requirements.txt -r requirements-test.txt
+      - name: Run offline regression and integration tests
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m unittest discover -s tests -p 'test_*.py' -v 2>&1 | tee linux-test-results.txt
+      - name: Record installed versions
+        if: always()
+        run: python -m pip freeze > linux-python-versions.txt
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: rss-verifica-${{ matrix.os }}
+          path: |
+            linux-test-results.txt
+            linux-python-versions.txt

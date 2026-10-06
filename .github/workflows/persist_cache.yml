@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   persist:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout main
@@ -54,118 +54,9 @@ jobs:
             echo "::warning::Cache Render temporaneamente non disponibile. Nessuna modifica; il prossimo cron riproverà."
           fi
 
-      - name: Normalize and validate candidate
-        id: normalize
-        if: steps.download.outputs.ready == 'true'
-        shell: bash
-        run: |
-          python - <<'PY'
-          import json
-          import os
-          import tempfile
-
-          source = os.path.join(os.environ["RUNNER_TEMP"], "articles_cache.json")
-          output = os.environ["GITHUB_OUTPUT"]
-          valid = False
-
-          try:
-              with open(source, "r", encoding="utf-8") as f:
-                  data = json.load(f)
-
-              if isinstance(data, list):
-                  data = {
-                      "items": data,
-                      "cursor": 0,
-                      "last_scan": None,
-                      "links_hash": None,
-                  }
-
-              if not isinstance(data, dict):
-                  raise ValueError("la radice JSON non è un oggetto")
-
-              items = data.get("items")
-
-              if isinstance(items, list):
-                  converted = {}
-
-                  for item in items:
-                      if isinstance(item, dict) and item.get("url"):
-                          converted[item["url"]] = item
-
-                  data["items"] = converted
-                  items = converted
-
-              if not isinstance(items, dict) or not items:
-                  raise ValueError("items non è un dizionario non vuoto")
-
-              raw = json.dumps(
-                  data,
-                  ensure_ascii=False,
-                  indent=2
-              ) + "\n"
-
-              if any(
-                  marker in raw
-                  for marker in (
-                      "<<<<<<<",
-                      "=======",
-                      ">>>>>>>"
-                  )
-              ):
-                  raise ValueError(
-                      "sono presenti marcatori di conflitto Git"
-                  )
-
-              fd, temp_path = tempfile.mkstemp(
-                  dir=os.environ["RUNNER_TEMP"],
-                  prefix="articles_cache_",
-                  suffix=".json",
-              )
-
-              try:
-                  with os.fdopen(
-                      fd,
-                      "w",
-                      encoding="utf-8"
-                  ) as f:
-                      f.write(raw)
-
-                  os.replace(
-                      temp_path,
-                      source
-                  )
-
-              finally:
-                  if os.path.exists(temp_path):
-                      os.remove(temp_path)
-
-              print(
-                  f"Cache candidata valida: "
-                  f"{len(items)} articoli"
-              )
-
-              valid = True
-
-          except Exception as exc:
-              print(
-                  f"::warning::Cache candidata non valida: "
-                  f"{exc}. Nessuna modifica; "
-                  "il prossimo cron riproverà."
-              )
-
-          with open(
-              output,
-              "a",
-              encoding="utf-8"
-          ) as f:
-              f.write(
-                  f"valid={'true' if valid else 'false'}\n"
-              )
-          PY
-
       - name: Commit and push cache safely
         id: persist_cache
-        if: steps.normalize.outputs.valid == 'true'
+        if: steps.download.outputs.ready == 'true'
         shell: bash
         run: |
           CANDIDATE="$RUNNER_TEMP/articles_cache.json"
@@ -184,90 +75,10 @@ jobs:
             exit 0
           fi
 
-          # Protezione contro un nuovo collasso della cache:
-          # la candidata non può perdere URL già persistiti.
-          if [ -f cache/articles_cache.json ]; then
-
-            if ! OLD_CACHE="cache/articles_cache.json" \
-                 NEW_CACHE="$CANDIDATE" \
-                 python - <<'PY'
-          import json
-          import os
-          import sys
-
-          def urls(path):
-              with open(
-                  path,
-                  "r",
-                  encoding="utf-8"
-              ) as f:
-                  data = json.load(f)
-
-              items = (
-                  data.get("items", {})
-                  if isinstance(data, dict)
-                  else {}
-              )
-
-              if isinstance(items, dict):
-                  result = set()
-
-                  for key, value in items.items():
-                      if (
-                          isinstance(value, dict)
-                          and value.get("url")
-                      ):
-                          result.add(value["url"])
-                      elif key:
-                          result.add(key)
-
-                  return result
-
-              if isinstance(items, list):
-                  return {
-                      item["url"]
-                      for item in items
-                      if (
-                          isinstance(item, dict)
-                          and item.get("url")
-                      )
-                  }
-
-              return set()
-
-          old_urls = urls(
-              os.environ["OLD_CACHE"]
-          )
-
-          new_urls = urls(
-              os.environ["NEW_CACHE"]
-          )
-
-          missing = old_urls - new_urls
-
-          if missing:
-              print(
-                  f"::warning::La cache candidata "
-                  f"perderebbe {len(missing)} URL "
-                  "già presenti. Commit saltato."
-              )
-
-              sys.exit(1)
-
-          print(
-              f"Protezione URL OK: "
-              f"{len(old_urls)} precedenti, "
-              f"{len(new_urls)} candidati."
-          )
-          PY
-            then
-              exit 0
-            fi
-          fi
-
-          mkdir -p cache
-
-          cp \
+          # Merge against the just-fetched main, retaining valid records and metadata.
+          # Any merge failure stops this job BEFORE staging, committing or pushing.
+          python .github/scripts/merge_cache.py \
+            cache/articles_cache.json \
             "$CANDIDATE" \
             cache/articles_cache.json
 

@@ -1,10 +1,16 @@
 import datetime
+import os
+import re
+from html import unescape
+from cache_safety import cache_entries, xml_text
 import json
 import logging
 import requests
 from flask import Response
 
-NEWS_CACHE_URL = "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json"
+NEWS_CACHE_URL = os.environ.get("RAW_CACHE_URL", "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json")
+LOCAL_CACHE_PATH = os.environ.get("CACHE_PATH", "cache/articles_cache.json")
+LOCAL_FIRST = True  # Cache locale aggiornata; GitHub resta il recupero.
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -20,8 +26,7 @@ KEYWORDS = "arte contemporanea, arte e cultura"
 
 
 def _escape_xml(s: str) -> str:
-    if not isinstance(s, str):
-        s = str(s)
+    s = xml_text(s)
     return (
         s.replace("&", "&amp;")
          .replace("<", "&lt;")
@@ -41,50 +46,45 @@ def _xml_response(xml: str) -> Response:
 
 
 def _cache_items(data):
-    if not isinstance(data, dict):
-        raise ValueError("La cache non è un oggetto JSON")
-    raw = data.get("items")
-    items = list(raw.values()) if isinstance(raw, dict) else raw
-    if not isinstance(items, list) or not items:
-        raise ValueError("La cache non contiene articoli")
-    for item in items:
-        if not isinstance(item, dict) or not all(
-            isinstance(item.get(key), str) and item[key].strip()
-            for key in ("url", "title", "published")
-        ):
-            raise ValueError("Articolo incompleto nella cache")
-        datetime.datetime.fromisoformat(item["published"])
-    return items
+    entries = cache_entries(data)
+    if len(entries) != len(data.get("items", {})):
+        logging.warning("News sitemap: escluse singole voci inutilizzabili")
+    return list(entries.values())
+
+
+def _load_local_items():
+    with open(LOCAL_CACHE_PATH, encoding="utf-8") as handle:
+        return _cache_items(json.load(handle))
+
+
+def _load_remote_items():
+    response = requests.get(NEWS_CACHE_URL, headers={"User-Agent": USER_AGENT}, timeout=15)
+    response.raise_for_status()
+    return _cache_items(response.json())
 
 
 def news_sitemap_view():
     """
-    Genera la News Sitemap leggendo la cache JSON su GitHub.
+    Genera la News Sitemap dalla cache locale, con recupero da GitHub.
 
     - Usa solo i campi: url, title, published
     - Finestra temporale: ultimi DAYS_WINDOW giorni
     - news:keywords = "arte contemporanea, arte e cultura"
     - news:title = "<titolo>"
     """
-    try:
-        resp = requests.get(
-            NEWS_CACHE_URL,
-            headers={"User-Agent": USER_AGENT},
-            timeout=15,
-        )
-        resp.raise_for_status()
-        items = _cache_items(resp.json())
-    except Exception as exc:
-        logging.warning("News sitemap: uso la cache locale; GitHub non disponibile: %s", exc)
+    loaders = (_load_local_items, _load_remote_items) if LOCAL_FIRST else (_load_remote_items, _load_local_items)
+    items = None
+    for load in loaders:
         try:
-            with open("cache/articles_cache.json", "r", encoding="utf-8") as f:
-                items = _cache_items(json.load(f))
-        except Exception as local_exc:
-            logging.error("News sitemap: nessuna cache valida: %s", local_exc)
-            response = Response("Sitemap temporaneamente non disponibile", status=503, mimetype="text/plain")
-            response.headers["Retry-After"] = "300"
-            response.headers["Cache-Control"] = "no-store"
-            return response
+            items = load()
+            break
+        except Exception as exc:
+            logging.warning("News sitemap, sorgente %s non disponibile: %s", getattr(load, "__name__", "cache"), exc)
+    if items is None:
+        response = Response("Sitemap temporaneamente non disponibile", status=503, mimetype="text/plain")
+        response.headers["Retry-After"] = "300"
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
     now = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
     window = datetime.timedelta(days=DAYS_WINDOW)
@@ -103,25 +103,31 @@ def news_sitemap_view():
             continue
 
         try:
-            pub_dt = datetime.datetime.fromisoformat(pub_str)
+            pub_dt = datetime.datetime.fromisoformat(pub_str.replace("Z", "+00:00"))
         except ValueError:
             continue
 
         if pub_dt.tzinfo is None:
             pub_dt = pub_dt.replace(tzinfo=datetime.timezone.utc)
 
+        if pub_dt > now:
+            continue
+
         if newest is None or pub_dt > newest[0]:
             newest = (pub_dt, url)
 
-        if now - pub_dt > window:
+        if now - pub_dt >= window:
             continue
 
+        it = dict(it)
         it["_pub_dt"] = pub_dt
         it["_url"] = url
         it["_title"] = title
         recent.append(it)
 
+    recent.sort(key=lambda a: a["_url"])
     recent.sort(key=lambda a: a["_pub_dt"], reverse=True)
+    recent = recent[:1000]
 
     parts = [
         '<?xml version="1.0" encoding="UTF-8"?>',
@@ -131,7 +137,7 @@ def news_sitemap_view():
 
     for it in recent:
         loc = _escape_xml(it["_url"])
-        title = _escape_xml(it["_title"])
+        title = _escape_xml(re.sub(r"\s+[—–-]\s+ARTBOOMS\s*$", "", unescape(it["_title"]), flags=re.I))
         pub_iso = it["_pub_dt"].replace(microsecond=0).isoformat()
 
         parts.append("  <url>")
