@@ -318,9 +318,21 @@ class AppTests(unittest.TestCase):
 
     def test_cycle_retries_new_article(self):
         new=candidate(url=VALID['url']+'-new')
-        with patch.object(processor,'_scan_archive',return_value=[VALID['url'],new['url']]),patch.object(processor.time,'sleep'),patch.object(processor,'parse_article',side_effect=[dict(new,title=None),new]):
+        attempts=iter([dict(new,title=None),new])
+        def parsed(url, session=None):
+            if url==new['url']:
+                return next(attempts)
+            self.assertEqual(url,VALID['url'])
+            return copy.deepcopy(VALID)
+        first=self.client.get('/rss')
+        with patch.object(processor,'_scan_archive',return_value=[VALID['url'],new['url']]),patch.object(processor.time,'sleep'),patch.object(processor,'parse_article',side_effect=parsed):
             processor.generate_items();self.assertNotIn(new['url'],json.loads(self.cache.read_text())['items'])
+            self.assertEqual(self.client.get('/rss').data,first.data)
             processor.generate_items();self.assertIn(new['url'],json.loads(self.cache.read_text())['items'])
+        response=self.client.get('/rss')
+        self.assertNotEqual(response.headers['ETag'],first.headers['ETag'])
+        self.assertEqual({node.findtext('link') for node in ET.fromstring(response.data).findall('./channel/item')},
+                         {VALID['url'],new['url']})
 
 
 class SitemapTests(unittest.TestCase):
