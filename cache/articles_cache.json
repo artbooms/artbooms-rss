@@ -4239,11 +4239,11 @@
       "url": "https://www.artbooms.com/blog/mimmo-rotella-e-il-cinema",
       "title": "Contributi: Mimmo Rotella e il Cinema — ARTBOOMS",
       "description": "Il Cinema ha influenzato moltissimi artisti in tutto il mondo. Tuttavia l’artista contemporaneo di origine calabrese Mimmo Rotella è stato uno dei pochi a trovare nella Settima Arte la sua vera musa ispiratrice.",
-      "author": "Elton Alickaj",
+      "author": "Martina e Mattia Stripartgallery",
       "published": "2021-02-18T10:24:00+01:00",
       "modified": "2021-02-18T10:24:00+01:00",
       "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/602da5c016cabf35771b8620/1764555440726/107.jpg?format=1500w",
-      "_hash": "74b7d72b9b1293a5ce8a6131e5752015ac0df11db8431e2eedbc1dffc6e40c6c",
+      "_hash": "ff025fc23d09c5ff809f97fd53e43573a1cbd51920eb4d0cfe2979b517b33788",
       "_fetched_at": "2026-07-13T12:21:13.945029+00:00"
     },
     "https://www.artbooms.com/blog/stan-douglas-new-york-penn-station": {
@@ -12519,7 +12519,7 @@
       "_fetched_at": "2026-09-28T09:03:44.539356+00:00"
     }
   },
-  "cursor": 156,
-  "last_scan": "2026-09-28T09:03:44.445449+00:00",
+  "cursor": 165,
+  "last_scan": "2026-10-06T22:48:36.905199+00:00",
   "links_hash": "21844763fdcdc55a94817fa5260eac6ffef3690f7cbceb59a081de84e4d70df2"
 }
