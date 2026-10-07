@@ -13,7 +13,11 @@ permissions:
   contents: read
 jobs:
   probe:
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-26.04]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
@@ -27,18 +31,28 @@ jobs:
           python-version: '3.12'
       - name: Install existing project and test requirements
         run: python -m pip install -r requirements.txt -r requirements-test.txt
-      - name: Run only probe tests and production non-regression checks
+      - name: Run all 22 probe tests and production non-regression checks
         shell: bash
         run: |
           set -o pipefail
           python -B -m unittest discover -s tests -p 'test_feedly_probe*.py' -v 2>&1 | tee feedly-probe-results.txt
+      - name: Run entire existing regression suite including native Linux Gunicorn tests
+        shell: bash
+        run: |
+          set -o pipefail
+          python -B -m unittest discover -s tests -p 'test_*.py' -v 2>&1 | tee full-regression-results.txt
+          if grep -E 'skipped=|\.\.\. skipped' full-regression-results.txt; then
+            echo "Unexpected skipped test on Linux" >&2
+            exit 1
+          fi
       - name: Record installed versions
         if: always()
         run: python -m pip freeze > feedly-probe-versions.txt
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: feedly-probe-linux
+          name: feedly-probe-linux-${{ matrix.os }}
           path: |
             feedly-probe-results.txt
             feedly-probe-versions.txt
+            full-regression-results.txt
