@@ -33,8 +33,8 @@ class FeedlyProbeGunicornTests(unittest.TestCase):
         cls.servers = []
         baseline = subprocess.check_output(["git", "show", BASELINE + ":app.py"], cwd=ROOT)
         source_cache = json.loads((ROOT / "cache/articles_cache.json").read_text(encoding="utf-8"))
-        items = list(source_cache["items"].items())[:2]
-        fixture = dict(source_cache, items=dict(items))
+        # Compare production responses using the complete pinned cache snapshot.
+        fixture = source_cache
         for name, original in (("baseline", baseline), ("probe", None)):
             work = Path(cls.temp.name) / name
             work.mkdir()
