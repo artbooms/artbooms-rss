@@ -18,6 +18,7 @@ from editorial_taxonomy import categories_for
 from news_sitemap import news_sitemap_view
 from rss_generator import build_rss
 from feedly_probe import feedly_probe_view
+from feedly_discovery import feedly_discovery_view
 
 RAW_CACHE_URL = os.environ.get("RAW_CACHE_URL", "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json")
 USER_AGENT = "ArtboomsRSS/1.0 (+https://www.artbooms.com)"
@@ -30,6 +31,8 @@ WAKE_PATH = CACHE_PATH + ".wake"
 
 app = Flask(__name__)
 app.add_url_rule("/feedly-probe.xml", view_func=feedly_probe_view,
+                 methods=["GET", "HEAD"], provide_automatic_options=False)
+app.add_url_rule("/feedly-discovery-test", view_func=feedly_discovery_view,
                  methods=["GET", "HEAD"], provide_automatic_options=False)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("artbooms")
