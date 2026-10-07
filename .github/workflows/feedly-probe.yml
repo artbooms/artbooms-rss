@@ -1,0 +1,44 @@
+name: Feedly probe diagnostic tests
+on:
+  push:
+    branches:
+      - codex/feedly-probe-2026-10-07
+    paths:
+      - app.py
+      - feedly_probe.py
+      - tests/test_feedly_probe.py
+      - tests/test_feedly_probe_linux.py
+      - .github/workflows/feedly-probe.yml
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Fetch pinned baseline for exact production comparisons
+        run: git fetch --no-tags --depth=1 origin a173ec0dbd5838278c6c002b848430d859ac56c6
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install existing project and test requirements
+        run: python -m pip install -r requirements.txt -r requirements-test.txt
+      - name: Run only probe tests and production non-regression checks
+        shell: bash
+        run: |
+          set -o pipefail
+          python -B -m unittest discover -s tests -p 'test_feedly_probe*.py' -v 2>&1 | tee feedly-probe-results.txt
+      - name: Record installed versions
+        if: always()
+        run: python -m pip freeze > feedly-probe-versions.txt
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: feedly-probe-linux
+          path: |
+            feedly-probe-results.txt
+            feedly-probe-versions.txt
