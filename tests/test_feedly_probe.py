@@ -297,8 +297,10 @@ class ProductionBaselineTests(unittest.TestCase):
             return {(rule.rule, rule.endpoint): frozenset(rule.methods) for rule in bundle.module.app.url_map.iter_rules()}
         before, after = rules(self.baseline), rules(self.revised)
         self.assertNotIn((PROBE_PATH, "feedly_probe_view"), before)
-        self.assertEqual(set(after) - set(before), {(PROBE_PATH, "feedly_probe_view")})
+        self.assertEqual(set(after) - set(before), {(PROBE_PATH, "feedly_probe_view"),
+                                                   ("/feedly-discovery-test", "feedly_discovery_view")})
         self.assertEqual(after[(PROBE_PATH, "feedly_probe_view")], frozenset({"GET", "HEAD"}))
+        self.assertEqual(after[("/feedly-discovery-test", "feedly_discovery_view")], frozenset({"GET", "HEAD"}))
         self.assertEqual(before, {key: value for key, value in after.items() if key in before})
 
     def test_rss_alias_get_head_and_conditional_bytes_headers_status_match_baseline(self):
