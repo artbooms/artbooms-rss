@@ -172,7 +172,7 @@ class ProbeContractTests(unittest.TestCase):
                 response = self.call(host=host)
                 self.assertEqual(response.status_code, 400)
                 self.assertEqual(response.headers["Cache-Control"], "no-store")
-                self.assertEqual(response.headers["X-Robots-Tag"], "noindex, nofollow")
+                self.assertNotIn("X-Robots-Tag", response.headers)
                 self.assertNotIn(b"<rss", response.data)
 
     def test_head_has_no_body_and_same_headers_as_get(self):
@@ -185,11 +185,11 @@ class ProbeContractTests(unittest.TestCase):
                 self.assertEqual(dict(head.headers), dict(get.headers))
                 self.assertEqual(int(head.headers["Content-Length"]), len(get.data))
 
-    def test_no_store_noindex_and_no_conditional_304(self):
+    def test_no_store_no_robots_header_and_no_conditional_304(self):
         for host in HOSTS:
             first = self.call(host=host)
             self.assertEqual(first.headers["Cache-Control"], "no-store")
-            self.assertEqual(first.headers["X-Robots-Tag"], "noindex, nofollow")
+            self.assertNotIn("X-Robots-Tag", first.headers)
             for field in ("ETag", "Last-Modified", "Set-Cookie", "Location"):
                 self.assertNotIn(field, first.headers)
             for method in ("GET", "HEAD"):
@@ -229,7 +229,7 @@ class ProbeContractTests(unittest.TestCase):
     def test_structured_logs_cover_get_head_and_rejected_host_without_secrets(self):
         expected_keys = {"utc", "method", "host", "path", "user_agent", "accept", "accept_encoding",
                          "x_forwarded_for", "x_forwarded_proto", "remote_addr", "status"}
-        headers = {"User-Agent": "Feedly/1.0 (+https://feedly.com/fetcher.html)",
+        headers = {"User-Agent": "ARTBOOMS-Probe-Test/1.0",
                    "Accept": "application/rss+xml, application/xml;q=0.9", "Accept-Encoding": "gzip, br",
                    "X-Forwarded-For": "198.51.100.7, 203.0.113.8", "X-Forwarded-Proto": "https",
                    "Cookie": "private_session=cookie-secret", "Authorization": "Bearer auth-secret"}
