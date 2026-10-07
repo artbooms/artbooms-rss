@@ -1,0 +1,58 @@
+name: Feed discovery diagnostic tests
+on:
+  push:
+    branches:
+      - codex/feedly-discovery-2026-10-08
+permissions:
+  contents: read
+jobs:
+  discovery:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-26.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Fetch both pinned production baselines
+        run: |
+          git fetch --no-tags --depth=1 origin a173ec0dbd5838278c6c002b848430d859ac56c6
+          git fetch --no-tags --depth=1 origin abbd6acadd18a41f20808a721044fe07d6206a25
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install unchanged project and test requirements
+        run: python -m pip install -r requirements.txt -r requirements-test.txt
+      - name: Run specific discovery tests including native Gunicorn
+        shell: bash
+        run: |
+          set -o pipefail
+          python -B -m unittest discover -s tests -p 'test_feedly_discovery*.py' -v 2>&1 | tee discovery-test-results.txt
+          if grep -E 'skipped=|\.\.\. skipped' discovery-test-results.txt; then
+            echo "Unexpected skipped test on Linux" >&2
+            exit 1
+          fi
+      - name: Run complete existing suite and all Linux tests
+        shell: bash
+        run: |
+          set -o pipefail
+          python -B -m unittest discover -s tests -p 'test_*.py' -v 2>&1 | tee full-regression-results.txt
+          if grep -E 'skipped=|\.\.\. skipped' full-regression-results.txt; then
+            echo "Unexpected skipped test on Linux" >&2
+            exit 1
+          fi
+      - name: Record versions
+        if: always()
+        run: python -m pip freeze > discovery-test-versions.txt
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: discovery-tests-${{ matrix.os }}
+          path: |
+            discovery-test-results.txt
+            full-regression-results.txt
+            discovery-test-versions.txt
