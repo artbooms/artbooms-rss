@@ -108,7 +108,7 @@ class FeedlyProbeGunicornTests(unittest.TestCase):
         cls.url, cls.work, _ = cls.servers[1]
 
     def call(self, method, path=PATH, host=HOSTS[0], extra=None, base=None):
-        headers = {"Host": host, "User-Agent": "Feedly-Probe-Test/1.0"}
+        headers = {"Host": host, "User-Agent": "ARTBOOMS-Probe-Test/1.0"}
         headers.update(extra or {})
         return requests.request(method, (base or self.url) + path, headers=headers,
                                 timeout=5, allow_redirects=False)
@@ -125,7 +125,7 @@ class FeedlyProbeGunicornTests(unittest.TestCase):
                 for r in (get, head):
                     self.assertEqual(r.headers["Content-Type"], "application/rss+xml; charset=utf-8")
                     self.assertEqual(r.headers["Cache-Control"], "no-store")
-                    self.assertEqual(r.headers["X-Robots-Tag"], "noindex, nofollow")
+                    self.assertNotIn("X-Robots-Tag", r.headers)
                     self.assertNotIn("Location", r.headers)
                     self.assertNotIn("ETag", r.headers)
                     self.assertNotIn("Last-Modified", r.headers)
@@ -158,7 +158,7 @@ class FeedlyProbeGunicornTests(unittest.TestCase):
                     r = self.call(method, host=host, extra={"X-Forwarded-Host": HOSTS[0]})
                     self.assertEqual(r.status_code, 400)
                     self.assertEqual(r.headers["Cache-Control"], "no-store")
-                    self.assertEqual(r.headers["X-Robots-Tag"], "noindex, nofollow")
+                    self.assertNotIn("X-Robots-Tag", r.headers)
                     self.assertNotIn("Location", r.headers)
                     if method == "HEAD":
                         self.assertEqual(r.content, b"")
@@ -176,7 +176,7 @@ class FeedlyProbeGunicornTests(unittest.TestCase):
         self.assertEqual(self.call("OPTIONS").status_code, 405)
 
     def test_dedicated_logging_records_requested_fields_and_no_secrets(self):
-        marker = "Feedly-Probe-Log-Test"
+        marker = "ARTBOOMS-Probe-Test-Log"
         extra = {
             "User-Agent": marker,
             "Accept": "application/rss+xml",
