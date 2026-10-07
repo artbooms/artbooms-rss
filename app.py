@@ -17,6 +17,7 @@ from cache_safety import with_editorial_authors
 from editorial_taxonomy import categories_for
 from news_sitemap import news_sitemap_view
 from rss_generator import build_rss
+from feedly_probe import feedly_probe_view
 
 RAW_CACHE_URL = os.environ.get("RAW_CACHE_URL", "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json")
 USER_AGENT = "ArtboomsRSS/1.0 (+https://www.artbooms.com)"
@@ -28,6 +29,8 @@ LEADER_PATH = CACHE_PATH + ".populator.lock"
 WAKE_PATH = CACHE_PATH + ".wake"
 
 app = Flask(__name__)
+app.add_url_rule("/feedly-probe.xml", view_func=feedly_probe_view,
+                 methods=["GET", "HEAD"], provide_automatic_options=False)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("artbooms")
 _snapshot = None  # (file token, validated bytes, ETag)
