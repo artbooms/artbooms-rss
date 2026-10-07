@@ -67,5 +67,4 @@ def feedly_probe_view():
         response = Response(PROBE_XML.format(host=host).encode("utf-8"),
                             content_type="application/rss+xml; charset=utf-8")
     response.headers["Cache-Control"] = "no-store"
-    response.headers["X-Robots-Tag"] = "noindex, nofollow"
     return response
