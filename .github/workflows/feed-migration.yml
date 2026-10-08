@@ -1,0 +1,56 @@
+name: RSS hostname migration tests
+on:
+  push:
+    branches:
+      - codex/feed-migration-2026-10-08
+permissions:
+  contents: read
+jobs:
+  migration:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-26.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Fetch current production baseline
+        run: git fetch --no-tags --depth=1 origin 14a1ec7b5a4a8962bbf77c130055de40391002c0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install unchanged project and test dependencies
+        run: python -m pip install -r requirements.txt -r requirements-test.txt
+      - name: Verify migration contract with native Linux Gunicorn
+        shell: bash
+        run: |
+          set -o pipefail
+          python -B -m unittest discover -s tests -p 'test_feed_migration*.py' -v 2>&1 | tee migration-test-results.txt
+          if grep -E 'skipped=|\.\.\. skipped' migration-test-results.txt; then
+            echo "Unexpected skipped test on Linux" >&2
+            exit 1
+          fi
+      - name: Run entire remaining regression suite and Linux tests
+        shell: bash
+        run: |
+          set -o pipefail
+          python -B -m unittest discover -s tests -p 'test_*.py' -v 2>&1 | tee full-regression-results.txt
+          if grep -E 'skipped=|\.\.\. skipped' full-regression-results.txt; then
+            echo "Unexpected skipped test on Linux" >&2
+            exit 1
+          fi
+      - name: Record versions
+        if: always()
+        run: python -m pip freeze > migration-test-versions.txt
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: migration-tests-${{ matrix.os }}
+          path: |
+            migration-test-results.txt
+            full-regression-results.txt
+            migration-test-versions.txt
