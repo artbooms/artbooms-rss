@@ -1,19 +1,20 @@
-"""Editorial categories only. No inference from titles or Squarespace tags.
+"""Explicit editorial categories for RSS, not Google News Publisher Center labels.
 
-Initially empty: existing metadata and RSS items remain unchanged.
-To activate, add approved labels to CATEGORY_VOCABULARY and assign them to
-explicit article URLs in ARTICLE_CATEGORIES. Missing categories do not block.
+The two site-wide subject categories correspond to the existing publication
+keywords. Extra article-specific categories require explicit URL mapping and
+approval; no categories are inferred from titles or Squarespace tags.
 """
 
-CATEGORY_VOCABULARY = frozenset()
+CATEGORY_VOCABULARY = frozenset(("arte contemporanea", "arte e cultura"))
+DEFAULT_CATEGORIES = ("arte contemporanea", "arte e cultura")
 ARTICLE_CATEGORIES = {}
 
 
 def categories_for(item):
+    result = list(DEFAULT_CATEGORIES)
     values = ARTICLE_CATEGORIES.get(item.get("url"), ())
     if not isinstance(values, (list, tuple)):
-        return ()
-    result = []
+        return tuple(result)
     for value in values:
         if (isinstance(value, str) and value.strip()
                 and value in CATEGORY_VOCABULARY and value not in result):
