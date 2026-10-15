@@ -42,6 +42,16 @@ e versioni native. Una wheel lxml già in cache Render non dimostra che una
 ricostruzione pulita funzionerà. Gli esiti della matrice, compresi eventuali
 fallimenti sulle nuove versioni, devono restare visibili.
 
+La prima build con header su Ubuntu 26.04 fallisce per incompatibilità del
+vecchio lxml con le librerie XML di sistema nuove. La CI prova quindi, soltanto
+su 26.04 e Python 3.13+, il profilo statico ufficiale della release lxml 5.2.2:
+libxml2 2.12.6 e libxslt 1.1.39, con zlib 1.3.2 e libiconv 1.19 esplicitamente
+fissati. Non modifica i requisiti Python o Render. I risultati di questo profilo
+vanno distinti dalla build standard di sistema fallita: non dimostrano che la
+combinazione lxml 5.2.2/librerie di sistema Ubuntu 26.04 sia compatibile.
+Riferimenti: [profilo della release](https://raw.githubusercontent.com/lxml/lxml/lxml-5.2.2/pyproject.toml)
+e [build statica ufficiale](https://lxml.de/5.2/build.html#building-an-egg-or-wheel).
+
 ## Decisione di storage ancora necessaria
 
 Il deploy hook del 15 ottobre alle 11:03 CEST ha ricreato la baseline. Il solo
