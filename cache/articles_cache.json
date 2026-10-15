@@ -12503,9 +12503,9 @@
       "author": "natasha barbieri",
       "published": "2026-08-27T16:22:05+02:00",
       "modified": "2026-08-27T16:22:05+02:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6a90401a2c2db423c721c7c4/1789013101854/Kusama.webp?format=1500w",
-      "_hash": "cd8ad0177a6dafdea801f3a9d26a597ba15f624aab816128322d36bfec598472",
-      "_fetched_at": "2026-09-10T07:57:19.611755+00:00"
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6a90401a2c2db423c721c7c4/1792013664538/Kusama.webp?format=1500w",
+      "_hash": "33978f7a5ecb068bb7bd3149d8bdb08ff68f0222affbb0d9fd16d377aa634ee1",
+      "_fetched_at": "2026-10-15T11:04:37.198422+00:00"
     },
     "https://www.artbooms.com/blog/broken-mostra-palazzo-strozzi": {
       "url": "https://www.artbooms.com/blog/broken-mostra-palazzo-strozzi",
@@ -12530,7 +12530,7 @@
       "_fetched_at": "2026-10-13T09:03:47.353127+00:00"
     }
   },
-  "cursor": 1116,
-  "last_scan": "2026-10-15T10:50:00.330074+00:00",
+  "cursor": 1137,
+  "last_scan": "2026-10-15T11:04:34.762253+00:00",
   "links_hash": "6d83ca1ca3abf57326a7c4785c8fd8cdd47698df4a83187d44ec0645ef229042"
 }
