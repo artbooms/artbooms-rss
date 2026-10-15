@@ -22,7 +22,7 @@ DAYS_WINDOW = 2
 
 SITE_NAME = "ARTBOOMS"
 LANG = "it"
-KEYWORDS = "arte contemporanea, arte e cultura"
+KEYWORDS = "arte"
 
 
 def _escape_xml(s: str) -> str:
@@ -69,7 +69,7 @@ def news_sitemap_view():
 
     - Usa solo i campi: url, title, published
     - Finestra temporale: ultimi DAYS_WINDOW giorni
-    - news:keywords = "arte contemporanea, arte e cultura"
+    - news:keywords = "arte" (elemento opzionale nello schema Google News)
     - news:title = "<titolo>"
     """
     loaders = (_load_local_items, _load_remote_items) if LOCAL_FIRST else (_load_remote_items, _load_local_items)

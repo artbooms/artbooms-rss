@@ -201,16 +201,22 @@ class FeedTests(unittest.TestCase):
         self.assertEqual(root.findtext('./channel/item/description'),'A ]]> B C')
         self.assertEqual(feedparser.parse(xml).bozo,0)
 
-    def test_categories_only_from_editorial_map(self):
+    def test_only_approved_general_category_ignores_article_tags_and_legacy_map(self):
         item=dict(VALID,categories=['Inferred'],tags=['Wrong'])
-        with patch.object(taxonomy,'CATEGORY_VOCABULARY',frozenset({'Arte & cultura'})), patch.object(taxonomy,'ARTICLE_CATEGORIES',{item['url']:['Arte & cultura','Wrong',None,'Arte & cultura']}):
+        before=copy.deepcopy(item)
+        with patch.object(taxonomy,'ARTICLE_CATEGORIES',{item['url']:['arte contemporanea','arte e cultura','Wrong',None]}):
             xml=ET.fromstring(generator.build_rss([item],{}))
-        self.assertEqual([x.text for x in xml.findall('./channel/item/category')],['Arte & cultura'])
+        categories=xml.findall('./channel/item/category')
+        self.assertEqual([(x.text,dict(x.attrib)) for x in categories],[('arte',{})])
+        self.assertEqual(taxonomy.CATEGORY_VOCABULARY,frozenset({'arte'}))
+        self.assertEqual(item,before)
 
-    def test_missing_or_wrong_categories_do_not_block(self):
+    def test_missing_or_wrong_legacy_categories_still_emit_one_arte_category(self):
         for value in (None, 'Arte', {}, [None,{}]):
             with self.subTest(value=value), patch.object(taxonomy,'ARTICLE_CATEGORIES',{VALID['url']:value}):
-                self.assertEqual(len(ET.fromstring(generator.build_rss([VALID],{})).findall('./channel/item')),1)
+                xml=ET.fromstring(generator.build_rss([VALID],{}))
+                self.assertEqual(len(xml.findall('./channel/item')),1)
+                self.assertEqual([x.text for x in xml.findall('./channel/item/category')],['arte'])
 
     def test_full_real_cache_feed(self):
         data=json.loads((ROOT/'cache/articles_cache.json').read_text())

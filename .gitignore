@@ -3,6 +3,7 @@ articles_cache.json
 feed.xml
 *.lock
 *.wake
+*.websub.json
 .artbooms-*
 __pycache__/
 *.py[cod]

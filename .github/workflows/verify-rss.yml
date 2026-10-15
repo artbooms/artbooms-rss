@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - codex/verifica-rss-2026-10-06
+      - codex/websub-arte-2026-10-15
 permissions:
   contents: read
 jobs:
@@ -15,12 +16,22 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Install project and test dependencies
         run: python -m pip install -r requirements.txt -r requirements-test.txt
+      - name: Run unchanged baseline tests
+        shell: bash
+        run: |
+          set -o pipefail
+          git worktree add --detach "$RUNNER_TEMP/rss-baseline" 10d82424d45304c83feb7f4a40f8ae49467d31ec
+          cd "$RUNNER_TEMP/rss-baseline"
+          python -m unittest discover -s tests -p 'test_*.py' -v 2>&1 | tee "$GITHUB_WORKSPACE/linux-baseline-results.txt"
       - name: Run offline regression and integration tests
+        if: always()
         shell: bash
         run: |
           set -o pipefail
@@ -34,4 +45,5 @@ jobs:
           name: rss-verifica-${{ matrix.os }}
           path: |
             linux-test-results.txt
+            linux-baseline-results.txt
             linux-python-versions.txt
