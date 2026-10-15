@@ -90,7 +90,7 @@ jobs:
           git add cache/articles_cache.json
 
           if ! git commit \
-            -m "Persist cache $(date -u +'%Y-%m-%dT%H:%M:%SZ')"; then
+            -m "Persist cache $(date -u +'%Y-%m-%dT%H:%M:%SZ') [skip render]"; then
 
             echo "::warning::Nessun commit creato. Nessuna modifica remota."
             exit 0
