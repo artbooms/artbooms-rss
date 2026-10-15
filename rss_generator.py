@@ -6,6 +6,7 @@ from html import unescape
 import re
 from cache_safety import valid_article, parsed_time, xml_text, with_editorial_author
 from editorial_taxonomy import categories_for
+from websub import WEBSUB_HUB_URL
 
 logger = logging.getLogger("rss_generator")
 
@@ -112,6 +113,7 @@ def build_rss(items: list, meta: dict):
         f"<description>{feed_description}</description>\n"
         f"<language>{feed_language}</language>\n"
         f"<atom:link href=\"https://rss.artbooms.com/rss\" rel=\"self\" type=\"application/rss+xml\" />\n"
+        f"<atom:link href=\"{WEBSUB_HUB_URL}\" rel=\"hub\" />\n"
         f"<lastBuildDate>{build_time_rfc}</lastBuildDate>\n"
         f"{body}\n"
         "</channel>\n"

@@ -321,12 +321,21 @@ class ProductionBaselineTests(FlaskMigrationCase):
                             if bundle is self.baseline:
                                 expected[key] = signature(response)
                             else:
+                                # Both application bundles import the current generator;
+                                # preserve the complete HTTP comparison, including ETag.
                                 self.assertEqual(signature(response), expected[key])
                             if method == "GET":
                                 parsed = ET.fromstring(response.data)
                                 self.assertEqual({item.findtext("link") for item in parsed.findall("./channel/item")}, set(urls))
+                                for item in parsed.findall("./channel/item"):
+                                    self.assertEqual([(node.text, dict(node.attrib)) for node in item.findall("category")], [("arte", {})])
                                 self.assertEqual(parsed.findtext("./channel/lastBuildDate"), "Thu, 08 Oct 2026 00:00:00 +0000")
-                                self.assertEqual(parsed.find("./channel/{http://www.w3.org/2005/Atom}link").get("href"), CANONICAL)
+                                atom_links = parsed.findall("./channel/{http://www.w3.org/2005/Atom}link")
+                                self.assertEqual([dict(link.attrib) for link in atom_links], [
+                                    {"href": CANONICAL, "rel": "self", "type": "application/rss+xml"},
+                                    {"href": "https://pubsubhubbub.appspot.com/", "rel": "hub"}])
+                                self.assertEqual(response.headers["ETag"], '"' + hashlib.sha256(response.data).hexdigest() + '"')
+                                self.assertEqual(int(response.headers["Content-Length"]), len(response.data))
                                 self.assertEqual(feedparser.parse(response.data).bozo, 0)
                     self.assertEqual(cache.read_bytes(), before)
                     self.assertEqual(feed.read_bytes(), expected[("/rss", "GET")][1])
@@ -352,7 +361,16 @@ class ProductionBaselineTests(FlaskMigrationCase):
                 for host in (CUSTOM_HOST, OLD_HOST):
                     for method in ("GET", "HEAD"):
                         with self.subTest(available=available, host=host, method=method):
-                            self.assert_same(self.responses("/news-sitemap.xml", method, host), 200 if available else 503)
+                            responses = self.responses("/news-sitemap.xml", method, host)
+                            # Both applications use the current sitemap generator, so
+                            # approved XML changes do not require weaker comparisons.
+                            self.assert_same(responses, 200 if available else 503)
+                            if available and method == "GET":
+                                root = ET.fromstring(responses[1].data)
+                                namespace = "{http://www.google.com/schemas/sitemap-news/0.9}"
+                                keywords = root.findall(".//" + namespace + "keywords")
+                                self.assertEqual([(node.text, dict(node.attrib)) for node in keywords], [("arte", {})])
+                                self.assertEqual(int(responses[1].headers["Content-Length"]), len(responses[1].data))
 
     def test_debug_and_cache_download_use_local_fixture_with_equal_bytes_headers_status(self):
         original = json.loads((ROOT / "cache/articles_cache.json").read_text(encoding="utf-8"))

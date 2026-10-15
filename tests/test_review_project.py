@@ -38,21 +38,24 @@ class ProjectCompatibilityTests(unittest.TestCase):
         new_items = ET.fromstring(self.new_xml).findall('./channel/item')
         old_guids = [item.findtext('guid') for item in old_items]
         new_guids = [item.findtext('guid') for item in new_items]
-        self.assertGreater(len(new_guids), 1000)
+        self.assertGreater(len(new_guids), 1100)
         self.assertEqual(set(new_guids), set(old_guids))
         self.assertEqual(len(new_guids), len(set(new_guids)))
         self.assertEqual(set(new_guids), set(cache_entries(self.data)))
 
-    def test_real_item_fields_only_change_for_explicit_editorial_author(self):
+    def test_real_item_fields_only_add_arte_and_explicit_editorial_author(self):
         def records(xml):
             return {item.findtext('guid'): item for item in ET.fromstring(xml).findall('./channel/item')}
         old, new = records(self.old_xml), records(self.new_xml)
         creator = '{http://purl.org/dc/elements/1.1/}creator'
         for guid, item in old.items():
-            before = {child.tag: (child.text, dict(child.attrib)) for child in item}
-            after = {child.tag: (child.text, dict(child.attrib)) for child in new[guid]}
-            expected_author = author_for(guid, before[creator][0])
-            before[creator] = (expected_author, before[creator][1])
+            categories = new[guid].findall('category')
+            self.assertEqual([(child.text, dict(child.attrib)) for child in categories], [('arte', {})], guid)
+            self.assertNotIn('category', [child.tag for child in item], guid)
+            expected_author = author_for(guid, item.findtext(creator))
+            before = [(child.tag, expected_author if child.tag == creator else child.text, dict(child.attrib))
+                      for child in item]
+            after = [(child.tag, child.text, dict(child.attrib)) for child in new[guid] if child.tag != 'category']
             self.assertEqual(after, before, guid)
 
     def test_feedparser_reads_full_real_feed_without_errors(self):

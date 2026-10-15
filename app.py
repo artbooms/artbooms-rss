@@ -17,6 +17,7 @@ from cache_safety import with_editorial_authors
 from editorial_taxonomy import categories_for
 from news_sitemap import news_sitemap_view
 from rss_generator import build_rss
+from websub import observe_feed, publish_pending
 
 RAW_CACHE_URL = os.environ.get("RAW_CACHE_URL", "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json")
 USER_AGENT = "ArtboomsRSS/1.0 (+https://www.artbooms.com)"
@@ -165,7 +166,10 @@ def rebuild_feed():
             _source_token, _source_digest = cache_token, digest
             if changed:
                 logger.info("Feed pubblicato: %d articoli", len(items))
-            return changed
+        # Separate notification state never participates in cache/feed writes.
+        # Network publication runs only in the background after public readiness.
+        observe_feed(_snapshot[1], state_path=CACHE_PATH + ".websub.json")
+        return changed
     except Exception:
         logger.exception("Ricostruzione fallita: conservo l'ultimo feed valido")
         _load_snapshot()
@@ -185,6 +189,18 @@ def _update_once():
     finally:
         _update_lock.release()
     return changed, rebuilt
+
+
+def _notify_websub():
+    # Retry observing unchanged bytes too if notification-state I/O recovered.
+    # Network calls are confined to this leader hook, outside feed/cache locks.
+    try:
+        snapshot = _load_snapshot()
+        if snapshot is not None:
+            observe_feed(snapshot[1], state_path=CACHE_PATH + ".websub.json")
+            publish_pending(state_path=CACHE_PATH + ".websub.json")
+    except Exception:
+        logger.exception("WebSub non disponibile; feed conservato")
 
 
 def background_populator():
@@ -217,6 +233,7 @@ def background_populator():
                             _update_once()
                         except Exception:
                             logger.exception("Ciclo popolatore fallito; riprovo al ciclo successivo")
+                        _notify_websub()
                         next_run = time.monotonic() + POPULATE_INTERVAL
                     _stop.wait(LEADER_RETRY_INTERVAL)
             finally:

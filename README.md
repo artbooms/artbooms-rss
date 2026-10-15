@@ -8,7 +8,25 @@ Render avvia `gunicorn app:app`, che legge `gunicorn.conf.py`. Un solo popolator
 
 Gli articoli nuovi hanno priorita; una quota del batch mantiene in movimento la scansione degli altri articoli anche se alcune pagine falliscono. Il ciclo attende normalmente 120 secondi dopo il lavoro precedente: questo intervallo non garantisce tempi di consegna agli aggregatori.
 
-La sitemap legge prima la cache locale aggiornata e usa GitHub come recupero. Include al massimo 1000 elementi News, pubblicati nelle ultime 48 ore, con data originale. Se non ci sono articoli recenti conserva un URL ordinario senza metadati News.
+La sitemap legge prima la cache locale aggiornata e usa GitHub come recupero: un nuovo articolo acquisito compare alla richiesta successiva, senza attendere la persistenza remota. Include al massimo 1000 elementi News, pubblicati nelle ultime 48 ore, con data originale. Se non ci sono articoli recenti conserva un URL ordinario senza metadati News.
+
+Ogni articolo RSS ha una sola categoria generale, `arte`. Anche il campo opzionale `news:keywords` contiene `arte`: e ammesso dallo [schema XML ufficiale](https://www.google.com/schemas/sitemap-news/0.9/sitemap-news.xsd), ma la documentazione Google attuale non ne garantisce l'utilizzo per la classificazione.
+
+## WebSub
+
+Il feed dichiara l'[hub Google](https://pubsubhubbub.appspot.com/) con `atom:link rel="hub"`, mantenendo il self canonico. Dopo una scrittura XML valida e atomica, il servizio registra solo i GUID nuovi in uno stato separato, `CACHE_PATH + ".websub.json"`. Il popolatore leader controlla con un GET che il feed pubblico risponda 200, dichiari hub/self e contenga tutti i GUID dell'evento; soltanto allora invia un POST form con `hub.mode=publish` e `hub.url=https://rss.artbooms.com/rss`. Le richieste RSS non contattano l'hub.
+
+Timeout di connessione/lettura: 3/10 secondi. Ogni evento ha al massimo tre tentativi persistiti, compresi i controlli di disponibilita pubblica falliti, con attese minime di 5/30 secondi; il normale ciclo del popolatore puo allungarle. Gli eventi senza tentativi possono essere accorpati. Lock separati impediscono invii concorrenti. Le risposte 2xx sono accettazioni dell'hub, senza garanzia di consegna ai lettori. Guasti dell'hub o dello stato vengono registrati e non modificano cache, XML o risposte HTTP dell'RSS.
+
+Al primo avvio senza stato, l'archivio costituisce la baseline senza notifiche. Uno stato conservato mantiene eventi in attesa, tentativi e GUID gia osservati attraverso i riavvii. Un deploy che perda i file locali ricrea la baseline senza ritrasmettere l'archivio; gli eventi non confermati del vecchio stato non sono recuperabili. Uno stato corrotto viene conservato e disabilita gli invii finche non viene ripristinato. La persistenza storica della cache resta invariata.
+
+WebSub non fornisce una chiave di idempotenza publisher: un timeout dopo l'accettazione o un crash prima del salvataggio della conferma puo produrre un POST duplicato nel retry limitato. I normali controlli, ricostruzioni, riavvii e cambiamenti dei metadati di GUID esistenti non generano nuovi eventi.
+
+## Scoperta della news sitemap
+
+Il sottodominio esterno e consentito con la [cross-submission ufficiale Google](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap#cross-submit): proprieta Search Console verificate che coprano entrambi gli host e invio della sitemap, oppure un riferimento nel robots.txt del sito che ospita gli articoli. La sola accessibilita dell'XML su rss.artbooms.com non dimostra questa associazione.
+
+La verifica pubblica del 15 ottobre 2026 ha trovato solo la sitemap Squarespace in `www.artbooms.com/robots.txt`. La registrazione Search Console resta da verificare separatamente con autorizzazione; questa modifica non cambia Search Console o Squarespace. Il canale ufficiale per segnalare una sitemap XML e Search Console o la sua [API sitemaps.submit](https://developers.google.com/webmaster-tools/v1/sitemaps/submit), senza garanzia di lettura immediata. WebSub notifica l'RSS/Atom, non la news sitemap. Nessun vecchio ping Google o Indexing API viene utilizzato.
 
 `persist_cache.yml` e attivato dal trigger esterno gia esistente: non introduce un cron aggiuntivo. Scarica e fonde la cache con l'ultima main, protegge schede valide e correzioni manuali e salva soltanto il JSON. Se cambia la cache avvia PWA Memory, che nel proprio repository avvia OneSignal. `keepalive.yml` mantiene attivo il repository. I due workflow RSS usano Ubuntu 24.04.
 
@@ -26,7 +44,7 @@ URL/GUID degli articoli e identita del feed rimangono gli stessi. La firma edito
 
 Caricare i file modificati insieme su un branch e verificare il diff prima di unirli a main. Non sovrascrivere o cancellare `cache/articles_cache.json`: e una risorsa viva. Il pacchetto distribuibile esclude quel file proprio per evitare di arretrare gli aggiornamenti. Il bootstrap puo recuperare la cache corrente da GitHub.
 
-La configurazione Render reale distribuisce automaticamente solo main; anteprime PR disabilitate. Il workflow `verify-rss.yml` esegue soltanto test isolati sul branch codex/verifica-rss-2026-10-06: non chiama il servizio reale, non pubblica feed e non avvia notifiche.
+La configurazione Render reale distribuisce automaticamente solo main; anteprime PR disabilitate. Il workflow `verify-rss.yml` esegue soltanto test isolati sui branch codex/verifica-rss-2026-10-06 e codex/websub-arte-2026-10-15: non chiama il servizio reale, non pubblica feed e non avvia notifiche. La cronologia completa rende disponibile la baseline fissata dai test di migrazione.
 
 ## Collaudo su Linux
 
