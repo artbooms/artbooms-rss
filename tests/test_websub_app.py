@@ -55,7 +55,7 @@ class WebSubApplicationTests(unittest.TestCase):
         self.feed_path = Path(temporary) / "feed.xml"
         self.state_path = str(self.cache_path) + ".websub.json"
         self.stack.enter_context(patch.dict(os.environ, {
-            "CACHE_BOOTSTRAP_REMOTE": "0", "POPULATOR_ENABLED": "0"}))
+            "CACHE_BOOTSTRAP_REMOTE": "0", "POPULATOR_ENABLED": "0", "WEBSUB_STATE_PATH": ""}))
         self.stack.enter_context(patch.object(app, "CACHE_PATH", str(self.cache_path)))
         self.stack.enter_context(patch.object(app, "FEED_PATH", str(self.feed_path)))
         self.stack.enter_context(patch.object(processor, "CACHE_PATH", str(self.cache_path)))
@@ -68,7 +68,7 @@ class WebSubApplicationTests(unittest.TestCase):
         self.stack.enter_context(patch.object(websub.time, "time", side_effect=lambda: self.now))
         self.public_override = None
         self.public = self.stack.enter_context(patch.object(websub.requests, "get", side_effect=self.public_feed))
-        self.hub = self.stack.enter_context(patch.object(websub.requests, "post", return_value=Mock(status_code=204)))
+        self.hub = self.stack.enter_context(patch.object(websub.requests, "post", return_value=Mock(status_code=204, headers={})))
         app._snapshot = app._source_token = app._source_digest = None
         self.addCleanup(self.reset_application)
         instant = datetime.now(timezone.utc)
@@ -105,7 +105,7 @@ class WebSubApplicationTests(unittest.TestCase):
         result = self.client.get("/rss")
         self.assertEqual(result.status_code, 200)
         content = self.public_override if self.public_override is not None else result.data
-        return Mock(status_code=200, content=content)
+        return Mock(status_code=200, content=content, headers={})
 
     def ingest(self):
         def parse(url, session=None):
@@ -170,7 +170,8 @@ class WebSubApplicationTests(unittest.TestCase):
         self.assertEqual(result.data, feed_before)
         self.assertEqual(self.cache_path.read_bytes(), cache_before)
         self.assertEqual(self.feed_path.read_bytes(), feed_before)
-        self.assertEqual(self.state()["pending"][0]["attempts"], 1)
+        self.assertEqual(self.state()["pending"][0]["hub_attempts"], 1)
+        self.assertEqual(self.state()["pending"][0]["feed_checks"], 1)
 
     def test_restart_does_not_duplicate_acknowledged_new_article(self):
         self.ingest()
@@ -184,16 +185,16 @@ class WebSubApplicationTests(unittest.TestCase):
 
     def test_pending_retry_survives_app_and_websub_module_restart(self):
         self.ingest()
-        self.hub.return_value = Mock(status_code=503)
+        self.hub.return_value = Mock(status_code=503, headers={})
         app._notify_websub()
         event_id = self.state()["pending"][0]["id"]
         restarted = self.restart()
         restarted._notify_websub()
         self.assertEqual(self.state()["pending"][0]["id"], event_id)
-        self.assertEqual(self.state()["pending"][0]["attempts"], 1)
+        self.assertEqual(self.state()["pending"][0]["hub_attempts"], 1)
         self.hub.assert_called_once()
-        self.now += 5
-        self.hub.return_value = Mock(status_code=204)
+        self.now = self.state()["pending"][0]["next_attempt_at"]
+        self.hub.return_value = Mock(status_code=204, headers={})
         restarted._notify_websub()
         self.assertEqual(self.hub.call_count, 2)
         self.assertEqual(self.state()["pending"], [])
@@ -216,9 +217,10 @@ class WebSubApplicationTests(unittest.TestCase):
         self.public_override = self.baseline.data
         app._notify_websub()
         self.hub.assert_not_called()
-        self.assertEqual(self.state()["pending"][0]["attempts"], 1)
+        self.assertEqual(self.state()["pending"][0]["hub_attempts"], 0)
+        self.assertEqual(self.state()["pending"][0]["feed_checks"], 1)
         self.public_override = None
-        self.now += 5
+        self.now = self.state()["pending"][0]["next_attempt_at"]
         app._notify_websub()
         self.hub.assert_called_once()
         self.assertEqual(self.state()["pending"], [])
@@ -234,6 +236,67 @@ class WebSubApplicationTests(unittest.TestCase):
         self.hub.assert_called_once()
         self.assertEqual(set(self.state()["observed_guids"]), {self.old["url"], self.new["url"]})
         self.assertEqual(self.state()["pending"], [])
+
+    def test_external_state_path_preserves_pending_and_observed_across_app_restart(self):
+        fallback_path = Path(self.state_path)
+        fallback_before = fallback_path.read_bytes()
+        # The configured state directory is independent from the article
+        # cache. A mounted persistent directory can keep this file on deploy.
+        self.state_path = str(self.cache_path.parent / "persistent-state" / "notifications.json")
+        self.stack.enter_context(patch.dict(os.environ, {"WEBSUB_STATE_PATH": self.state_path}))
+        self.reset_application()
+        self.assertEqual(self.client.get("/rss").status_code, 200)
+        self.assertEqual(self.state()["observed_guids"], [self.old["url"]])
+        self.assertEqual(self.state()["pending"], [])
+        self.public.assert_not_called()
+        self.hub.assert_not_called()
+        self.assertEqual(self.ingest(), (True, True))
+        cache_before, feed_before = self.cache_path.read_bytes(), self.feed_path.read_bytes()
+        self.hub.return_value = Mock(status_code=503, headers={})
+        app._notify_websub()
+        pending = self.state()["pending"][0].copy()
+        self.assertEqual(pending["hub_attempts"], 1)
+        self.assertEqual(set(self.state()["observed_guids"]), {self.old["url"], self.new["url"]})
+        restarted = self.restart()
+        restarted._notify_websub()
+        self.assertEqual(self.state()["pending"][0], pending)
+        self.hub.assert_called_once()
+        self.assertEqual(self.cache_path.read_bytes(), cache_before)
+        self.assertEqual(self.feed_path.read_bytes(), feed_before)
+        self.assertEqual(fallback_path.read_bytes(), fallback_before)
+        self.now = pending["next_attempt_at"]
+        self.hub.return_value = Mock(status_code=204, headers={})
+        restarted._notify_websub()
+        self.assertEqual(self.hub.call_count, 2)
+        self.assertEqual(self.state()["pending"], [])
+        self.assertEqual(self.cache_path.read_bytes(), cache_before)
+        self.assertEqual(fallback_path.read_bytes(), fallback_before)
+        restarted = self.restart()
+        restarted._notify_websub()
+        self.assertEqual(self.hub.call_count, 2)
+        self.assertEqual(self.state()["observed_guids"], sorted((self.old["url"], self.new["url"])))
+
+    def test_public_feed_temporarily_unavailable_does_not_exhaust_hub_or_change_cache(self):
+        self.ingest()
+        cache_before, feed_before = self.cache_path.read_bytes(), self.feed_path.read_bytes()
+        self.public_override = self.baseline.data
+        started = self.now
+        while self.now - started < 6 * 3600:
+            app._notify_websub()
+            self.assertEqual(self.state()["pending"][0]["hub_attempts"], 0)
+            self.assertEqual(self.client.get("/rss").status_code, 200)
+            self.assertEqual(self.cache_path.read_bytes(), cache_before)
+            self.assertEqual(self.feed_path.read_bytes(), feed_before)
+            self.now = self.state()["pending"][0]["next_attempt_at"]
+        self.assertGreater(self.state()["pending"][0]["feed_checks"], 3)
+        self.hub.assert_not_called()
+        restarted = self.restart()
+        self.public_override = None
+        restarted._notify_websub()
+        self.hub.assert_called_once()
+        self.assertEqual(self.state()["pending"], [])
+        self.assertEqual(self.cache_path.read_bytes(), cache_before)
+        self.assertEqual(self.feed_path.read_bytes(), feed_before)
 
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@ from cache_safety import with_editorial_authors
 from editorial_taxonomy import categories_for
 from news_sitemap import news_sitemap_view
 from rss_generator import build_rss
-from websub import observe_feed, publish_pending
+from websub import observe_feed, publish_pending, resolve_state_path
 
 RAW_CACHE_URL = os.environ.get("RAW_CACHE_URL", "https://raw.githubusercontent.com/artbooms/artbooms-rss/main/cache/articles_cache.json")
 USER_AGENT = "ArtboomsRSS/1.0 (+https://www.artbooms.com)"
@@ -168,7 +168,7 @@ def rebuild_feed():
                 logger.info("Feed pubblicato: %d articoli", len(items))
         # Separate notification state never participates in cache/feed writes.
         # Network publication runs only in the background after public readiness.
-        observe_feed(_snapshot[1], state_path=CACHE_PATH + ".websub.json")
+        observe_feed(_snapshot[1], state_path=resolve_state_path(CACHE_PATH))
         return changed
     except Exception:
         logger.exception("Ricostruzione fallita: conservo l'ultimo feed valido")
@@ -197,8 +197,9 @@ def _notify_websub():
     try:
         snapshot = _load_snapshot()
         if snapshot is not None:
-            observe_feed(snapshot[1], state_path=CACHE_PATH + ".websub.json")
-            publish_pending(state_path=CACHE_PATH + ".websub.json")
+            state_path = resolve_state_path(CACHE_PATH)
+            observe_feed(snapshot[1], state_path=state_path)
+            publish_pending(state_path=state_path)
     except Exception:
         logger.exception("WebSub non disponibile; feed conservato")
 
