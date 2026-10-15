@@ -4,6 +4,7 @@ on:
     branches:
       - codex/verifica-rss-2026-10-06
       - codex/websub-arte-2026-10-15
+      - codex/skip-render-cache-2026-10-15
 permissions:
   contents: read
 jobs:
