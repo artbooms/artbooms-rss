@@ -11,7 +11,7 @@ from contextlib import ExitStack
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 import hashlib
-from html import unescape
+from html import escape, unescape
 import importlib.util
 import json
 import logging
@@ -81,7 +81,7 @@ class WebSubArchiveSimulationTests(unittest.TestCase):
         self.state_path = Path(self.temporary) / "durable-state" / "websub.json"
         self.stack.enter_context(patch.dict(os.environ, {
             "CACHE_BOOTSTRAP_REMOTE": "0", "POPULATOR_ENABLED": "0",
-            "WEBSUB_STATE_PATH": str(self.state_path)}))
+            "WEBSUB_BACKEND": "file", "WEBSUB_STATE_PATH": str(self.state_path)}))
         self.network_guard = self.stack.enter_context(patch.object(
             requests.Session, "request", side_effect=AssertionError("Unexpected public HTTP")))
         self.socket_guard = self.stack.enter_context(patch.object(
@@ -175,14 +175,43 @@ class WebSubArchiveSimulationTests(unittest.TestCase):
     def state(self):
         return json.loads(self.state_path.read_text(encoding="utf-8"))
 
-    def acquire(self):
+    def acquire(self, real_source=False, pending_state=True):
         links = list(self.archive["items"]) + [self.guid]
-        with patch.object(processor, "_scan_archive", return_value=links) as scan, \
-             patch.object(processor, "parse_article", return_value=copy.deepcopy(self.fixture)) as parse:
-            self.assertEqual(self.application._update_once(), (True, True))
-        scan.assert_called_once()
-        parse.assert_called_once()
-        self.assertEqual(parse.call_args.args[0], self.guid)
+        if real_source:
+            articles = [*self.archive["items"].values(), self.fixture]
+            archive_html = "<ul>" + "".join(
+                '<li class="archive-item"><a href="%s">Articolo</a>'
+                '<span class="archive-item-date">%s</span></li>' % (
+                    escape(item["url"], quote=True), escape(item["published"]))
+                for item in articles) + "</ul>"
+            fields = {"name": "title", "url": "url", "description": "description",
+                      "author": "author", "datePublished": "published",
+                      "dateModified": "modified", "thumbnailUrl": "image"}
+            article_html = "<html><head>" + "".join(
+                '<meta itemprop="%s" content="%s">' % (prop, escape(self.fixture[field], quote=True))
+                for prop, field in fields.items()) + "</head><body></body></html>"
+            responses = {processor.ARCHIVE_URL: archive_html, self.guid: article_html}
+            visited = []
+            def offline_http(method, url, **kwargs):
+                self.assertEqual(method.upper(), "GET")
+                self.assertIn(url, responses, "Unconfigured public HTTP is forbidden")
+                visited.append(url)
+                response = requests.Response()
+                response.status_code, response.url, response.encoding = 200, url, "utf-8"
+                response._content = responses[url].encode("utf-8")
+                return response
+            # The normal archive scanner and article parser execute unchanged;
+            # only their transport returns locally constructed HTML documents.
+            with patch.object(self.network_guard, "side_effect", offline_http):
+                self.assertEqual(self.application._update_once(), (True, True))
+            self.assertEqual(visited, [processor.ARCHIVE_URL, self.guid])
+        else:
+            with patch.object(processor, "_scan_archive", return_value=links) as scan, \
+                 patch.object(processor, "parse_article", return_value=copy.deepcopy(self.fixture)) as parse:
+                self.assertEqual(self.application._update_once(), (True, True))
+            scan.assert_called_once()
+            parse.assert_called_once()
+            self.assertEqual(parse.call_args.args[0], self.guid)
         data = json.loads(self.cache_path.read_bytes())
         self.assertEqual(len(data["items"]), self.archive_count + 1)
         self.assertEqual(data["cursor"], self.cursor)
@@ -191,15 +220,18 @@ class WebSubArchiveSimulationTests(unittest.TestCase):
         for field, value in self.fixture.items():
             self.assertEqual(data["items"][self.guid][field], value)
         pending = self.state()["pending"]
-        self.assertEqual(len(pending), 1)
-        self.assertEqual(pending[0]["guids"], [self.guid])
-        self.assertEqual(pending[0]["hub_attempts"], 0)
-        self.assertEqual(pending[0]["feed_checks"], 0)
-        self.assertEqual(pending[0]["expires_at"] - pending[0]["created_at"], 72 * 3600)
+        if pending_state:
+            self.assertEqual(len(pending), 1)
+            self.assertEqual(pending[0]["guids"], [self.guid])
+            self.assertEqual(pending[0]["hub_attempts"], 0)
+            self.assertEqual(pending[0]["feed_checks"], 0)
+            self.assertEqual(pending[0]["expires_at"] - pending[0]["created_at"], 72 * 3600)
+        else:
+            self.assertEqual(pending, [])
         self.public.assert_not_called()
         self.hub.assert_not_called()
         self.assert_editorial_outputs()
-        return pending[0].copy()
+        return pending[0].copy() if pending else None
 
     def assert_editorial_outputs(self):
         result = self.client.get("/rss")
@@ -281,7 +313,7 @@ class WebSubArchiveSimulationTests(unittest.TestCase):
     def test_full_archive_one_acquisition_ack_and_deploy_before_and_after(self):
         self.deploy()  # Deployment before the new article establishes no new event.
         self.assert_quiet()
-        self.acquire()
+        self.acquire(real_source=True)
         cache_bytes = self.cache_path.read_bytes()
         self.notify()
         self.assertEqual(self.trace, [("GET", 1, 0), ("POST", 1, 1)])
@@ -293,7 +325,7 @@ class WebSubArchiveSimulationTests(unittest.TestCase):
         self.assertEqual(self.cache_path.read_bytes(), cache_bytes)
         self.assertEqual(set(self.state()["observed_guids"]), set(self.archive["items"]) | {self.guid})
         self.assert_editorial_outputs()
-        self.network_guard.assert_not_called()
+        self.assertEqual(self.network_guard.call_count, 2)
         self.socket_guard.assert_not_called()
 
     def test_stale_feed_then_timeout_503_429_recovers_after_deploy_beyond_one_day(self):

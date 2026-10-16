@@ -34,6 +34,7 @@ ATOM_LINK = "{http://www.w3.org/2005/Atom}link"
 HEADERS = {"User-Agent": "ArtboomsRSS-WebSub/1.0 (+https://www.artbooms.com)"}
 logger = logging.getLogger("websub")
 _publisher_lock = threading.Lock()
+_latest_feed_content = None
 
 
 def resolve_state_path(cache_path=None):
@@ -67,12 +68,8 @@ def _feed_guids(content):
     return set(guids)
 
 
-def _load_state(path):
-    try:
-        with open(path, encoding="utf-8") as handle:
-            state = json.load(handle)
-    except FileNotFoundError:
-        return None
+def _validate_state(state):
+    """Validate persisted state without changing it or accessing storage."""
     if not isinstance(state, dict) or state.get("version") not in (1, 2):
         raise ValueError("Versione stato WebSub non valida")
     observed, pending = state.get("observed_guids"), state.get("pending")
@@ -106,6 +103,17 @@ def _load_state(path):
                     or expires != created + EVENT_TTL):
                 raise ValueError("Budget/scadenza evento WebSub non validi")
         identifiers.add(identifier)
+    return state
+
+
+def _load_state(path):
+    try:
+        with open(path, encoding="utf-8") as handle:
+            state = json.load(handle)
+    except FileNotFoundError:
+        return None
+    _validate_state(state)
+    observed, pending = state["observed_guids"], state["pending"]
     if state["version"] == 1:
         # v1 mixed GET and POST attempts. Preserve the count conservatively as
         # hub attempts: migration never grants a fresh POST budget or replays
@@ -133,6 +141,16 @@ def observe_feed(content, state_path=None):
     Call after releasing the cache/feed transaction. The state uses a separate
     transaction, and no article/cache/cursor data is written here.
     """
+    global _latest_feed_content
+    backend = os.environ.get("WEBSUB_BACKEND", "file").strip().lower()
+    if backend != "file":
+        if backend == "github":
+            # HTTP/cache paths only hand off immutable bytes; GitHub I/O belongs
+            # exclusively to the existing background publisher.
+            _latest_feed_content = content
+        else:
+            logger.error("WebSub: backend sconosciuto; pubblicazione sospesa")
+        return False
     path = state_path or resolve_state_path()
     try:
         guids = _feed_guids(content)
@@ -297,6 +315,20 @@ def publish_pending(state_path=None):
     Separate GET/POST budgets and a fixed 72-hour deadline survive restarts.
     No network operation holds a cache/feed/state transaction.
     """
+    backend = os.environ.get("WEBSUB_BACKEND", "file").strip().lower()
+    if backend != "file":
+        if backend != "github":
+            logger.error("WebSub: backend sconosciuto; pubblicazione sospesa")
+            return False
+        if _latest_feed_content is None:
+            return False
+        try:
+            from websub_durable import run
+            return run(_latest_feed_content)
+        except Exception:
+            # Do not include request objects/headers in credential-bearing logs.
+            logger.warning("WebSub: backend GitHub non disponibile; RSS conservato")
+            return False
     path = state_path or resolve_state_path()
     try:
         with _publisher_transaction(path) as acquired:
