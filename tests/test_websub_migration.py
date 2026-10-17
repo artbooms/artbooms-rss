@@ -1,5 +1,6 @@
 """Offline migration proofs: fence, exact transfer, cancellation, no baseline."""
 import copy
+import hashlib
 from contextlib import contextmanager
 import io
 import json
@@ -310,6 +311,195 @@ with open(str(path) + '.publish.lock', 'a+b') as lock:
             self.assertEqual(migration.main(["status", "--state-path", str(self.path)]), 0)
         self.assertNotIn("https://example.org", stdout.getvalue())
         self.assertIn(MIGRATION_ID, stdout.getvalue())
+
+
+class LegacyReadOnlyPreflightTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.folder = Path(self.temporary.name)
+        self.path = self.folder / "legacy.websub.json"
+        self.original = legacy_state()
+        self.path.write_text(json.dumps(self.original), encoding="utf-8")
+
+    def test_oversized_import_or_empty_guid_archive_stops_before_fence(self):
+        for state in (dict(self.original, preserved_extension="x" * migration.MAX_STATE_BYTES),
+                      {"version": 2, "observed_guids": [], "pending": []}):
+            with self.subTest(empty=not state["observed_guids"]):
+                self.path.write_text(json.dumps(state), encoding="utf-8")
+                before = self.path.read_bytes()
+                with self.assertRaises(migration.MigrationError):
+                    migration.check_legacy_state(self.path, now=1000)
+                with self.assertRaises(migration.MigrationError):
+                    migration.fence_legacy_state(self.path, MIGRATION_ID)
+                self.assertEqual(self.path.read_bytes(), before)
+
+    def test_import_size_is_checked_without_loading_remote_backend(self):
+        with patch.object(migration, "_store", side_effect=AssertionError("Remote accessed")):
+            result = migration.check_legacy_state(self.path, now=1000)
+        self.assertLess(result["migration_document_bytes"], migration.MAX_STATE_BYTES)
+        self.assertFalse(result["capacity_warning"])
+
+    def test_nonregular_file_and_excessive_read_size_fail_without_opening(self):
+        with self.assertRaises(migration.MigrationError):
+            migration.check_legacy_state(self.folder, now=1000)
+        with self.path.open("wb") as handle:
+            handle.truncate(migration.MAX_LEGACY_READ_BYTES + 1)
+        before = self.path.stat()
+        with self.assertRaises(migration.MigrationError):
+            migration.check_legacy_state(self.path, now=1000)
+        self.assertEqual(self.path.stat().st_mtime_ns, before.st_mtime_ns)
+
+    def test_preflight_is_strictly_read_only_without_locks_http_export_or_content_leak(self):
+        before = self.path.read_bytes()
+        names = sorted(path.name for path in self.folder.iterdir())
+        original_open = open
+        def readonly_open(path, mode="r", *args, **kwargs):
+            self.assertFalse(any(flag in mode for flag in "wax+"), "Preflight attempted a write")
+            return original_open(path, mode, *args, **kwargs)
+        with patch("builtins.open", side_effect=readonly_open), \
+                patch.object(migration, "atomic_json", side_effect=AssertionError("State write")), \
+                patch.object(migration, "cache_transaction", side_effect=AssertionError("State lock")), \
+                patch.object(migration, "_file_lock", side_effect=AssertionError("Publisher lock")), \
+                patch.object(migration, "_file_unlock", side_effect=AssertionError("Publisher unlock")), \
+                patch.object(migration, "_store", side_effect=AssertionError("GitHub accessed")), \
+                patch.object(migration, "export_document", side_effect=AssertionError("Export attempted")), \
+                patch("requests.sessions.Session.request", side_effect=AssertionError("HTTP attempted")), \
+                patch("sys.stdout", new_callable=io.StringIO) as stdout:
+            self.assertEqual(migration.main(["check-legacy", "--state-path", str(self.path)]), 0)
+        result = json.loads(stdout.getvalue())
+        self.assertEqual(result["path"], str(self.path.resolve()))
+        self.assertEqual(result["version"], 2)
+        self.assertEqual(result["observed_guids"], 2)
+        self.assertEqual(result["pending"], 1)
+        self.assertEqual(result["size_bytes"], len(before))
+        self.assertEqual(result["sha256"], hashlib.sha256(before).hexdigest())
+        self.assertEqual(result["file_identity"]["inode"], self.path.stat().st_ino)
+        self.assertNotIn("https://example.org", stdout.getvalue())
+        self.assertNotIn("pending-original", stdout.getvalue())
+        self.assertNotIn("preserved_extension", stdout.getvalue())
+        self.assertEqual(self.path.read_bytes(), before)
+        self.assertEqual(sorted(path.name for path in self.folder.iterdir()), names)
+
+    def test_summary_keeps_original_budgets_and_distinguishes_due_and_expired(self):
+        before = self.path.read_bytes()
+        result = migration.check_legacy_state(self.path, now=1000)
+        self.assertEqual(result["pending_guids"], 1)
+        self.assertEqual(result["feed_checks_total"], 7)
+        self.assertEqual(result["hub_attempts_total"], 3)
+        self.assertEqual(result["expired_pending"], 0)
+        self.assertEqual(result["exhausted_pending"], 0)
+        self.assertEqual(result["due_pending"], 1)
+        self.assertEqual(result["earliest_expires_at"], 259300)
+        self.assertEqual(result["latest_expires_at"], 259300)
+        self.assertEqual(result["earliest_next_attempt_at"], 301)
+        expired = migration.check_legacy_state(self.path, now=259300)
+        self.assertEqual(expired["expired_pending"], 1)
+        self.assertEqual(expired["exhausted_pending"], 1)
+        self.assertEqual(expired["due_pending"], 0)
+        self.assertEqual(self.path.read_bytes(), before)
+
+    def test_empty_pending_has_null_deadlines_without_creating_baseline(self):
+        self.original["pending"] = []
+        self.path.write_text(json.dumps(self.original), encoding="utf-8")
+        before = self.path.read_bytes()
+        result = migration.check_legacy_state(self.path, now=1000)
+        self.assertEqual(result["observed_guids"], 2)
+        self.assertEqual(result["pending"], 0)
+        self.assertEqual(result["due_pending"], 0)
+        self.assertIsNone(result["earliest_expires_at"])
+        self.assertIsNone(result["latest_expires_at"])
+        self.assertIsNone(result["earliest_next_attempt_at"])
+        self.assertEqual(self.path.read_bytes(), before)
+
+    def test_path_policy_matches_configured_default_and_explicit_publisher_paths(self):
+        with patch.dict(os.environ, {"WEBSUB_STATE_PATH": "  " + str(self.path) + "  ",
+                                     "CACHE_PATH": str(self.folder / "unused.json")}):
+            self.assertEqual(migration.check_legacy_state(now=1000)["path"], str(self.path.resolve()))
+            self.assertEqual(migration.check_legacy_state(self.path, now=1000)["path"], str(self.path.resolve()))
+        cache = self.folder / "cache" / "articles_cache.json"
+        cache.parent.mkdir()
+        fallback = Path(str(cache) + ".websub.json")
+        fallback.write_bytes(self.path.read_bytes())
+        with patch.dict(os.environ, {"WEBSUB_STATE_PATH": "   ", "CACHE_PATH": str(cache)}):
+            self.assertEqual(migration.check_legacy_state(now=1000)["path"], str(fallback.resolve()))
+        previous = Path.cwd()
+        try:
+            os.chdir(self.folder)
+            with patch.dict(os.environ, {}, clear=True):
+                self.assertEqual(migration.check_legacy_state(now=1000)["path"], str(fallback.resolve()))
+        finally:
+            os.chdir(previous)
+
+    def test_invalid_or_missing_state_fails_without_fence_or_lock_side_effects(self):
+        bad_deadline = copy.deepcopy(self.original)
+        bad_deadline["pending"][0]["expires_at"] += 1
+        nonfinite = copy.deepcopy(self.original)
+        nonfinite["pending"][0]["next_attempt_at"] = float("nan")
+        cases = (None, b"{broken", b'{"version":1,"observed_guids":[],"pending":[]}',
+                 b'{"version":"migration-fence-v1","legacy_state":{}}',
+                 b'{"version":2,"version":2,"observed_guids":[],"pending":[]}',
+                 json.dumps(bad_deadline).encode(), json.dumps(nonfinite).encode())
+        for content in cases:
+            with self.subTest(content=content):
+                if self.path.exists():
+                    self.path.unlink()
+                if content is not None:
+                    self.path.write_bytes(content)
+                names = sorted(path.name for path in self.folder.iterdir())
+                with patch.object(migration, "fence_legacy_state", side_effect=AssertionError("Fence attempted")), \
+                        patch.object(migration, "_store", side_effect=AssertionError("GitHub accessed")), \
+                        patch.object(migration, "atomic_json", side_effect=AssertionError("State write")), \
+                        patch.object(migration, "cache_transaction", side_effect=AssertionError("State lock")), \
+                        patch("sys.stdout", new_callable=io.StringIO) as stdout, \
+                        patch("sys.stderr", new_callable=io.StringIO) as stderr:
+                    self.assertEqual(migration.main(["check-legacy", "--state-path", str(self.path)]), 1)
+                self.assertEqual(stdout.getvalue(), "")
+                self.assertNotIn("https://example.org", stderr.getvalue())
+                self.assertEqual(self.path.read_bytes() if self.path.exists() else None, content)
+                self.assertEqual(sorted(path.name for path in self.folder.iterdir()), names)
+
+    def test_atomic_replacement_during_read_retries_the_current_file(self):
+        real_fstat = os.fstat
+        real_stat = Path.stat
+        calls = []
+        replaced = []
+        updated = copy.deepcopy(self.original)
+        updated["pending"][0]["hub_attempts"] = 4
+        def counting_fstat(descriptor):
+            calls.append(descriptor)
+            return real_fstat(descriptor)
+        def replacing_stat(path, *args, **kwargs):
+            if path == self.path and len(calls) == 2 and not replaced:
+                replaced.append(True)
+                atomic_json(self.path, updated)  # external writer's atomic replacement
+            return real_stat(path, *args, **kwargs)
+        with patch.object(migration.os, "fstat", side_effect=counting_fstat), \
+                patch.object(migration.Path, "stat", autospec=True, side_effect=replacing_stat):
+            result = migration.check_legacy_state(self.path, now=1000)
+        self.assertEqual(len(calls), 4)
+        self.assertEqual(result["hub_attempts_total"], 4)
+        self.assertEqual(result["sha256"], hashlib.sha256(self.path.read_bytes()).hexdigest())
+
+    def test_continuously_changing_file_fails_after_three_attempts_without_writes(self):
+        real_fstat = os.fstat
+        calls = []
+        before = self.path.read_bytes()
+        def changing_fstat(descriptor):
+            actual = real_fstat(descriptor)
+            calls.append(descriptor)
+            values = {name: getattr(actual, name) for name in (
+                "st_dev", "st_ino", "st_size", "st_mtime_ns", "st_ctime_ns", "st_mode")}
+            if len(calls) % 2 == 0:
+                values["st_mtime_ns"] += 1
+            return types.SimpleNamespace(**values)
+        with patch.object(migration.os, "fstat", side_effect=changing_fstat), \
+                patch.object(migration, "atomic_json", side_effect=AssertionError("State write")), \
+                patch.object(migration, "cache_transaction", side_effect=AssertionError("State lock")):
+            with self.assertRaisesRegex(migration.MigrationError, "tre letture"):
+                migration.check_legacy_state(self.path, now=1000)
+        self.assertEqual(len(calls), 6)
+        self.assertEqual(self.path.read_bytes(), before)
 
 
 if __name__ == "__main__":

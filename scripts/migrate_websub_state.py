@@ -12,6 +12,7 @@ import json
 import math
 import os
 from pathlib import Path
+import stat
 import sys
 import time
 import uuid
@@ -27,6 +28,8 @@ from cache_safety import atomic_json, cache_transaction, _file_lock, _file_unloc
 TOPIC = "https://rss.artbooms.com/rss"
 FENCE_VERSION = "migration-fence-v1"
 EVENT_TTL = 72 * 3600
+MAX_STATE_BYTES = 900 * 1024
+MAX_LEGACY_READ_BYTES = 2 * 1024 * 1024
 
 
 class MigrationError(ValueError):
@@ -97,6 +100,97 @@ def validate_legacy_state(state):
     return state
 
 
+def resolve_legacy_path(path=None):
+    """Match the publisher's path policy without importing the new backend."""
+    if path is None:
+        configured = os.environ.get("WEBSUB_STATE_PATH", "").strip()
+        path = configured or os.environ.get("CACHE_PATH", "cache/articles_cache.json") + ".websub.json"
+    if not os.fspath(path).strip():
+        raise MigrationError("Percorso dello stato legacy assente")
+    return Path(path).resolve()
+
+
+def _file_identity(metadata):
+    return (metadata.st_dev, metadata.st_ino, metadata.st_size,
+            metadata.st_mtime_ns, metadata.st_ctime_ns)
+
+
+def _check_import_size(state):
+    # Same fixed-width UUID/envelope as the explicit initial import; no store,
+    # HTTP, baseline, or credentials are needed for this pre-fence check.
+    if not state["observed_guids"]:
+        raise MigrationError("Archivio GUID vivo vuoto: migrazione rifiutata, nessuna nuova baseline")
+    document = {"format": 1, "topic": TOPIC, "state": state, "completed": {},
+                "mode": "paused", "migration_id": "00000000-0000-0000-0000-000000000000",
+                "revision": 0}
+    size = len(_canonical(document))
+    if size > MAX_STATE_BYTES:
+        raise MigrationError("Stato importato oltre 900 KiB: fermarsi prima del fence, nessun troncamento")
+    return size
+
+
+def check_legacy_state(path=None, now=None):
+    """Read a coherent existing v2 snapshot; never create locks or write files.
+
+    Atomic replacements can race a diagnostic read. Retry up to three times;
+    the later fence still validates the live state again under its own locks.
+    """
+    resolved = resolve_legacy_path(path)
+    for _ in range(3):
+        if not stat.S_ISREG(resolved.stat().st_mode):
+            raise MigrationError("Lo stato legacy deve essere un file regolare")
+        with open(resolved, "rb") as handle:
+            before = os.fstat(handle.fileno())
+            if not stat.S_ISREG(before.st_mode):
+                raise MigrationError("Lo stato legacy deve essere un file regolare")
+            if before.st_size > MAX_LEGACY_READ_BYTES:
+                raise MigrationError("File legacy troppo grande per il controllo sicuro: nessuna migrazione")
+            content = handle.read(MAX_LEGACY_READ_BYTES + 1)
+            if len(content) > MAX_LEGACY_READ_BYTES:
+                raise MigrationError("File legacy troppo grande per il controllo sicuro: nessuna migrazione")
+            after = os.fstat(handle.fileno())
+        try:
+            current = resolved.stat()
+        except FileNotFoundError:
+            continue
+        opened, located = _file_identity(after), _file_identity(current)
+        # On Windows, fstat and stat can report different creation/change-time
+        # values for the same open file. Device/inode/size/mtime still identify
+        # atomic replacements; retain the stronger ctime check on Linux.
+        if (_file_identity(before) != _file_identity(after)
+                or opened[:4] != located[:4]
+                or (os.name != "nt" and opened[4] != located[4])
+                or len(content) != after.st_size):
+            continue
+        state = validate_legacy_state(json.loads(content.decode("utf-8"), object_pairs_hook=_unique_object))
+        import_bytes = _check_import_size(state)
+        clock = time.time() if now is None else now
+        if type(clock) not in (int, float) or not math.isfinite(clock):
+            raise MigrationError("Orologio del controllo legacy non valido")
+        pending = state["pending"]
+        expires = [event["expires_at"] for event in pending]
+        exhausted = lambda event: (event["expires_at"] <= clock
+            or event["feed_checks"] >= 40 or event["hub_attempts"] >= 8)
+        return {"path": str(resolved), "version": 2, "size_bytes": len(content),
+            "migration_document_bytes": import_bytes,
+            "capacity_warning": import_bytes >= 600 * 1024,
+            "sha256": hashlib.sha256(content).hexdigest(),
+            "file_identity": dict(zip(("device", "inode", "size_bytes", "mtime_ns", "ctime_ns"),
+                                      _file_identity(after))),
+            "checked_at": datetime.fromtimestamp(clock, timezone.utc).isoformat(),
+            "observed_guids": len(state["observed_guids"]), "pending": len(pending),
+            "pending_guids": len({guid for event in pending for guid in event["guids"]}),
+            "expired_pending": sum(event["expires_at"] <= clock for event in pending),
+            "exhausted_pending": sum(exhausted(event) for event in pending),
+            "due_pending": sum(not exhausted(event) and event["next_attempt_at"] <= clock for event in pending),
+            "feed_checks_total": sum(event["feed_checks"] for event in pending),
+            "hub_attempts_total": sum(event["hub_attempts"] for event in pending),
+            "earliest_expires_at": min(expires) if expires else None,
+            "latest_expires_at": max(expires) if expires else None,
+            "earliest_next_attempt_at": min((event["next_attempt_at"] for event in pending), default=None)}
+    raise MigrationError("Stato legacy cambiato durante tre letture: nessuna migrazione, riprovare")
+
+
 def _validate_fence(fence, migration_id=None):
     if not isinstance(fence, dict) or fence.get("version") != FENCE_VERSION:
         raise MigrationError("Fence di migrazione assente: non ricostruire lo stato dal feed")
@@ -160,6 +254,7 @@ def fence_legacy_state(path, migration_id, wait_timeout=60, poll_interval=0.1):
         if isinstance(state, dict) and state.get("version") == FENCE_VERSION:
             return copy.deepcopy(_validate_fence(state, migration_id))
         validate_legacy_state(state)
+        _check_import_size(state)
         fence = {"version": FENCE_VERSION, "migration_id": migration_id, "topic": TOPIC,
                  "legacy_state": copy.deepcopy(state),
                  "legacy_sha256": hashlib.sha256(_canonical(state)).hexdigest(),
@@ -336,6 +431,8 @@ def main(argv=None):
     parser.add_argument("--branch", default=os.environ.get("WEBSUB_STATE_BRANCH", "websub-state"))
     parser.add_argument("--file", default=os.environ.get("WEBSUB_STATE_FILE", "websub-state.json"))
     commands = parser.add_subparsers(dest="command", required=True)
+    check = commands.add_parser("check-legacy", help="Controlla il v2 vivo in sola lettura, senza lock o export")
+    check.add_argument("--state-path")
     fence = commands.add_parser("fence", help="Ferma solo il publisher legacy, conserva tutto lo stato v2")
     fence.add_argument("--state-path", required=True)
     fence.add_argument("--migration-id", default=None)
@@ -361,7 +458,9 @@ def main(argv=None):
     rollback.add_argument("--wait-timeout", type=float, default=60)
     args = parser.parse_args(argv)
     try:
-        if args.command == "fence":
+        if args.command == "check-legacy":
+            result = check_legacy_state(args.state_path)
+        elif args.command == "fence":
             document = build_document(fence_legacy_state(args.state_path, args.migration_id or str(uuid.uuid4()),
                                                          args.wait_timeout))
             result = _summary(document)

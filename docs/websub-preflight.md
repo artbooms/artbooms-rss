@@ -43,8 +43,17 @@ recuperabile dopo la perdita del processo. Non si promette altrimenti.
 
 A feed invariato: un GET del ref per ciclo di circa 120 secondi, zero commit.
 Le scritture avvengono solo per eventi/transizioni; il ramo nasce senza
-workflow. Limite file 900 KiB: superato, il publisher si ferma senza troncare
-stato o toccare RSS. GitHub mantiene quote e disponibilità proprie. Token
+workflow. Le ricevute terminali `completed` possono essere rimosse dal solo
+documento corrente dopo sette giorni oltre sia la conferma sia la deadline
+originale, esclusivamente durante una transizione già da salvare. La storia
+Git le conserva; GUID osservati, pending, budget, scadenze e ACK recenti non
+vengono rimossi. La deduplicazione dipende dai GUID permanenti, non dalla
+presenza indefinita della ricevuta nel documento corrente. Segnalazione nei
+log a 600 e 800 KiB, con limite orario salvo aumento di livello.
+Limite file 900 KiB: superato, il publisher si ferma senza troncare
+stato o toccare RSS. La crescita dei GUID resta permanente, quindi anche con
+questa pulizia gli avvisi richiedono un controllo futuro. GitHub mantiene
+quote e disponibilità proprie. Token
 scaduto o senza permessi sospende WebSub, senza fallback/reset locali.
 
 ## Credenziali
@@ -71,6 +80,15 @@ provati due istanze, crash, lease, timeout prima/dopo PATCH, ACK ambiguo,
 guasti GitHub, ripartenza, deduplica, budget e migrazione. I test del vecchio
 file verificano il default. Restano i controlli cache/cursore/correzioni
 manuali, arte, news 48 ore/fallback e dispatch PWA. Nessuna pubblicazione reale.
+
+`check-legacy` è il nuovo preflight Render Shell, locale e strettamente in
+sola lettura: percorso, file stabile, JSON/v2, GUID/pending/retry/scadenze e
+dimensione dell'importazione. Niente lock, rete, export o dati integrali in
+stdout; fallisce prima del fence per stato invalido o dimensione eccessiva.
+Le API reali ref/commit/contents sono state lette con HTTP 200 e versione
+2022-11-28. Le scritture del backend e i conflitti sono tuttora testati con
+Git Data simulato: la prova reale segregata richiede autorizzazione futura,
+come indicato nella procedura. Non è già stata eseguita.
 
 ## CI e ambiente
 

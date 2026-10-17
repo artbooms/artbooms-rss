@@ -6,6 +6,7 @@ WebSub has no idempotency key; a lost hub acknowledgement can consume another
 bounded attempt, whereas a durably acknowledged event is never replayed.
 """
 import copy
+import json
 import math
 import os
 import threading
@@ -15,10 +16,15 @@ import uuid
 import requests
 
 import websub as legacy
-from websub_store import Conflict, GitHubStore, StoreError, Unavailable
+from websub_store import Conflict, GitHubStore, MAX_DOCUMENT_BYTES, StoreError, Unavailable
 
 LEASE_SECONDS = 180
 CAS_ATTEMPTS = 3
+RECEIPT_RETENTION = 7 * 24 * 3600
+CAPACITY_WARNING_BYTES = 600 * 1024
+CAPACITY_CRITICAL_BYTES = 800 * 1024
+CAPACITY_LOG_INTERVAL = 3600
+_capacity_warning = None
 _run_lock = threading.Lock()
 _default_store = None
 _default_config = None
@@ -86,17 +92,52 @@ def _store_from_env():
     return _default_store
 
 
-def _transaction(store, change):
+def _prune_completed(document, now):
+    """Drop only old terminal receipts; observed GUIDs remain the dedupe ledger.
+
+    Keep seven days after BOTH completion and the event's original deadline.
+    Git history retains the full receipts. No pending, counter or lease is
+    changed, and this runs only alongside an already necessary state write.
+    """
+    old = [identifier for identifier, receipt in document["completed"].items()
+           if now >= max(receipt["at"], receipt["expires_at"]) + RECEIPT_RETENTION]
+    for identifier in old:
+        del document["completed"][identifier]
+    return len(old)
+
+
+def _warn_capacity(document, now):
+    global _capacity_warning
+    size = len(json.dumps(document, sort_keys=True, ensure_ascii=False,
+                          separators=(",", ":"), allow_nan=False).encode("utf-8"))
+    level = 2 if size >= CAPACITY_CRITICAL_BYTES else 1 if size >= CAPACITY_WARNING_BYTES else 0
+    if not level:
+        return
+    if (_capacity_warning is not None and level <= _capacity_warning[1]
+            and 0 <= now - _capacity_warning[0] < CAPACITY_LOG_INTERVAL):
+        return
+    _capacity_warning = (now, level)
+    logger.warning("WebSub GitHub: capacità stato %d/%d byte (livello %d), %d GUID, %d ricevute; "
+                   "verificare la crescita prima del limite, nessun dato viene troncato",
+                   size, MAX_DOCUMENT_BYTES, level,
+                   len(document["state"]["observed_guids"]), len(document["completed"]))
+
+
+def _transaction(store, change, now=None):
     """Retry only revision conflicts; ambiguous writes must first be resolved."""
+    clock = _clock(now)
     for attempt in range(CAS_ATTEMPTS):
         snapshot = store.load()
         original = _validate_document(snapshot.document)
+        _warn_capacity(original, clock())
         document = copy.deepcopy(original)
         change(document)
         if document == original:
             return original
+        _prune_completed(document, clock())
         document["revision"] += 1
         _validate_document(document)
+        _warn_capacity(document, clock())
         try:
             return _validate_document(store.commit(snapshot, document).document)
         except Conflict:
@@ -213,7 +254,7 @@ def run(content, store=None, now=None):
     try:
         guids = legacy._feed_guids(content)
         store = store or _store_from_env()
-        document = _transaction(store, lambda doc: _reconcile(doc, guids, clock()))
+        document = _transaction(store, lambda doc: _reconcile(doc, guids, clock()), now=clock)
         if not _active(document):
             return False
         if not any(event["next_attempt_at"] <= clock() and not _leased(event, clock())
@@ -222,7 +263,7 @@ def run(content, store=None, now=None):
             # An unchanged feed costs one authoritative ref read, no commits.
             return False
         token = uuid.uuid4().hex
-        document = _transaction(store, lambda doc: _reserve_feed(doc, token, clock()))
+        document = _transaction(store, lambda doc: _reserve_feed(doc, token, clock()), now=clock)
         event = next((candidate for candidate in document["state"]["pending"]
                       if candidate.get("lease_token") == token), None)
         if event is None or not _leased(event, clock()):
@@ -233,11 +274,11 @@ def run(content, store=None, now=None):
         except Exception as exc:
             retry_after = getattr(exc, "retry_after", None)
             _transaction(store, lambda doc: _finish(doc, identifier, token, clock(),
-                                                    retry_after=retry_after))
+                                                    retry_after=retry_after), now=clock)
             logger.warning("WebSub GitHub: feed non pronto, evento %s; POST non consumati", identifier)
             return False
         previous_attempts = event["hub_attempts"]
-        document = _transaction(store, lambda doc: _reserve_hub(doc, identifier, token, clock()))
+        document = _transaction(store, lambda doc: _reserve_hub(doc, identifier, token, clock()), now=clock)
         event = _owned(document, identifier, token)
         if event is None or event["hub_attempts"] != previous_attempts + 1:
             return False
@@ -267,7 +308,7 @@ def run(content, store=None, now=None):
             logger.warning("WebSub GitHub: esito hub incerto, evento %s, POST %d/%d",
                            identifier, event["hub_attempts"], legacy.MAX_HUB_ATTEMPTS)
         document = _transaction(store, lambda doc: _finish(doc, identifier, token, clock(),
-            accepted=accepted, terminal=terminal, retry_after=retry_after))
+            accepted=accepted, terminal=terminal, retry_after=retry_after), now=clock)
         acknowledged = document["completed"].get(identifier, {}).get("status") == "accepted"
         if accepted and acknowledged:
             logger.info("WebSub GitHub: conferma durevole evento %s (%d GUID), POST %d",

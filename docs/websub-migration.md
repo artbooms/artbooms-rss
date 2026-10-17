@@ -1,14 +1,26 @@
-# Migrazione manuale dello stato WebSub su GitHub
+# Attivazione WebSub: procedura definitiva e punti di arresto
 
-Queste istruzioni preparano il passaggio dal file locale v2 al ramo dedicato `websub-state`. Non eseguono merge o deploy. Prima dell'esecuzione servono l'approvazione dei risultati della PR e un momento concordato per la migrazione. Il feed RSS e l'acquisizione continuano durante il fence; soltanto le notifiche WebSub restano ferme fino all'attivazione esplicita.
+**Documento da approvare, non autorizzazione ad agire.** Nessuna operazione di produzione descritta qui è stata eseguita. Non iniziare dal merge. Il codice è predisposto; prima dell'attivazione servono una prova GitHub reale autorizzata, il controllo dello stato vivo e il blocco dei trigger di deploy.
 
-Lo stato iniziale **deve provenire dal file vivo del servizio**: conserva tutti i GUID osservati, gli eventi pending, i contatori GET/POST e le scadenze originali. Non usare la cache articoli, una copia vecchia del file o il feed pubblico per ricostruirlo. Se il file vivo è assente, illeggibile, corrotto o v1, la CLI si ferma. Non eliminare il file per aggirare l'errore.
+## Sequenza semplice: chi fa cosa
 
-## 1. Fence prima del deploy, dalla Render Shell
+1. **Tu approvi separatamente la finestra operativa e i cambi temporanei Render.** Il chiamante del deploy hook delle 09:03 UTC resta sconosciuto: non ci sono prove che sia cron-job.org. Auto-Deploy Off, da solo, non blocca il hook. La procedura richiede di autorizzare espressamente Settings → Auto-Deploy → Off e Settings → Deploy Hook → Regenerate Hook, senza comunicare il nuovo URL ad alcuna automazione. Questo invalida il vecchio URL, senza toccare il cronjob GitHub dei 15 minuti. Non usare GET/POST sul vecchio hook come test: se fosse ancora valido provocherebbe un deploy. Non usare sospensione o maintenance mode: interromperebbero l'RSS. Nessun cambiamento viene eseguito ora.
+2. **Tu crei il token solo dopo autorizzazione; noi verifichiamo le API reali prima del fence.** Fine-grained PAT per il solo repository artbooms/artbooms-rss, Contents lettura/scrittura e Metadata lettura, senza Actions, Workflows o amministrazione. Usare un prompt nascosto, mai incollare il token in chat, URL, file o comandi. La prova isolata dell'appendice B deve riuscire: non invia notifiche e non tocca lo stato vivo. In caso di errore ci si ferma qui.
+3. **Tu apri la Render Shell del servizio; noi controlliamo che non ci siano deploy in corso o accodati e registriamo deploy/istanza correnti.** Gli eventuali build/deploy già avviati prima del blocco devono essere terminati prima di iniziare. Nessun collega o altro sistema deve richiedere deploy/API/restart durante il trasferimento. L'RSS deve restare HTTP 200. Non modificare cronjob, PWA, cache, DNS o Squarespace.
+4. **Tu incolli il controllo in sola lettura dell'appendice A. La verifica è automatica.** Deve riportare versione 2, percorso corretto, un numero plausibile di GUID (almeno i 1.139 già osservati nell'audit, salvo verifica successiva), pending, budget e scadenze. Non stampa URL, GUID o contenuto integrale. File assente, JSON corrotto, archivio vuoto, v1, deadline incoerente o dimensione incompatibile fanno fallire il comando: nessun fence, esportazione o importazione deve partire. Un successo non congela lo stato; sarà riletto sotto lock.
+5. **Dopo il via libera, tu esegui il blocco C nella stessa istanza; le verifiche e l'importazione sono automatiche.** Il token è richiesto prima del fence. Lo script ripete il preflight, attende l'eventuale invio in corso, conserva il v2 integrale in un fence e in un backup privato, importa subito su GitHub in modalità paused e verifica il contenuto esatto. Non azzera GUID, contatori o scadenze. Se API/importazione non sono confermate, STOP: niente merge, variabili o deploy. Preservare backup e migration_id; non ricreare una baseline.
+6. **Solo dopo importazione verificata, tu configuri Environment con Save only.** Impostare WEBSUB_BACKEND=github, WEBSUB_STATE_REPOSITORY=artbooms/artbooms-rss, WEBSUB_STATE_BRANCH=websub-state, WEBSUB_STATE_FILE=websub-state.json e WEBSUB_GITHUB_TOKEN come segreto. Non scegliere Save and deploy o Save, rebuild, and deploy. Non premere Restart service: Render riparte dal commit/config già in esecuzione, non dalle modifiche Save only. Il publisher vecchio resta sul file con fence; quello nuovo non è ancora avviato. Non cambiare cache/cursore/WEBSUB_STATE_PATH.
+7. **Dopo autorizzazione al merge/deploy, noi uniamo la PR e tu avvii un solo deploy manuale del nuovo commit approvato.** Auto-Deploy resta Off durante questa fase, quindi né merge né snapshot possono anticipare il deploy. Non distribuire il vecchio commit. Noi verifichiamo SHA effettivo, backend github, remoto paused valido, completamento deploy e fine della vecchia istanza, RSS/news/health HTTP 200, archivio completo, logs e PWA. Non attivare se compare una nuova baseline locale o se i controlli falliscono.
+8. **Tu esegui resume dello stesso migration_id, soltanto dopo verifica; noi osserviamo i cicli successivi.** Comando nell'appendice D. I pending conservano le scadenze originali; nessun articolo o POST artificiale. Il publisher rileva anche i GUID acquisiti durante la pausa e salva le transizioni subito, senza attendere il salvataggio dei 15 minuti. Un token errato o GitHub assente sospende solo WebSub.
+9. **Dopo verifica dell'attivazione, tu ripristini Auto-Deploy On Commit previa autorizzazione.** Render può riallinearsi al commit main più recente: un eventuale ulteriore deploy deve essere atteso e verificato, ora con stato durevole. I successivi snapshot Persist cache restano marcati [skip render]. Non distribuire automaticamente il nuovo hook: il ripristino del chiamante giornaliero richiede identificarlo e una decisione separata. Il cronjob dei 15 minuti e la PWA non sono stati disabilitati o modificati.
 
-La shell deve appartenere all'istanza che esegue il publisher legacy. Non riavviare né deployare mentre il suo stato locale non è stato esportato e verificato su GitHub. Preparare prima la credenziale autorizzata e verificare la disponibilità di GitHub. **Il fence locale e la scrittura GitHub non sono una transazione atomica fra servizi**: un deploy/restart nella finestra può perdere il file effimero. È presente un deploy hook esterno; questa PR non lo modifica. Concordare la finestra operativa prima di procedere e non lasciare una pausa umana fra fence ed upload. I comandi seguenti sono una procedura manuale dopo approvazione, non sono stati eseguiti dall'agente.
+### Limite operativo da non nascondere
 
-Per poter usare la CLI prima che il nuovo codice sia distribuito, prendere **i soli due moduli revisionati da un commit preciso approvato**, salvarli in `/tmp` e mantenere `PYTHONPATH` anche sul checkout del servizio. Non utilizzare una URL di branch mobile o il testo di una PR non ancora approvata.
+Rigenerare il hook e disabilitare l'auto-deploy impedisce i due trigger noti (vecchio URL e nuovi commit), non un crash hardware o un restart deciso dalla piattaforma/amministratore. Il primo trasferimento fra filesystem effimero legacy e GitHub non è una transazione atomica. Se cambia istanza prima della verifica dell'importazione, STOP: niente attivazione; conservare il backup e verificare lo stato remoto/locale. Il vecchio codice non riconosce il backend GitHub: un suo rimpiazzo prima del deploy nuovo potrebbe ricreare una baseline locale. Non si può promettere l'eliminazione di questo rischio con il solo codice ancora non distribuito. Senza il blocco autorizzato e una finestra controllata la migrazione non è pronta per iniziare. Il fence della vecchia istanza e il remoto paused impediscono i publisher concorrenti nel trasferimento pianificato.
+
+## Appendice A — preparazione e controllo davvero in sola lettura
+
+Dopo aver approvato uno SHA preciso della PR, sostituire COMMIT_APPROVATO con quello SHA. La preparazione scarica soltanto gli strumenti in /tmp; non sostituisce file del servizio. Il comando check-legacy seguente legge soltanto: -B impedisce anche la scrittura di bytecode Python.
 
 ```bash
 cd /opt/render/project/src
@@ -20,102 +32,128 @@ curl --fail --silent --show-error --location \
 curl --fail --silent --show-error --location \
   https://raw.githubusercontent.com/artbooms/artbooms-rss/COMMIT_APPROVATO/websub_store.py \
   --output /tmp/websub_store.py
+python -B /tmp/migrate_websub_state.py check-legacy
+```
+
+Il percorso rispetta WEBSUB_STATE_PATH; altrimenti CACHE_PATH + .websub.json. Se necessario usare --state-path PERCORSO_VERIFICATO. Non indovinare un altro file se manca quello configurato. Output: versione, dimensioni originali e dell'importazione, checksum, identità file, conteggi, retry totali e scadenze minime/massime (timestamp UTC Unix). Nessun lock, file creato, rete, export, fence o lista GUID. Tre letture al massimo in caso di sostituzioni concorrenti; poi errore e STOP. Il fence rilegge e valida nuovamente il v2 prima di scrivere.
+
+## Appendice B — prova GitHub reale, solo dopo autorizzazione
+
+**Non ancora eseguita.** Le letture ref/commit/contents con API 2022-11-28 sono state provate realmente con HTTP 200. Creazione ramo, scritture e conflitti del backend sono stati finora verificati con trasporto simulato; la credenziale di produzione non è stata creata o collaudata. Il blocco seguente crea esclusivamente un ramo di prova root, senza workflow o cache, tiene mode paused e non chiama alcun publisher/hub. Richiede un'autorizzazione separata alla creazione di questo oggetto, oltre al token. Non eseguirlo oggi senza tale autorizzazione.
+
+```bash
+python -B - <<'PY'
+import getpass, uuid
+from websub_store import GitHubStore, Conflict
+suffix = uuid.uuid4().hex
+branch = 'websub-state-check-' + suffix
+print('Ramo isolato da annotare:', branch, flush=True)
+token = getpass.getpass('Token GitHub (input nascosto): ')
+a = GitHubStore('artbooms/artbooms-rss', branch, 'websub-state.json', token)
+b = GitHubStore('artbooms/artbooms-rss', branch, 'websub-state.json', token)
+doc = {'format': 1, 'topic': 'https://rss.artbooms.com/rss', 'state':
+       {'version': 2, 'observed_guids': [], 'pending': []}, 'completed': {},
+       'mode': 'paused', 'migration_id': str(uuid.uuid4()), 'revision': 0}
+a.initialize(doc)
+first, stale = a.load(), b.load()
+next_doc = dict(first.document, revision=1)
+written = a.commit(first, next_doc)
+try:
+    b.commit(stale, dict(stale.document, revision=2))
+except Conflict:
+    pass
+else:
+    raise RuntimeError('Conflitto CAS non rilevato: STOP')
+current = a.load()
+assert current.document == next_doc and current.head == written.head
+assert a.commit(current, current.document).head == current.head
+assert a.load().head == current.head
+print('OK: lettura, scrittura, CAS e no-op verificati; nessun POST hub')
+PY
+```
+
+Un errore richiede STOP prima del fence; non proseguire aggiungendo permessi a caso. Eliminare poi **solo il ramo di prova annotato** dalla pagina Branches GitHub, previo controllo del nome. Non cancellare o riscrivere websub-state. La prova reale non simula timeout GitHub, crash o ACK hub: quelle condizioni restano coperte dai test offline. Nessuna notifica artificiale è necessaria.
+
+## Appendice C — trasferimento vivo, dopo tutti i controlli
+
+Solo nella finestra già protetta e con preflight riuscito. Nessuna pausa umana fra fence e upload; se la shell cade non rilanciare da zero con un ID diverso. Il backup è privato e non può essere riscritto: se esiste già, verificare la migrazione precedente.
+
+```bash
 export WEBSUB_STATE_REPOSITORY=artbooms/artbooms-rss
 export WEBSUB_STATE_BRANCH=websub-state
 export WEBSUB_STATE_FILE=websub-state.json
-```
-
-Se `WEBSUB_STATE_PATH` è configurata, usare il suo percorso effettivo al posto dell'esempio seguente. La CLI non sceglie automaticamente un file alternativo. Il blocco usa le funzioni della CLI revisionata: chiede il token **prima** del fence, poi esegue immediatamente fence, backup privato e importazione in pausa, senza trasferimenti intermedi o attese umane.
-
-```bash
-python - <<'PY'
+python -B - <<'PY'
 import getpass, json, os, sys, uuid
 import migrate_websub_state as migration
 from websub_store import GitHubStore
-token = getpass.getpass("Token GitHub (input nascosto): ")
-store = GitHubStore(os.environ["WEBSUB_STATE_REPOSITORY"],
-                    os.environ["WEBSUB_STATE_BRANCH"],
-                    os.environ["WEBSUB_STATE_FILE"], token)
+preflight = migration.check_legacy_state()
+print(json.dumps(preflight, sort_keys=True), flush=True)
+token = getpass.getpass('Token GitHub (input nascosto): ')
+store = GitHubStore(os.environ['WEBSUB_STATE_REPOSITORY'],
+                    os.environ['WEBSUB_STATE_BRANCH'], os.environ['WEBSUB_STATE_FILE'], token)
 migration_id = str(uuid.uuid4())
-print("migration_id:", migration_id, flush=True)
+print('migration_id:', migration_id, flush=True)
 try:
-    fence = migration.fence_legacy_state("cache/articles_cache.json.websub.json", migration_id)
+    fence = migration.fence_legacy_state(preflight['path'], migration_id)
     document = migration.build_document(fence)
-    migration.export_document(document, "/tmp/websub-migration-backup.json")
+    migration.export_document(document, '/tmp/websub-migration-backup.json')
     snapshot = migration.initialize_remote(store, document, allow_initialize=True)
     print(json.dumps(migration._summary(snapshot.document, snapshot.head), sort_keys=True))
 except Exception as error:
-    print("Migrazione non confermata (%s): nessuna attivazione; conservare backup e ID" %
+    print('Trasferimento non confermato (%s): STOP, nessun deploy o attivazione' %
           type(error).__name__, file=sys.stderr)
     sys.exit(1)
 PY
 ```
 
-Conservare il `migration_id` UUID stampato dal comando: non è un segreto. Ripetere ogni comando successivo con quello stesso ID. Se il token/API non funziona, il blocco si ferma senza attivare WebSub e senza ripristinare automaticamente il locale. Se l'istanza o il deploy cambia durante il trasferimento, **non attivare**: conservare l'export e verificare quale commit remoto sia stato effettivamente confermato. Non ricostruire una baseline dal feed.
+Il lock publisher aspetta un POST già in corso; poi il lock di stato dura solo per la copia/fence atomica, non durante HTTP. Il vecchio observer e publisher rifiutano migration-fence-v1 senza ricreare stato né interrompere RSS/cache. Il documento remoto è il v2 integrale, revision 0, paused, completed vuoto. Non esistono inizializzazione automatica, fallback locale o sovrascrittura di uno stato differente/più recente. Preservare il backup fuori da Render appena importato; non pubblicarlo in PR, log, chat o endpoint. /tmp non è durevole.
 
-Il fence aspetta fino a 60 secondi, senza bloccare il lock di stato, per acquisire `STATE_PATH.publish.lock`. Un POST già in corso finisce prima della copia. Poi prende brevemente il lock di stato, legge il v2 valido e sostituisce atomicamente il file con `version: "migration-fence-v1"`, `migration_id`, copia integrale `legacy_state` e checksum. Rilascia entrambi i lock prima di qualunque operazione GitHub. Se l'attesa scade non scrive il fence. Il publisher e l'observer legacy rifiutano questa versione e gestiscono l'errore senza interrompere RSS o cache; non creano una nuova baseline.
+Se l'upload ha avuto una risposta incerta ma il backup e l'istanza sono conservati, riprendere soltanto con lo stesso backup/ID e la stessa destinazione. Non ripetere il blocco iniziale con un UUID nuovo:
 
 ```bash
-python /tmp/migrate_websub_state.py status \
-  --state-path cache/articles_cache.json.websub.json --migration-id ID_CONSERVATO
+python -B /tmp/migrate_websub_state.py upload \
+  --input /tmp/websub-migration-backup.json --initialize-branch
+python -B /tmp/migrate_websub_state.py status
 ```
 
-Il backup contiene GUID e stato editoriale, **non credenziali**. È creato con permessi privati, fuori dalla directory `cache`, e non sovrascrive un backup esistente. Dopo la conferma dell'upload, trasferire una copia tramite un canale privato; non incollarlo nei log, aggiungerlo alla PR o pubblicare un endpoint per scaricarlo. `/tmp` e il disco locale Render sono effimeri: completare la copia durevole prima di qualsiasi restart/deploy. Se GitHub è indisponibile, lasciare il fence e mettere immediatamente al sicuro l'export privato, poi riprendere dagli stessi file/ID; RSS continua finché l'istanza rimane disponibile.
+Uno stato remoto differente o più recente viene rifiutato, mai sostituito.
 
-## 2. Verifica dell'importazione e ripresa, sempre in pausa
+## Appendice D — controllo, attivazione e rollback
 
-Il blocco precedente importa già lo stato. Per controllare il remoto, o riprendere dopo un errore temporaneo, usare la stessa destinazione e lo stesso backup dal checkout completo approvato oppure dalla Render Shell preparata. Esempio dal checkout:
-
-```bash
-export WEBSUB_STATE_REPOSITORY=artbooms/artbooms-rss
-export WEBSUB_STATE_BRANCH=websub-state
-export WEBSUB_STATE_FILE=websub-state.json
-python scripts/migrate_websub_state.py upload \
-  --input /PERCORSO_PRIVATO/websub-migration-backup.json --initialize-branch
-python scripts/migrate_websub_state.py status
-```
-
-La CLI chiede il token con `getpass`, a input nascosto, se `WEBSUB_GITHUB_TOKEN` non è già una variabile segreta dell'ambiente. Non passare token come argomento, non salvarlo in file, cron, history o comandi `export TOKEN=...`. Usare una credenziale limitata al repository e ai permessi Contents necessari; la sua configurazione nel servizio è un'azione manuale separata e autorizzata. Il blocco iniziale mantiene il token soltanto nella memoria del processo Python.
-
-`--initialize-branch` autorizza soltanto la creazione esplicita del ramo dedicato se assente. Il ramo nasce da un commit root con il solo file di stato, senza workflow né cache. L'envelope è `format: 1`, topic RSS canonico, `state` v2 integrale, `completed: {}`, `mode: "paused"`, stesso `migration_id`, `revision: 0`. La CLI rilegge il contenuto per verificarlo. Un ramo esistente viene accettato solo se identico; un errore, un'autorizzazione mancante o uno stato diverso/più recente non provoca mai reset o sovrascrittura. Dopo una risposta di creazione persa, ripetere la stessa importazione con lo stesso backup/ID, senza cambiare ramo per aggirare il controllo.
-
-## 3. Configurazione e attivazione separate
-
-Dopo l'importazione verificata, configurare manualmente `WEBSUB_BACKEND=github` e le tre variabili di destinazione precedenti nel servizio, più `WEBSUB_GITHUB_TOKEN` come segreto. Il deploy richiede ancora approvazione esplicita. Il nuovo codice deve trovare il remoto esistente; un remoto assente o non valido deve lasciare WebSub fermo senza ricreare la baseline. Dopo `resume`, il publisher confronta anche i nuovi GUID entrati nel feed durante il fence con l'archivio importato, conservando tutti i budget originali.
-
-Solo dopo questi controlli e l'autorizzazione all'attivazione:
+Nella nuova Render Shell, dopo il deploy corretto e con le variabili configurate:
 
 ```bash
-python scripts/migrate_websub_state.py resume \
+python -B scripts/migrate_websub_state.py status
+python -B scripts/migrate_websub_state.py resume \
   --migration-id ID_CONSERVATO --confirm-activation
-python scripts/migrate_websub_state.py status
+python -B scripts/migrate_websub_state.py status
 ```
 
-`resume` cambia solo la modalità con compare-and-swap e incrementa la revisione; non azzera pending, scadenze, lease, contatori o completamenti. Un conflitto richiede una nuova lettura, non un retry cieco. Il protocollo WebSub non offre una chiave d'idempotenza publisher: un POST accettato seguito da timeout resta ambiguo; la migrazione non promette consegna exactly-once.
-
-## Comandi di gestione e rollback
+Eseguire resume soltanto dopo aver verificato status paused, ID e conteggi attesi, backend github e vecchia istanza terminata/fenced. Non stampare token. Una pausa conserva tutto e permette soltanto il completamento dell'ACK di un invio già in corso:
 
 ```bash
-python scripts/migrate_websub_state.py pause --migration-id ID_CONSERVATO
-python scripts/migrate_websub_state.py status
-python scripts/migrate_websub_state.py export --output /PERCORSO_PRIVATO/websub-backup-nuovo.json
+python -B scripts/migrate_websub_state.py pause --migration-id ID_CONSERVATO
 ```
 
-`pause` è persistente e conserva lo stato; un invio già autorizzato/in corso può completarsi. `status` stampa soltanto ID, modalità, revisione, head e conteggi. L'export remoto conserva il documento attuale e serve da backup, non da sorgente per reinizializzare un ramo avanzato.
-
-**Prima dell'attivazione soltanto**, se il remoto è ancora paused/revision 0, senza nuove transizioni e con stato identico al fence, è possibile annullare:
-
-Il comando deve essere eseguito nella shell della stessa istanza legacy con accesso al backend revisionato. Se il nuovo codice non è ancora distribuito, scaricare anche **il solo modulo di archiviazione dallo stesso commit approvato** in `/tmp`, senza sostituire i file del servizio:
+**Rollback prima del nuovo deploy e prima di qualsiasi attivazione/transizione:** remoto ancora paused/revision 0, identico al fence. Nella stessa istanza legacy:
 
 ```bash
-cd /opt/render/project/src
-curl --fail --silent --show-error --location \
-  https://raw.githubusercontent.com/artbooms/artbooms-rss/COMMIT_APPROVATO/websub_store.py \
-  --output /tmp/websub_store.py
-PYTHONPATH="/tmp:$PWD" python /tmp/migrate_websub_state.py rollback-fence \
-  --state-path PERCORSO_DEL_FILE_VIVO --migration-id ID_CONSERVATO
+python -B /tmp/migrate_websub_state.py rollback-fence \
+  --state-path PERCORSO_VERIFICATO --migration-id ID_CONSERVATO
 ```
 
-Usare la medesima destinazione GitHub non segreta del punto 2; il token viene chiesto dal prompt nascosto. Prima registra su GitHub, con CAS, `cancelled: true`, `mode: "paused"`, revisione 1; il nuovo backend e `resume` rifiutano la riattivazione. Solo dopo conferma remota ripristina il v2 integrale sotto gli stessi lock. Un crash fra le due fasi si recupera ripetendo il comando con lo stesso ID. Se GitHub non risponde o lo stato è avanzato, il fence resta conservato.
+Prima registra cancelled/revision 1 su GitHub con CAS e lo verifica, poi ripristina il v2 originale sotto lock. Crash fra le due fasi: ripetere con lo stesso ID. Se GitHub manca o lo stato è avanzato, nessun ripristino cieco: fence conservato. Ripristinare impostazioni/automazioni richiede una decisione separata, perché riabilitare l'auto-deploy può distribuire il main più recente.
 
-Dopo l'attivazione o qualunque nuova transizione, **non ripristinare il file locale**, non fare force-push/reset del ramo e non reimportare snapshot vecchi. Per il rollback applicativo mantenere codice capace di usare il backend GitHub, mettere il remoto in pausa e conservare tutta la storia. Non tornare a una release che usa soltanto il file effimero locale. Credenziali, backend e eventuale riattivazione richiedono la rispettiva autorizzazione manuale; non esporre endpoint di amministrazione pubblici.
+**Dopo il nuovo deploy o l'attivazione:** non ripristinare una release che ignora GitHub, non fare force-push, non cancellare il ramo e non reimportare backup vecchi. Mettere WebSub in pausa e mantenere l'adattatore durevole mentre si ripristina solo l'eventuale codice applicativo guasto. RSS/news/cache non sono stati riscritti da questa PR. Un ritorno letterale al vecchio publisher effimero non è un rollback garantito senza perdita di stato.
+
+## Scadenze e capacità
+
+- Pending già registrati: deadline originale immutabile. Dopo oltre 72 ore di indisponibilità GitHub, alla ripresa quelli scaduti ricevono status expired, senza POST e senza riaccodamento del GUID. Questo significa che la notifica non è consegnata; non si presenta il recupero del servizio come recupero di quella notifica.
+- GUID nuovi mai registrati durante il guasto: se ancora nel feed/cache/sorgente canonica, diventano un evento al recupero, con 72 ore da quel momento. Il primo istante locale perso non è ricostruibile. Nessuna nuova baseline storica.
+- GET che termina alla deadline non autorizza POST; POST iniziato prima della deadline può salvare la risposta positiva dopo. Lease e budget persistiti non vengono resettati.
+- completed è alleggerito solo su una scrittura già necessaria, almeno sette giorni dopo sia la ricevuta sia la deadline originale. GUID osservati, pending, retry e ricevute recenti restano intatti; la storia Git conserva le ricevute archiviate. Nessuna scrittura ogni due minuti per fare pulizia.
+- Segnalazioni preventive nei log a 600 e 800 KiB, al massimo una volta all'ora salvo aumento di livello. Limite 900 KiB invariato; un superamento ferma solo WebSub, senza troncare dati o limitare l'RSS. I GUID osservati continuano a crescere: gli avvisi richiedono controllo futuro, la compattazione non elimina quel limite. Un remoto già fuori limite non viene corretto distruttivamente.
+
+Le frequenze restano circa 120 secondi per acquisizione/feed e 15 minuti per snapshot cache/dispatch PWA. WebSub salva le proprie transizioni sincronicamente nel background, senza attendere quello snapshot.
+
+Fonti ufficiali: [deploy e restart Render](https://render.com/docs/deploys), [hook e rigenerazione](https://render.com/docs/deploy-hooks), [Save only e variabili](https://render.com/docs/configure-environment-variables), [Git refs e CAS non forzato](https://docs.github.com/en/rest/git/refs#update-a-reference).
