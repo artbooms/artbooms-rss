@@ -25,11 +25,13 @@ def notify_news_sitemap_topic(updated_urls):
     No periodic pings, no changes to RSS/WebSub durable state, no exception to
     the caller, no claim that Google subscribes to this XML sitemap topic.
     """
-    changed = {
+    # None is reserved for a single startup catch-up of current News items.
+    # The normal publishing path always supplies exact updated URLs.
+    changed = None if updated_urls is None else {
         url for url in updated_urls
         if isinstance(url, str) and url.startswith("https://www.artbooms.com/blog/")
     }
-    if not changed:
+    if changed is not None and not changed:
         return False
     try:
         # Same public URL that Google would fetch, not an internal/cache copy.
@@ -54,7 +56,7 @@ def notify_news_sitemap_topic(updated_urls):
             for entry in root.findall(f"{{{SITEMAP_NS}}}url")
             if entry.find(f"{{{NEWS_NS}}}news") is not None
         }
-        if not eligible.intersection(changed):
+        if not eligible or (changed is not None and not eligible.intersection(changed)):
             logger.warning(
                 "News sitemap WebSub: articolo cambiato non presente con metadati News "
                 "nella sitemap pubblica; nessun POST"
