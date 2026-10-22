@@ -41,6 +41,22 @@ class NewsSitemapWebSubTests(unittest.TestCase):
             })
             self.assertFalse(post.call_args.kwargs["allow_redirects"])
 
+    def test_startup_catchup_notifies_existing_recent_article_once(self):
+        with patch.object(notifier.requests, "get", return_value=Mock(
+                status_code=200, content=document())) as get, \
+             patch.object(notifier.requests, "post", return_value=Mock(
+                status_code=204)) as post:
+            self.assertTrue(notifier.notify_news_sitemap_topic(None))
+            get.assert_called_once()
+            post.assert_called_once()
+
+    def test_startup_no_news_entries_does_not_notify(self):
+        with patch.object(notifier.requests, "get", return_value=Mock(
+                status_code=200, content=document(with_news=False))), \
+             patch.object(notifier.requests, "post") as post:
+            self.assertFalse(notifier.notify_news_sitemap_topic(None))
+            post.assert_not_called()
+
     def test_empty_batch_makes_no_requests(self):
         with patch.object(notifier.requests, "get") as get, \
              patch.object(notifier.requests, "post") as post:
