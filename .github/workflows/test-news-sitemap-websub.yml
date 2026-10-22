@@ -1,0 +1,25 @@
+name: Test experimental sitemap WebSub
+on:
+  push:
+    branches:
+      - experiment/news-sitemap-websub-topic-2026-10-22
+  pull_request:
+    branches:
+      - main
+permissions:
+  contents: read
+jobs:
+  offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install project dependencies
+        run: pip install -r requirements.txt -r requirements-test.txt
+      - name: Run all regression tests
+        run: python -m unittest discover -s tests -p "test_*.py" -q

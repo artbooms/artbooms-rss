@@ -23,6 +23,8 @@ DAYS_WINDOW = 2
 SITE_NAME = "ARTBOOMS"
 LANG = "it"
 KEYWORDS = "arte"
+NEWS_SITEMAP_URL = "https://rss.artbooms.com/news-sitemap.xml"
+NEWS_SITEMAP_HUB = "https://pubsubhubbub.appspot.com/"
 
 
 def _escape_xml(s: str) -> str:
@@ -36,6 +38,10 @@ def _escape_xml(s: str) -> str:
 
 def _xml_response(xml: str) -> Response:
     resp = Response(xml, mimetype="application/xml")
+    # WebSub permits HTTP resources other than feeds; discovery is via Link.
+    # Google hub support for a sitemap XML topic is not guaranteed.
+    resp.headers.add("Link", f'<{NEWS_SITEMAP_URL}>; rel="self"')
+    resp.headers.add("Link", f'<{NEWS_SITEMAP_HUB}>; rel="hub"')
     resp.headers["Cache-Control"] = "no-cache, max-age=0, must-revalidate"
     resp.headers["Pragma"] = "no-cache"
     resp.headers["Expires"] = "0"
