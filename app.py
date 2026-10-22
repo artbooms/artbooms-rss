@@ -232,6 +232,7 @@ def background_populator():
                 leader.write(str(os.getpid()).encode())
                 leader.flush()
                 next_run = 0.0
+                startup_news_sitemap = True  # One-time catch-up for today's published article.
                 wake_token = _file_token(WAKE_PATH)
                 while not _stop.is_set():
                     token = _file_token(WAKE_PATH)
@@ -246,12 +247,16 @@ def background_populator():
                             logger.exception("Ciclo popolatore fallito; riprovo al ciclo successivo")
                         # Existing RSS WebSub path remains first and unchanged.
                         _notify_websub()
-                        if news_feed_ready and news_urls:
+                        if startup_news_sitemap or (news_feed_ready and news_urls):
                             try:
-                                notify_news_sitemap_topic(news_urls)
+                                # On deployment also notify already-published recent news.
+                                # After startup, notify only genuinely updated articles.
+                                notify_news_sitemap_topic(None if startup_news_sitemap else news_urls)
                             except Exception:
                                 # This experiment can never interrupt RSS or WebSub.
                                 logger.exception("News sitemap WebSub: errore isolato; RSS conservato")
+                            finally:
+                                startup_news_sitemap = False
                         next_run = time.monotonic() + POPULATE_INTERVAL
                     _stop.wait(LEADER_RETRY_INTERVAL)
             finally:
