@@ -16,6 +16,7 @@ from cache_safety import atomic_write, atomic_json, cache_entries, cache_transac
 from cache_safety import with_editorial_authors
 from editorial_taxonomy import categories_for
 from news_sitemap import news_sitemap_view
+from news_sitemap_websub import notify_news_sitemap_topic
 from rss_generator import build_rss
 from websub import observe_feed, publish_pending, resolve_state_path
 
@@ -176,7 +177,7 @@ def rebuild_feed():
         return False
 
 
-def _update_once():
+def _update_once(news_urls=None):
     if not _update_lock.acquire(blocking=False):
         return False, False
     changed, rebuilt = False, False
@@ -184,6 +185,13 @@ def _update_once():
         try:
             items, _ = generate_items()
             changed = bool(items)
+            # Optional output for the independent sitemap-topic notification.
+            # Keep the original two-value return contract for existing callers/tests.
+            if changed and news_urls is not None:
+                news_urls.extend(
+                    item["url"] for item in items
+                    if isinstance(item, dict) and isinstance(item.get("url"), str)
+                )
         finally:
             rebuilt = rebuild_feed()
     finally:
@@ -230,11 +238,20 @@ def background_populator():
                     now = time.monotonic()
                     if now >= next_run or token != wake_token:
                         wake_token = token
+                        news_urls, news_feed_ready = [], False
                         try:
-                            _update_once()
+                            changed, rebuilt = _update_once(news_urls)
+                            news_feed_ready = changed and rebuilt
                         except Exception:
                             logger.exception("Ciclo popolatore fallito; riprovo al ciclo successivo")
+                        # Existing RSS WebSub path remains first and unchanged.
                         _notify_websub()
+                        if news_feed_ready and news_urls:
+                            try:
+                                notify_news_sitemap_topic(news_urls)
+                            except Exception:
+                                # This experiment can never interrupt RSS or WebSub.
+                                logger.exception("News sitemap WebSub: errore isolato; RSS conservato")
                         next_run = time.monotonic() + POPULATE_INTERVAL
                     _stop.wait(LEADER_RETRY_INTERVAL)
             finally:
