@@ -1,4 +1,4 @@
-name: Test experimental sitemap WebSub
+name: Test RSS and sitemap regressions
 on:
   push:
     branches:
@@ -11,6 +11,10 @@ permissions:
 jobs:
   offline:
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12.15", "3.13.4"]
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -18,7 +22,12 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python }}
+      - name: Install native XML build prerequisites
+        if: matrix.python == '3.13.4'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y libxml2-dev libxslt1-dev
       - name: Install project dependencies
         run: pip install -r requirements.txt -r requirements-test.txt
       - name: Run all regression tests

@@ -272,10 +272,12 @@ class GitHubStoreTests(unittest.TestCase):
     def test_unavailable_reads_never_initialize_or_mutate_branch(self):
         for outcome in (401, 404, 429, 503, requests.Timeout("Offline read timeout")):
             with self.subTest(outcome=type(outcome).__name__ if isinstance(outcome, Exception) else outcome):
-                self.fake.queue_fault("GET", "/git/ref/heads/" + BRANCH,
-                                      exception=outcome if isinstance(outcome, Exception) else None,
-                                      status=outcome if isinstance(outcome, int) else None,
-                                      headers={"Retry-After": "120"})
+                # A transport outage must outlast the single safe GET retry.
+                for _ in range(2 if isinstance(outcome, Exception) else 1):
+                    self.fake.queue_fault("GET", "/git/ref/heads/" + BRANCH,
+                                          exception=outcome if isinstance(outcome, Exception) else None,
+                                          status=outcome if isinstance(outcome, int) else None,
+                                          headers={"Retry-After": "120"})
                 with self.assertRaises(self.api.Unavailable):
                     self.make_store().load()
                 self.assertEqual(self.fake.writes, [])
