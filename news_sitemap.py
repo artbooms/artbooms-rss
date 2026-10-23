@@ -41,7 +41,8 @@ def _xml_response(xml: str) -> Response:
     # WebSub permits HTTP resources other than feeds; discovery is via Link.
     # Google hub support for a sitemap XML topic is not guaranteed.
     resp.headers.add("Link", f'<{NEWS_SITEMAP_URL}>; rel="self"')
-    resp.headers.add("Link", f'<{NEWS_SITEMAP_HUB}>; rel="hub"')
+    if os.environ.get("NEWS_SITEMAP_WEBSUB_ENABLED", "0") == "1":
+        resp.headers.add("Link", f'<{NEWS_SITEMAP_HUB}>; rel="hub"')
     resp.headers["Cache-Control"] = "no-cache, max-age=0, must-revalidate"
     resp.headers["Pragma"] = "no-cache"
     resp.headers["Expires"] = "0"

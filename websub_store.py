@@ -8,6 +8,7 @@ import base64
 import binascii
 import copy
 import json
+import logging
 import math
 import os
 import re
@@ -20,13 +21,16 @@ import requests
 
 MAX_DOCUMENT_BYTES = 900 * 1024
 API_ROOT = "https://api.github.com"
+logger = logging.getLogger("websub")
 
 
 class StoreError(RuntimeError):
-    def __init__(self, message, retry_after=None, status_code=None):
+    def __init__(self, message, retry_after=None, status_code=None, operation=None, reason=None):
         super().__init__(message)
         self.retry_after = retry_after
         self.status_code = status_code
+        self.operation = operation
+        self.reason = reason
 
 
 class Conflict(StoreError):
@@ -159,29 +163,51 @@ class GitHubStore:
                    env.get("WEBSUB_GITHUB_TOKEN", ""), session=session)
 
     def _request(self, method, endpoint, *, conflict=False, **kwargs):
-        response = None
-        try:
-            response = self.session.request(method, self._base + endpoint,
-                                            headers=dict(self._headers), timeout=self.timeout,
-                                            allow_redirects=False, **kwargs)
-            status = response.status_code
-            if not 200 <= status < 300:
-                error = Conflict if conflict and status in (409, 422) else Unavailable
-                raise error("GitHub WebSub state request failed (HTTP %d)" % status,
-                            retry_after=_retry_after(response.headers), status_code=status)
+        # Fixed endpoint families, never a URL, token, body or exception text.
+        family = ("ref" if endpoint.startswith("/git/ref") else
+                  "commit" if endpoint.startswith("/git/commits") else
+                  "tree" if endpoint.startswith("/git/trees") else "contents")
+        operation = method + ":" + family
+        # Only a transport failure on a read is safe to repeat immediately.
+        # HTTP failures obey the existing cooldown/Retry-After policy. Writes
+        # retain their original ambiguous-acknowledgement recovery, never retry.
+        attempts = 2 if method == "GET" else 1
+        for attempt in range(attempts):
+            response = None
             try:
-                result = response.json()
-            except (ValueError, TypeError):
-                raise Unavailable("GitHub returned invalid JSON") from None
-            if not isinstance(result, dict):
-                raise Unavailable("GitHub returned an invalid state response")
-            return result
-        except requests.RequestException:
-            # Request exceptions can contain the Authorization header or URL.
-            raise Unavailable("GitHub WebSub state request did not complete") from None
-        finally:
-            if response is not None:
-                response.close()
+                response = self.session.request(method, self._base + endpoint,
+                                                headers=dict(self._headers), timeout=self.timeout,
+                                                allow_redirects=False, **kwargs)
+                status = response.status_code
+                if not 200 <= status < 300:
+                    error = Conflict if conflict and status in (409, 422) else Unavailable
+                    raise error("GitHub WebSub state request failed (HTTP %d)" % status,
+                                retry_after=_retry_after(response.headers), status_code=status,
+                                operation=operation, reason="http")
+                try:
+                    result = response.json()
+                except (ValueError, TypeError):
+                    raise Unavailable("GitHub returned invalid JSON", operation=operation,
+                                      reason="json") from None
+                if not isinstance(result, dict):
+                    raise Unavailable("GitHub returned an invalid state response",
+                                      operation=operation, reason="json")
+                return result
+            except requests.RequestException as exc:
+                reason = ("tls" if isinstance(exc, requests.exceptions.SSLError) else
+                          "timeout" if isinstance(exc, requests.Timeout) else
+                          "connection" if isinstance(exc, requests.ConnectionError) else "request")
+                if reason in ("timeout", "connection") and attempt + 1 < attempts:
+                    logger.warning("WebSub GitHub: %s non completata (%s); un solo nuovo GET",
+                                   operation, reason)
+                    continue
+                # Request exceptions can contain credentials; never propagate
+                # their text or traceback to the publisher's diagnostics.
+                raise Unavailable("GitHub WebSub state request did not complete",
+                                  operation=operation, reason=reason) from None
+            finally:
+                if response is not None:
+                    response.close()
 
     def _head(self):
         result = self._request("GET", self._ref)

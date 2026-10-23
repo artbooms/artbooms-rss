@@ -212,6 +212,18 @@ def _notify_websub():
         logger.exception("WebSub non disponibile; feed conservato")
 
 
+def _notify_news_sitemap(news_urls, feed_ready):
+    # Google documents WebSub discovery for RSS/Atom, not XML sitemaps.
+    # Keep the isolated experiment opt-in; never ping unchanged news on deploy.
+    if (os.environ.get("NEWS_SITEMAP_WEBSUB_ENABLED", "0") != "1"
+            or not feed_ready or not news_urls):
+        return
+    try:
+        notify_news_sitemap_topic(news_urls)
+    except Exception:
+        logger.exception("News sitemap WebSub: errore isolato; RSS conservato")
+
+
 def background_populator():
     # This lock is independent of cache/feed write locks. Never delete it:
     # locks follow an inode, not the pathname. Kernel release covers worker death.
@@ -232,7 +244,6 @@ def background_populator():
                 leader.write(str(os.getpid()).encode())
                 leader.flush()
                 next_run = 0.0
-                startup_news_sitemap = True  # One-time catch-up for today's published article.
                 wake_token = _file_token(WAKE_PATH)
                 while not _stop.is_set():
                     token = _file_token(WAKE_PATH)
@@ -247,16 +258,7 @@ def background_populator():
                             logger.exception("Ciclo popolatore fallito; riprovo al ciclo successivo")
                         # Existing RSS WebSub path remains first and unchanged.
                         _notify_websub()
-                        if startup_news_sitemap or (news_feed_ready and news_urls):
-                            try:
-                                # On deployment also notify already-published recent news.
-                                # After startup, notify only genuinely updated articles.
-                                notify_news_sitemap_topic(None if startup_news_sitemap else news_urls)
-                            except Exception:
-                                # This experiment can never interrupt RSS or WebSub.
-                                logger.exception("News sitemap WebSub: errore isolato; RSS conservato")
-                            finally:
-                                startup_news_sitemap = False
+                        _notify_news_sitemap(news_urls, news_feed_ready)
                         next_run = time.monotonic() + POPULATE_INTERVAL
                     _stop.wait(LEADER_RETRY_INTERVAL)
             finally:
@@ -332,7 +334,11 @@ def cache_download():
 
 @app.route("/healthz")
 def healthz():
-    return jsonify(ok=True, service="artbooms-rss")
+    response = jsonify(ok=True, service="artbooms-rss")
+    revision = os.environ.get("RENDER_GIT_COMMIT", "")
+    if re.fullmatch(r"[0-9a-f]{40}", revision):
+        response.headers["X-Artbooms-Revision"] = revision
+    return response
 
 
 @app.route("/")

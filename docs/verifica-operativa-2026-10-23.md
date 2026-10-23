@@ -1,75 +1,95 @@
-# ARTBOOMS: verifiche e riduzione banda, 23 ottobre 2026
+# ARTBOOMS — finalizzazione del 23–24 ottobre 2026
 
-Questa proposta contiene due modifiche circoscritte ai workflow. Non modifica
-il codice dei publisher, lo stato WebSub, gli articoli o le frequenze di scansione.
-Merge e modifiche alla produzione richiedono l'autorizzazione dell'editrice.
+Proposta nella PR #10, ancora da autorizzare per la produzione.
 
-## Verifiche pubbliche in sola lettura
+## Problemi riscontrati e correzioni
 
-Alle 23:32–23:38 CEST del 23 ottobre:
+- **54 avvisi Unavailable nelle prime 22 ore UTC del 23 ottobre.** Il codice
+  precedente eliminava la causa dal log: non è possibile distinguere
+  retroattivamente timeout, TLS, HTTP o autenticazione. I nuovi log riportano
+  soltanto operazione, categoria, HTTP e Retry-After, senza token o corpi.
+  Un errore di connessione/timeout su GET può ricevere un solo ritentativo.
+  Nessun ritentativo automatico aggiuntivo di POST/PATCH; HTTP e rate limit
+  conservano il cooldown esistente. Gli errori TLS non sono ritentati.
+- **Letture GitHub a feed invariato e coda vuota.** Il solo controllo periodico
+  inattivo passa da circa 120 a 600 secondi. Nuovi byte RSS, pending, pausa,
+  errori, nuova configurazione o nuovo processo richiedono lo stato autorevole.
+  La memoria locale non autorizza invii: prenotazioni, lease, budget, deadline,
+  CAS e ACK persistenti restano quelli esistenti. Riduzione teorica dell'80%
+  dei controlli inattivi, non dell'intero traffico.
+- **POST XML ripetuti a ogni avvio.** Eliminato il catch-up automatico al
+  riavvio/deploy. L'esperimento XML diventa opt-in:
+  `NEWS_SITEMAP_WEBSUB_ENABLED=1`. Per impostazione predefinita non genera
+  richieste né pubblicizza un hub XML. Se attivato, richiede contenuti realmente
+  aggiornati e pronti, metadati News obbligatori e data valida con fuso;
+  chiude entrambe le risposte HTTP. Non è stata creata una seconda persistenza.
+- **Cache scaricata senza compressione richiesta.** Il workflow usa
+  `curl --compressed`; il JSON viene decompresso prima del merge protetto.
+- **Deploy del solo timestamp di manutenzione.** Render conferma un deploy
+  causato dal keepalive del 19 ottobre. Aggiunto `[skip render]` al suo commit.
 
-- RSS pubblico HTTP 200, 1.141 articoli, GUID unici coincidenti con la cache valida;
-  parsing RSS riuscito, metadati hub/self presenti.
-- News sitemap pubblica HTTP 200, articolo del 23 ottobre alle 09:02 +02:00,
-  header Link self/hub presenti. XML valido contro entrambi gli schemi locali
-  Sitemap e Google News, importati insieme come nella suite esistente.
-- Stato RSS remoto letto tramite GitHub, senza scritture: `mode: active`, revisione
-  9, 1.141 GUID osservati, zero pending, due ricevute `accepted`.
-- Render applica già gzip/Brotli quando il client li richiede.
+Il solo header `X-Artbooms-Revision` su /healthz permetterà di confrontare
+la versione realmente servita con il commit del deploy, senza cambiare il JSON.
 
-Questi controlli non attestano una scansione Google News o l'efficacia del topic
-WebSub sperimentale della sitemap. Il codice della PR #9 effettua un solo
-tentativo, senza stato persistente o retry: non è una coda durevole come l'RSS.
+## Misure e verifiche precedenti all'attivazione
 
-## Modifiche proposte
+| Misura | Risultato |
+| --- | --- |
+| Render 22 ottobre, giornata UTC completa | 251,00 MB |
+| Render 23 ottobre, prime 22 ore UTC | 232,07 MB |
+| Cache integra | 1.164.813 byte, 1.141 articoli |
+| Trasferimento gzip misurato | 322.632 byte |
+| Trasferimento reale con curl --compressed | 317.099 byte, JSON integro |
+| Stato RSS remoto | active, revisione 9, 1.141 GUID, zero pending, due accepted |
+| Commit effettivamente live prima delle modifiche | 7b536df832ff24cf1afac4cb5728293bacbd387a |
 
-1. `persist_cache.yml`: `curl --compressed` per il download della cache.
-   Curl negozia la compressione e scrive JSON già decompresso, compatibile con
-   l'attuale merge protetto. Non cambia frequenza, retry, contenuti o dispatch PWA.
-2. `keepalive.yml`: aggiunta di `[skip render]` al messaggio del commit settimanale,
-   secondo la convenzione già utilizzata dagli snapshot della cache. Il workflow
-   resta attivo; il solo aggiornamento del timestamp non deve causare un deploy.
+Nel campione di 100 accessi tra le 17:19 e le 22:06 UTC: 22 download cache,
+21 letture RSS del client con user-agent Chrome/123 e 21 del notifier PWA.
+Gli altri accessi includono health check, crawler e sitemap. È un campione,
+non una ricostruzione completa del traffico. Non è stata analizzata la PWA.
 
-Riferimento ufficiale per `--compressed`:
-<https://curl.se/docs/manpage.html#--compressed>.
+Per 96 download/giorno, dimensione costante e confronto gzip: circa 80,85 MB/giorno
+di payload in meno, 2,43 GB in 30 giorni, circa il 32% della baseline giornaliera
+del 22 ottobre. Il risparmio effettivamente contabilizzato da Render va misurato
+dopo l'attivazione. Non si somma un secondo risparmio per la compressione già
+offerta al pubblico; non si attribuiscono risparmi a 304 che i client non chiedono.
 
-## Misura riproducibile del trasferimento
+## Limite Google e scelta tecnica
 
-Cache integra: 1.164.813 byte e 1.141 articoli. Un GET con gzip ha trasferito
-322.632 byte; un GET con `curl --compressed` ha trasferito 317.099 byte e scritto
-1.164.813 byte di JSON valido, con gli stessi 1.141 URL del repository.
-Il secondo valore dipende anche dagli algoritmi supportati dal client.
+Il 23 ottobre l'hub registra RSS recuperato alle 09:03:53 CEST e news sitemap
+alle 09:09:45 CEST. Questo verifica il recupero dell'hub, non una scansione
+Googlebot verificata, sottoscrittori Google News o indicizzazione. Gli access log
+disponibili non consentono la verifica retroattiva degli IP.
 
-Il confronto gzip corrisponde a circa il 72,3% in meno per quel payload. A 96
-download/giorno e dimensione costante per 30 giorni: circa 3,35 GB senza
-compressione contro 0,93 GB con gzip, circa 2,43 GB risparmiati. È una stima dei
-soli payload di questo workflow, non del consumo complessivo o della fattura Render.
+Google documenta WebSub per RSS/Atom e l'invio XML tramite Search Console/API:
+<https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap>.
+Per le news chiede una sitemap aggiornata allo stesso URL e mantiene il controllo
+della frequenza di scansione:
+<https://developers.google.com/search/docs/crawling-indexing/sitemaps/news-sitemap>.
 
-## Collaudo e limiti ancora aperti
+La soluzione supportata entro l'infrastruttura attuale resta il WebSub RSS durevole
+più la news sitemap sempre aggiornata, già sottoposta a Search Console.
+Non si promette un controllo immediato della lettura XML. La chiamata in sola
+lettura a GSC Wizard è stata rifiutata per assenza di abbonamento: nessun acquisto,
+nuova credenziale o invio Search Console è stato effettuato.
 
-- Suite esistente: 256 test eseguiti localmente, 255 riusciti e un errore nel
-  controllo `/proc/<pid>/status` del test Gunicorn di failover. Ripetendo solo
-  il modulo, lo stesso controllo fallisce prima di verificare la morte del leader.
-  L'ambiente locale espone PID del processo e `/proc/self` differenti. Non è stato
-  modificato il test; il suo risultato su Ubuntu GitHub Actions resta necessario.
-- Il download reale con `--compressed` ha già verificato decompressione, JSON
-  leggibile, numero articoli e insieme degli URL.
-- I controlli Render su deploy, log e consumi richiedono l'identificazione dello
-  workspace esposto dal connector (`My Workspace`, info@artbooms.com).
-- Il messaggio operativo ricevuto si interrompe all'inizio del punto 2: occorre
-  acquisirne il seguito prima di dichiarare conclusa l'intera finalizzazione.
+## Collaudo e attivazione
 
-## Applicazione e ripristino
+I 256 test della prima versione della PR sono passati nel run 40028221880.
+Sono aggiunti 16 casi mirati su idle, nuovi articoli, pending, pausa/ripresa,
+riavvio dopo ACK, segreti nei log, recupero GET, TLS e isolamento XML.
+La CI della PR esegue l'intera suite su Ubuntu 24.04, Python 3.12.15 e 3.13.4.
+Il test locale Gunicorn /proc non è stato modificato per aggirare i PID virtualizzati.
 
-Prima del merge, verificare i risultati CI e ottenere l'autorizzazione alla
-produzione. Unire soltanto i file della PR, preservando gli snapshot successivi
-di `main`. Questi interventi riguardano i workflow: non richiedono un nuovo deploy
-del servizio Python. Il merge va marcato `[skip render]` per evitarlo.
+RSS integrale, metadati, cache, scansione circa 120 secondi, snapshot 15 minuti,
+workflow/dispatch PWA, DNS, Squarespace e formato dello stato WebSub non cambiano.
 
-Dopo il merge, controllare il successivo normale run di persistenza: download,
-merge protetto e dispatch devono mantenere il comportamento esistente. Nessun
-dispatch manuale o POST agli hub serve per provare il risparmio.
+Render ha Auto-Deploy On Commit e preview PR disattivate. Dopo autorizzazione:
+merge con messaggio normale senza `[skip render]`, un solo deploy automatico,
+controllo dello SHA live e dell'header di /healthz, RSS/news/cache, stato e log.
+Non richiamare anche il deploy manuale. Gli snapshot e il keepalive successivi
+mantengono il marcatore e non devono produrre altri deploy.
 
-Ripristino: rimuovere `--compressed` se un client non supportasse la risposta
-negoziata. La convenzione `[skip render]` del keepalive può essere mantenuta.
-Non riportare indietro cache o stato WebSub e non rifare la migrazione.
+Ripristino, se necessario: revert delle sole modifiche applicative conservando
+il backend GitHub e lo stato corrente; nessun reset di main/cache/stato o migrazione
+inversa. Compressione del workflow e marcatore keepalive possono essere conservati.

@@ -1,5 +1,6 @@
 """Offline tests: optional XML sitemap topic must never disturb existing RSS WebSub."""
 import unittest
+import os
 from unittest.mock import Mock, patch
 
 import requests
@@ -110,7 +111,8 @@ class NewsSitemapWebSubTests(unittest.TestCase):
             post.assert_called_once()
 
     def test_sitemap_advertises_own_topic_and_hub_without_changing_xml(self):
-        response = news_sitemap._xml_response(document().decode("utf-8"))
+        with patch.dict(os.environ, {"NEWS_SITEMAP_WEBSUB_ENABLED": "1"}):
+            response = news_sitemap._xml_response(document().decode("utf-8"))
         self.assertEqual(response.status_code, 200)
         self.assertIn(URL.encode(), response.data)
         links = response.headers.getlist("Link")

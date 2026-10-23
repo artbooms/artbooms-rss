@@ -6,6 +6,7 @@ WebSub has no idempotency key; a lost hub acknowledgement can consume another
 bounded attempt, whereas a durably acknowledged event is never replayed.
 """
 import copy
+import hashlib
 import json
 import math
 import os
@@ -29,6 +30,8 @@ _run_lock = threading.Lock()
 _default_store = None
 _default_config = None
 _retry_not_before = 0
+IDLE_CHECK_INTERVAL = 600
+_idle_checkpoint = None
 logger = legacy.logger
 
 
@@ -240,7 +243,7 @@ def run(content, store=None, now=None):
     ``store`` and ``now`` allow isolated tests using the production transitions.
     Never call this function from an HTTP handler.
     """
-    global _retry_not_before
+    global _retry_not_before, _idle_checkpoint
     explicit_store = store is not None
     clock = _clock(now)
     if not explicit_store and clock() < _retry_not_before:
@@ -252,15 +255,28 @@ def run(content, store=None, now=None):
     if lock is not None and not lock.acquire(blocking=False):
         return False
     try:
-        guids = legacy._feed_guids(content)
         store = store or _store_from_env()
+        digest = hashlib.sha256(content.encode("utf-8") if isinstance(content, str)
+                                else content).digest() if not explicit_store else None
+        if not explicit_store and _idle_checkpoint is not None:
+            previous_store, previous_digest, checked_at = _idle_checkpoint
+            if (store is previous_store and digest == previous_digest
+                    and 0 <= clock() - checked_at < IDLE_CHECK_INTERVAL):
+                # Advisory idle throttle only: no publication can use this
+                # checkpoint as authoritative state. New bytes bypass it;
+                # pending/paused/error states are never checkpointed.
+                return False
+        if not explicit_store:
+            _idle_checkpoint = None
+        guids = legacy._feed_guids(content)
         document = _transaction(store, lambda doc: _reconcile(doc, guids, clock()), now=clock)
         if not _active(document):
             return False
         if not any(event["next_attempt_at"] <= clock() and not _leased(event, clock())
                    and not legacy._exhausted(event, clock())
                    for event in document["state"]["pending"]):
-            # An unchanged feed costs one authoritative ref read, no commits.
+            if not explicit_store and not document["state"]["pending"]:
+                _idle_checkpoint = (store, digest, clock())
             return False
         token = uuid.uuid4().hex
         document = _transaction(store, lambda doc: _reserve_feed(doc, token, clock()), now=clock)
@@ -319,8 +335,11 @@ def run(content, store=None, now=None):
         if not explicit_store:
             delay = getattr(exc, "retry_after", None)
             _retry_not_before = clock() + max(120, delay or 0)
-        logger.warning("WebSub GitHub: stato non confermato (%s); invio sospeso, RSS conservato",
-                       type(exc).__name__)
+        logger.warning("WebSub GitHub: stato non confermato (%s); operazione=%s, motivo=%s, "
+                       "HTTP=%s, retry_after=%s; invio sospeso, RSS conservato",
+                       type(exc).__name__, getattr(exc, "operation", None) or "validazione",
+                       getattr(exc, "reason", None) or "stato",
+                       getattr(exc, "status_code", None), getattr(exc, "retry_after", None))
         return False
     finally:
         if lock is not None:
