@@ -214,8 +214,9 @@ def _notify_websub():
 
 def _notify_news_sitemap(news_urls, feed_ready):
     # Google documents WebSub discovery for RSS/Atom, not XML sitemaps.
-    # Keep the isolated experiment opt-in; never ping unchanged news on deploy.
-    if (os.environ.get("NEWS_SITEMAP_WEBSUB_ENABLED", "0") != "1"
+    # Preserve the existing low-cost experiment; allow an explicit opt-out.
+    # Never ping unchanged news on deploy.
+    if (os.environ.get("NEWS_SITEMAP_WEBSUB_ENABLED", "1") != "1"
             or not feed_ready or not news_urls):
         return
     try:

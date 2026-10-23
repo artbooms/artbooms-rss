@@ -18,9 +18,10 @@ Proposta nella PR #10, ancora da autorizzare per la produzione.
   CAS e ACK persistenti restano quelli esistenti. Riduzione teorica dell'80%
   dei controlli inattivi, non dell'intero traffico.
 - **POST XML ripetuti a ogni avvio.** Eliminato il catch-up automatico al
-  riavvio/deploy. L'esperimento XML diventa opt-in:
-  `NEWS_SITEMAP_WEBSUB_ENABLED=1`. Per impostazione predefinita non genera
-  richieste né pubblicizza un hub XML. Se attivato, richiede contenuti realmente
+  riavvio/deploy. Le tre notifiche nei log dal 22 ottobre sono tutte HTTP 204;
+  non è dimostrata una perdita reale che giustifichi una seconda coda durevole.
+  L'esperimento XML resta attivo; può essere spento esplicitamente con
+  `NEWS_SITEMAP_WEBSUB_ENABLED=0`. Richiede soltanto contenuti realmente
   aggiornati e pronti, metadati News obbligatori e data valida con fuso;
   chiude entrambe le risposte HTTP. Non è stata creata una seconda persistenza.
 - **Cache scaricata senza compressione richiesta.** Il workflow usa
@@ -67,8 +68,9 @@ Per le news chiede una sitemap aggiornata allo stesso URL e mantiene il controll
 della frequenza di scansione:
 <https://developers.google.com/search/docs/crawling-indexing/sitemaps/news-sitemap>.
 
-La soluzione supportata entro l'infrastruttura attuale resta il WebSub RSS durevole
-più la news sitemap sempre aggiornata, già sottoposta a Search Console.
+La soluzione documentata entro l'infrastruttura attuale resta il WebSub RSS durevole
+più la news sitemap sempre aggiornata, già sottoposta a Search Console. Il ping
+XML resta un esperimento isolato a costo minimo, senza attribuirgli una garanzia.
 Non si promette un controllo immediato della lettura XML. La chiamata in sola
 lettura a GSC Wizard è stata rifiutata per assenza di abbonamento: nessun acquisto,
 nuova credenziale o invio Search Console è stato effettuato.

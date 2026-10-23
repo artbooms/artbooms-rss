@@ -185,7 +185,7 @@ class GitHubReadRecoveryTests(unittest.TestCase):
 
 
 class NewsExperimentTests(unittest.TestCase):
-    def test_default_disables_all_experimental_requests_and_hub_advertisement(self):
+    def test_explicit_disable_removes_requests_and_hub_advertisement(self):
         with patch.dict(os.environ, {"NEWS_SITEMAP_WEBSUB_ENABLED": "0"}), \
                 patch.object(app, "notify_news_sitemap_topic") as notifier:
             app._notify_news_sitemap([URL], True)
@@ -195,15 +195,19 @@ class NewsExperimentTests(unittest.TestCase):
                          response.headers.getlist("Link"))
         self.assertEqual(response.data, document())
 
-    def test_opt_in_only_notifies_changed_ready_content_never_startup(self):
-        with patch.dict(os.environ, {"NEWS_SITEMAP_WEBSUB_ENABLED": "1"}), \
-                patch.object(app, "notify_news_sitemap_topic") as notifier:
-            app._notify_news_sitemap([], False)
-            app._notify_news_sitemap([], True)
-            app._notify_news_sitemap([URL], False)
-            notifier.assert_not_called()
-            app._notify_news_sitemap([URL], True)
-            notifier.assert_called_once_with([URL])
+    def test_default_and_explicit_enable_only_notify_changed_ready_content(self):
+        for setting in (None, "1"):
+            with self.subTest(setting=setting), \
+                    patch.dict(os.environ, {"NEWS_SITEMAP_WEBSUB_ENABLED": "1"}), \
+                    patch.object(app, "notify_news_sitemap_topic") as notifier:
+                if setting is None:
+                    os.environ.pop("NEWS_SITEMAP_WEBSUB_ENABLED", None)
+                app._notify_news_sitemap([], False)
+                app._notify_news_sitemap([], True)
+                app._notify_news_sitemap([URL], False)
+                notifier.assert_not_called()
+                app._notify_news_sitemap([URL], True)
+                notifier.assert_called_once_with([URL])
 
     def test_missing_required_metadata_closes_get_and_never_posts(self):
         for tag in ("news:name", "news:language", "news:publication_date", "news:title"):
