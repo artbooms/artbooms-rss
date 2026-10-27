@@ -4,9 +4,11 @@ from bs4 import BeautifulSoup
 from dateutil import parser as dateparser
 import requests
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 logger = logging.getLogger("article_parser")
+SITE_TIMEZONE = ZoneInfo("Europe/Rome")
 
 MONTHS_EN_SHORT = {
     "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
@@ -24,7 +26,9 @@ def _parse_date(s: str):
         dt = dateparser.parse(s, fuzzy=True)
         if dt:
             if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
+                # A timezone-free Squarespace date is local editorial time,
+                # not UTC. Explicit offsets are always retained unchanged.
+                dt = dt.replace(tzinfo=SITE_TIMEZONE)
             return dt
     except Exception:
         pass
@@ -34,7 +38,7 @@ def _parse_date(s: str):
         mon_num = MONTHS_EN_SHORT.get(mon.capitalize())
         if mon_num:
             try:
-                return datetime(int(year), mon_num, int(day), tzinfo=timezone.utc)
+                return datetime(int(year), mon_num, int(day), tzinfo=SITE_TIMEZONE)
             except Exception:
                 return None
     return None
@@ -140,8 +144,12 @@ def parse_article(url, html=None, session=None):
 
     soup = BeautifulSoup(html, "lxml")
 
-    # 🔹 SOLO i meta SEO Squarespace (itemprop)
-    title       = _first_meta(soup, [{"itemprop": "name"}])
+    # The public headline is distinct from the SEO title (itemprop=name).
+    # News sitemap titles must be the title as it appears on the article.
+    headline = soup.select_one("article h1.entry-title, h1.entry-title, article h1")
+    title = headline.get_text(" ", strip=True) if headline else None
+    if not title:
+        title = _first_meta(soup, [{"itemprop": "headline"}, {"itemprop": "name"}])
     canonical   = _first_meta(soup, [{"itemprop": "url"}])
     description = _first_meta(soup, [{"itemprop": "description"}])
     thumbnail   = _first_meta(soup, [{"itemprop": "thumbnailUrl"}])  # preferito
@@ -177,9 +185,8 @@ def parse_article(url, html=None, session=None):
     # date
     pub_dt = _parse_date(published)
     mod_dt = _parse_date(modified) or pub_dt
-    # 🩹 PRIORITÀ PUBBLICAZIONE: non permettere che 'modified' superi 'published'
-    if pub_dt and mod_dt and mod_dt > pub_dt:
-        mod_dt = pub_dt
+    # Keep the real modification date; published alone controls feed order
+    # and the 48-hour News window, so an edit never republishes an old URL.
 
     # log di verifica
     logger.info("Parsed articolo: %s | titolo=%s | autore=%s | img=%s",

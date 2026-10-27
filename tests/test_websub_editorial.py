@@ -126,7 +126,7 @@ class NewsEditorialTests(unittest.TestCase):
         self.assertEqual(document.findtext("s:url/n:news/n:publication/n:language", namespaces=NS), "it")
         self.assertEqual(document.findtext("s:url/n:news/n:publication_date", namespaces=NS), item["published"])
         self.assertEqual(document.findtext("s:url/n:news/n:title", namespaces=NS), "Museo & arte 0")
-        self.assertEqual(document.findtext("s:url/n:news/n:keywords", namespaces=NS), "arte")
+        self.assertIsNone(document.find("s:url/n:news/n:keywords", namespaces=NS))
         self.assertEqual(document.findall(".//n:category", NS), [])
         self.assertEqual(document.findall(".//s:lastmod", NS), [])
 

@@ -369,7 +369,7 @@ class ProductionBaselineTests(FlaskMigrationCase):
                                 root = ET.fromstring(responses[1].data)
                                 namespace = "{http://www.google.com/schemas/sitemap-news/0.9}"
                                 keywords = root.findall(".//" + namespace + "keywords")
-                                self.assertEqual([(node.text, dict(node.attrib)) for node in keywords], [("arte", {})])
+                                self.assertEqual(keywords, [])
                                 self.assertEqual(int(responses[1].headers["Content-Length"]), len(responses[1].data))
 
     def test_debug_and_cache_download_use_local_fixture_with_equal_bytes_headers_status(self):
