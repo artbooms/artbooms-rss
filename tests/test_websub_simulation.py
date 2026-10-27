@@ -262,7 +262,7 @@ class WebSubArchiveSimulationTests(unittest.TestCase):
             self.assertEqual(news.findtext("n:publication/n:name", namespaces=SITEMAP_NS), "ARTBOOMS")
             self.assertEqual(news.findtext("n:publication/n:language", namespaces=SITEMAP_NS), "it")
             self.assertTrue(news.findtext("n:title", namespaces=SITEMAP_NS))
-            self.assertEqual(news.findtext("n:keywords", namespaces=SITEMAP_NS), "arte")
+            self.assertIsNone(news.find("n:keywords", namespaces=SITEMAP_NS))
             self.assertEqual(datetime.fromisoformat(news.findtext("n:publication_date", namespaces=SITEMAP_NS)),
                              datetime.fromisoformat(self.fixture["published"]))
         for node in recent.values():

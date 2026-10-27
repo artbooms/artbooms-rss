@@ -22,7 +22,6 @@ DAYS_WINDOW = 2
 
 SITE_NAME = "ARTBOOMS"
 LANG = "it"
-KEYWORDS = "arte"
 NEWS_SITEMAP_URL = "https://rss.artbooms.com/news-sitemap.xml"
 NEWS_SITEMAP_HUB = "https://pubsubhubbub.appspot.com/"
 
@@ -76,7 +75,6 @@ def news_sitemap_view():
 
     - Usa solo i campi: url, title, published
     - Finestra temporale: ultimi DAYS_WINDOW giorni
-    - news:keywords = "arte" (elemento opzionale nello schema Google News)
     - news:title = "<titolo>"
     """
     loaders = (_load_local_items, _load_remote_items) if LOCAL_FIRST else (_load_remote_items, _load_local_items)
@@ -156,7 +154,6 @@ def news_sitemap_view():
         parts.append("      </news:publication>")
         parts.append(f"      <news:publication_date>{pub_iso}</news:publication_date>")
         parts.append(f"      <news:title>{title}</news:title>")
-        parts.append(f"      <news:keywords>{_escape_xml(KEYWORDS)}</news:keywords>")
         parts.append("    </news:news>")
         parts.append("  </url>")
 
