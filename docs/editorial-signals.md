@@ -8,8 +8,8 @@ The parser now reads the article H1 first, then the native headline, retaining
 the old name field only as a fallback. This corrects the primary acquisition
 step for both RSS and News sitemap. SEO settings on the site are unaffected.
 Google requires `news:title` to be the title as it appears on the article,
-without the publication name. The obsolete `news:keywords` extension is
-omitted; RSS still includes the approved `arte` category.
+without the publication name. `news:keywords`, absent from Google's current
+documented News fields, is omitted; RSS still includes the approved `arte` category.
 
 The real native modification timestamp is retained. Publication time alone
 continues to control RSS order, the 48-hour News window and existing WebSub
@@ -37,7 +37,9 @@ Never add a third schema or a global JavaScript schema rewriter.
 
 The audit command compares original HTML, native and manual article schemas,
 cache, RSS, News sitemap and ordinary sitemap. Its JSON distinguishes errors
-from review items. It does not write to production, refresh the application
+from review items. It also compares RSS modification times, image references,
+News publication/language and sitemap identities. Different image paths require
+review; the offline checker does not prove image availability. It does not write to production, refresh the application
 cache, notify a hub or block feed distribution.
 
 For one article, capture the current public RSS and sitemaps once, then run:

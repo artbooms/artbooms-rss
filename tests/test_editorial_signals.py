@@ -1,8 +1,10 @@
 """Regressions for editorial/SEO separation and contradictory article markup."""
 import unittest
+import tempfile
+from pathlib import Path
 
 from article_parser import parse_article, _parse_date
-from scripts.audit_editorial_signals import extract_signals, compare
+from scripts.audit_editorial_signals import extract_signals, compare, load_rss
 
 
 URL = "https://www.artbooms.com/blog/art-basel-paris-sicurezza"
@@ -82,6 +84,32 @@ class AuditSignals(unittest.TestCase):
         page = extract_signals(html, URL)
         self.assertEqual(page["h1"], HEADLINE)
         self.assertEqual(compare(page, self.item, sitemap={})[0]["code"], "invalid_json_ld")
+
+    def test_image_renditions_match_but_foreign_paths_require_review(self):
+        self.page["og_image"] = "https://images.squarespace-cdn.com/art/photo.jpg?format=1500w"
+        rss = {"image": "http://images.squarespace-cdn.com/art/photo.jpg?format=2500w"}
+        self.assertEqual(compare(self.page, rss=rss, sitemap={}), [])
+        rss["image"] = "https://www.artbooms.com/images/invented.jpg"
+        issues = compare(self.page, rss=rss, sitemap={})
+        self.assertEqual(issues[0]["code"], "image_requires_review")
+        self.assertEqual(issues[0]["severity"], "review")
+
+    def test_news_publisher_language_and_sitemap_identity_are_checked(self):
+        news = {"publication": "Another magazine", "language": "en"}
+        codes = {i["code"] for i in compare(self.page, news=news, sitemap={"loc": URL + "-wrong"})}
+        self.assertEqual(codes, {"publisher_mismatch", "language_mismatch", "canonical_mismatch"})
+
+    def test_rss_modification_is_compared_as_an_instant(self):
+        xml = f'''<rss xmlns:dcterms="http://purl.org/dc/terms/"><channel><item>
+        <link>{URL}</link><dcterms:modified>2026-10-22T20:48:50Z</dcterms:modified>
+        <category>arte</category></item></channel></rss>'''
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "rss.xml"
+            path.write_text(xml, encoding="utf-8")
+            rss = next(iter(load_rss(path).values()))
+        self.assertEqual(compare(self.page, rss=rss, sitemap={}), [])
+        rss["modified"] = self.item["published"]
+        self.assertIn("date_mismatch", {i["code"] for i in compare(self.page, rss=rss, sitemap={})})
 
 
 if __name__ == "__main__":

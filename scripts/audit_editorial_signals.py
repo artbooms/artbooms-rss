@@ -24,7 +24,8 @@ import requests
 NS = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9",
       "n": "http://www.google.com/schemas/sitemap-news/0.9",
       "i": "http://www.google.com/schemas/sitemap-image/1.1",
-      "dc": "http://purl.org/dc/elements/1.1/"}
+      "dc": "http://purl.org/dc/elements/1.1/",
+      "dcterms": "http://purl.org/dc/terms/"}
 ARTICLE_TYPES = {"Article", "NewsArticle", "BlogPosting"}
 
 
@@ -71,6 +72,20 @@ def author_names(value):
     return [normalized(value).casefold()] if isinstance(value, str) and value else []
 
 
+def image_urls(value):
+    if isinstance(value, list):
+        return [url for item in value for url in image_urls(item)]
+    if isinstance(value, dict):
+        return image_urls(value.get("url") or value.get("contentUrl"))
+    return [value] if isinstance(value, str) and value else []
+
+
+def image_key(value):
+    """Ignore CDN rendition size and protocol, without equating other paths."""
+    parsed = urlsplit(value)
+    return parsed.netloc.lower() + unquote(parsed.path)
+
+
 def extract_signals(html, requested_url):
     soup = BeautifulSoup(html, "lxml")
 
@@ -105,6 +120,7 @@ def extract_signals(html, requested_url):
         "author": meta("itemprop", "author"),
         "publisher": meta("itemprop", "publisher"),
         "og_image": meta("property", "og:image"),
+        "thumbnail": meta("itemprop", "thumbnailUrl"),
         "og_image_width": meta("property", "og:image:width"),
         "og_image_height": meta("property", "og:image:height"),
         "language": soup.html.get("lang", "") if soup.html else "",
@@ -126,6 +142,7 @@ def load_rss(path):
     return {url_key(n.findtext("link")): {
         "title": n.findtext("title"), "link": n.findtext("link"),
         "guid": n.findtext("guid"), "published": n.findtext("pubDate"),
+        "modified": n.findtext("dcterms:modified", namespaces=NS),
         "author": n.findtext("dc:creator", namespaces=NS),
         "image": n.find("enclosure").get("url") if n.find("enclosure") is not None else None,
         "categories": [c.text for c in n.findall("category")],
@@ -155,6 +172,18 @@ def compare(page, cache=None, rss=None, news=None, sitemap=None):
 
     canonical = url_key(page["canonical"])
     headline = page["h1"]
+    primary_images = {image_key(url) for url in
+                      (page["og_image"], page.get("thumbnail")) if url}
+    page_images = primary_images | {
+        image_key(url) for item in page["images"]
+        for url in (item.get("src"), item.get("data_src")) if url}
+
+    def compare_image(value, source, reference):
+        observed = image_urls(value)
+        if observed and reference and not ({image_key(url) for url in observed} & reference):
+            # Another editorial image or a CDN alias can be legitimate. A URL
+            # difference is a review item, never proof of an unavailable image.
+            issue("image_requires_review", source, observed, sorted(reference), "review")
     if not canonical:
         issue("missing_canonical", "HTML", None, page["requested_url"])
     if not headline:
@@ -166,6 +195,7 @@ def compare(page, cache=None, rss=None, news=None, sitemap=None):
     for schema in page["article_schemas"]:
         node = schema["data"]
         label = f"JSON-LD {','.join(sorted(types(node)))} {schema['location']}"
+        compare_image(node.get("image"), label + ".image", page_images)
         for key in ("mainEntityOfPage", "url", "@id"):
             identity = node.get(key)
             if isinstance(identity, dict):
@@ -194,6 +224,7 @@ def compare(page, cache=None, rss=None, news=None, sitemap=None):
     for label, record in (("cache", cache), ("RSS", rss), ("news sitemap", news)):
         if not record:
             continue
+        compare_image(record.get("image"), label + ".image", primary_images)
         record_url = record.get("url") or record.get("link") or record.get("loc")
         if record_url and url_key(record_url) != canonical:
             issue("canonical_mismatch", label, record_url, page["canonical"])
@@ -209,8 +240,17 @@ def compare(page, cache=None, rss=None, news=None, sitemap=None):
                     issue("date_mismatch", label + "." + key, record[key], page[key])
         if record.get("author") and author_names(record["author"]) != author_names(page["author"]):
             issue("author_mismatch", label, record["author"], page["author"])
+        if label == "news sitemap":
+            if record.get("publication") and normalized(record["publication"]).casefold() != "artbooms":
+                issue("publisher_mismatch", label, record["publication"], "ARTBOOMS")
+            if record.get("language") and record["language"].split("-")[0].lower() != page["language"].split("-")[0].lower():
+                issue("language_mismatch", label, record["language"], page["language"])
+        if label == "RSS" and record.get("categories") is not None and "arte" not in record["categories"]:
+            issue("category_mismatch", label, record["categories"], "arte", "review")
     if sitemap is None:
         issue("missing_ordinary_sitemap", "Squarespace sitemap", None, page["canonical"], "review")
+    elif sitemap.get("loc") and url_key(sitemap["loc"]) != canonical:
+        issue("canonical_mismatch", "Squarespace sitemap", sitemap["loc"], page["canonical"])
     return issues
 
 
