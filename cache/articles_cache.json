@@ -12590,13 +12590,13 @@
       "description": "\"Castagni in fiore\" di Vincent Van Gogh è stato venduto da Sotheby's per oltre 190 milioni: è il nuovo record  per l'artista. L'asta è arrivata dopo una settimana tribolata.",
       "author": "natasha barbieri",
       "published": "2026-11-19T04:25:14+01:00",
-      "modified": "2026-11-19T04:25:16+01:00",
-      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6afe5efa279f875af8f5f197/1795058716745/van_gogh_castagni_in_fiore.jpg?format=1500w",
-      "_hash": "aead9621e6e9926b6171e65a1ed4e17dae84a66073e568ee0534882ca46fa6d8",
-      "_fetched_at": "2026-11-19T22:24:32.416069+00:00"
+      "modified": "2026-11-20T03:23:33+01:00",
+      "image": "https://static1.squarespace.com/static/55fb5ba0e4b0f81e4e52f39a/56009ba2e4b0fd3b2554c99c/6afe5efa279f875af8f5f197/1795141413139/van_gogh_castagni_in_fiore.jpg?format=1500w",
+      "_hash": "b6ca79c05e8373981094f7ad3d9d8e0c490252e775565c97556015494f8e2d37",
+      "_fetched_at": "2026-11-20T11:03:24.301019+00:00"
     }
   },
-  "cursor": 1124,
-  "last_scan": "2026-11-20T10:48:51.747846+00:00",
+  "cursor": 0,
+  "last_scan": "2026-11-20T11:03:22.401844+00:00",
   "links_hash": "39ca814c05569c9aaa18a0c82b1b1cdb4c145baa4d6371e0b8526fdbcc75bae1"
 }
