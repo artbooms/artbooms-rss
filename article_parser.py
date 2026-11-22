@@ -1,5 +1,5 @@
 import re
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit, urlunsplit
 from bs4 import BeautifulSoup
 from dateutil import parser as dateparser
 import requests
@@ -66,6 +66,33 @@ def _first_meta(soup, attrs_list):
             if val:
                 return val.strip()
     return None
+
+
+def extract_recent_article_links_from_blog_html(html: str, base_url: str):
+    """Read only native collection headings, newest first; never body links."""
+    soup = BeautifulSoup(html, "lxml")
+    expected_host = urlsplit(base_url).hostname
+    links, seen = [], set()
+    for tag in soup.select("article h1.entry-title a[href]"):
+        try:
+            parts = urlsplit(urljoin(base_url, tag["href"].strip()))
+            if (parts.scheme not in ("http", "https")
+                    or parts.hostname != expected_host
+                    or parts.username or parts.password
+                    or parts.port not in (None, 80, 443)
+                    or parts.query or parts.fragment):
+                continue
+            path = parts.path.rstrip("/")
+            if (not path.startswith("/blog/") or path == "/blog"
+                    or "/tag/" in path or "/category/" in path):
+                continue
+            url = urlunsplit(("https", expected_host, path, "", ""))
+        except (ValueError, TypeError):
+            continue
+        if url not in seen:
+            seen.add(url)
+            links.append(url)
+    return links
 
 
 def extract_article_links_from_archive_html(html: str, base_url: str):

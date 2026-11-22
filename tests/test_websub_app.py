@@ -150,6 +150,34 @@ class WebSubApplicationTests(unittest.TestCase):
         app._notify_websub()
         self.hub.assert_called_once()
 
+    def test_stale_archive_does_not_delay_new_post_rss_news_or_websub(self):
+        # Reproduce 19 November: the archive still lists the old article,
+        # while the collection page already links to the published new one.
+        archive = ('<li class="archive-item"><a href="%s">Old</a>'
+                   '<span class="archive-item-date">Nov 16, 2026</span></li>') % self.old["url"]
+        recent = ('<article><h1 class="entry-title"><a href="%s">New</a>'
+                  '</h1></article>') % self.new["url"]
+
+        def source(url, **kwargs):
+            return archive if url == processor.ARCHIVE_URL else recent
+
+        def parse(url, session=None):
+            return copy.deepcopy(self.new if url == self.new["url"] else self.old)
+
+        with patch.object(processor, "fetch_html", side_effect=source), \
+             patch.object(processor, "parse_article", side_effect=parse), \
+             patch.object(processor.time, "sleep"):
+            self.assertEqual(app._update_once(), (True, True))
+            self.assertIn(self.new["url"].encode(), self.client.get("/rss").data)
+            self.assertIn(self.new["url"].encode(), self.client.get("/news-sitemap.xml").data)
+            app._notify_websub()
+            self.hub.assert_called_once()
+            # A later stale archive response must not undo discovery or replay.
+            self.assertEqual(app._update_once(), (False, False))
+            app._notify_websub()
+            self.hub.assert_called_once()
+            self.assertEqual(self.state()["pending"], [])
+
     def test_unchanged_periodic_rebuild_and_restart_do_not_notify(self):
         for _ in range(3):
             self.assertFalse(app.rebuild_feed())
