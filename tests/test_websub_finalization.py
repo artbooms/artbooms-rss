@@ -4,6 +4,7 @@ Production transitions use the existing Git Data fake. No external socket or
 production state is accessed, and publication checks retain the real ledger.
 """
 import copy
+from datetime import datetime, timezone
 from contextlib import ExitStack
 import logging
 import os
@@ -16,6 +17,7 @@ import requests
 import app
 import news_sitemap
 import news_sitemap_websub as news_notifier
+from news_sitemap_retry import PendingNewsNotifications
 import websub_durable as durable
 import websub_store as api
 from test_news_sitemap_websub import URL, document
@@ -199,7 +201,12 @@ class NewsExperimentTests(unittest.TestCase):
         for setting in (None, "1"):
             with self.subTest(setting=setting), \
                     patch.dict(os.environ, {"NEWS_SITEMAP_WEBSUB_ENABLED": "1"}), \
-                    patch.object(app, "notify_news_sitemap_topic") as notifier:
+                    patch.object(app, "notify_news_sitemap_topic", return_value=True) as notifier, \
+                    patch.object(app, "_news_publication_queue", PendingNewsNotifications()), \
+                    patch.object(app, "_load_snapshot", return_value=(None, feed(URL), "etag")), \
+                    patch("builtins.open", unittest.mock.mock_open(read_data='{}')), \
+                    patch.object(app, "_cache_entries", return_value={URL: {
+                        "url": URL, "published": datetime.now(timezone.utc).isoformat()}}):
                 if setting is None:
                     os.environ.pop("NEWS_SITEMAP_WEBSUB_ENABLED", None)
                 app._notify_news_sitemap([], False)

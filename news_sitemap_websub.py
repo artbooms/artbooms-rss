@@ -74,7 +74,7 @@ def notify_news_sitemap_topic(updated_urls):
             except ValueError:
                 continue
             eligible.add(url)
-        if not eligible or (changed is not None and not eligible.intersection(changed)):
+        if not eligible or (changed is not None and not changed.issubset(eligible)):
             logger.warning(
                 "News sitemap WebSub: articolo cambiato non presente con metadati News "
                 "nella sitemap pubblica; nessun POST"

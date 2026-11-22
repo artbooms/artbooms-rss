@@ -12,7 +12,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import rss_generator
-from cache_safety import cache_entries
+from cache_safety import cache_entries, parsed_time
 from editorial_authors import author_for
 
 
@@ -43,11 +43,12 @@ class ProjectCompatibilityTests(unittest.TestCase):
         self.assertEqual(len(new_guids), len(set(new_guids)))
         self.assertEqual(set(new_guids), set(cache_entries(self.data)))
 
-    def test_real_item_fields_only_add_arte_and_explicit_editorial_author(self):
+    def test_real_item_fields_preserve_baseline_and_restore_source_modification_date(self):
         def records(xml):
             return {item.findtext('guid'): item for item in ET.fromstring(xml).findall('./channel/item')}
         old, new = records(self.old_xml), records(self.new_xml)
         creator = '{http://purl.org/dc/elements/1.1/}creator'
+        modified_tag = '{http://purl.org/dc/terms/}modified'
         for guid, item in old.items():
             categories = new[guid].findall('category')
             self.assertEqual([(child.text, dict(child.attrib)) for child in categories], [('arte', {})], guid)
@@ -55,8 +56,11 @@ class ProjectCompatibilityTests(unittest.TestCase):
             expected_author = author_for(guid, item.findtext(creator))
             before = [(child.tag, expected_author if child.tag == creator else child.text, dict(child.attrib))
                       for child in item]
-            after = [(child.tag, child.text, dict(child.attrib)) for child in new[guid] if child.tag != 'category']
+            after = [(child.tag, child.text, dict(child.attrib)) for child in new[guid]
+                     if child.tag not in ('category', modified_tag)]
             self.assertEqual(after, before, guid)
+            modified = parsed_time(self.data['items'][guid].get('modified'))
+            self.assertEqual(new[guid].findtext(modified_tag), modified.isoformat() if modified else None, guid)
 
     def test_feedparser_reads_full_real_feed_without_errors(self):
         parsed = feedparser.parse(self.new_xml)

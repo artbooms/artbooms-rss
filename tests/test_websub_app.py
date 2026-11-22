@@ -32,6 +32,7 @@ with patch.dict(os.environ, {"CACHE_BOOTSTRAP_REMOTE": "0", "POPULATOR_ENABLED":
     import cache_safety
     import news_sitemap
     import websub
+    from news_sitemap_retry import PendingNewsNotifications
 
 
 def fresh_module(filename, name):
@@ -107,14 +108,81 @@ class WebSubApplicationTests(unittest.TestCase):
         content = self.public_override if self.public_override is not None else result.data
         return Mock(status_code=200, content=content, headers={})
 
-    def ingest(self):
+    def ingest(self, news_urls=None):
         def parse(url, session=None):
             self.assertIn(url, (self.old["url"], self.new["url"]))
             return copy.deepcopy(self.new if url == self.new["url"] else self.old)
         with patch.object(processor, "_scan_archive", return_value=[self.old["url"], self.new["url"]]), \
              patch.object(processor, "parse_article", side_effect=parse), \
              patch.object(processor.time, "sleep"):
-            return app._update_once()
+            return app._update_once(news_urls)
+
+    def news_publication_context(self):
+        self.now = datetime.now(timezone.utc).timestamp()
+        self.tick = 100.0
+        self.stack.enter_context(patch.object(app, "_news_publication_queue", PendingNewsNotifications()))
+        self.stack.enter_context(patch.object(app.time, "monotonic", side_effect=lambda: self.tick))
+        original_public = self.public_feed
+        def both_public_documents(url, **kwargs):
+            if url == news_sitemap.NEWS_SITEMAP_URL:
+                result = self.client.get("/news-sitemap.xml")
+                return Mock(status_code=result.status_code, content=result.data, headers={})
+            return original_public(url, **kwargs)
+        self.public.side_effect = both_public_documents
+
+    def test_failed_xml_topic_recovers_on_idle_cycle_without_replaying_rss(self):
+        self.news_publication_context()
+        urls = []
+        self.assertEqual(self.ingest(urls), (True, True))
+        # First RSS ACK succeeds; XML hub failure must remain independently retryable.
+        self.hub.side_effect = [Mock(status_code=204, headers={}), Mock(status_code=503, headers={}),
+                                Mock(status_code=204, headers={})]
+        app._notify_websub()
+        app._notify_news_sitemap(urls, True)
+        self.assertIn(self.new["url"], app._news_publication_queue.pending)
+        self.assertEqual(self.state()["pending"], [])
+        # Serving public documents never sends notifications from an HTTP request.
+        self.client.get("/rss")
+        self.client.get("/news-sitemap.xml")
+        self.assertEqual(self.hub.call_count, 2)
+        self.tick += 120
+        self.assertEqual(self.ingest(), (False, False))
+        app._notify_news_sitemap([], False)
+        app._notify_websub()
+        self.assertEqual(app._news_publication_queue.pending, {})
+        topics = [call.kwargs["data"]["hub.url"] for call in self.hub.call_args_list]
+        self.assertEqual(topics.count(websub.FEED_SELF_URL), 1)
+        self.assertEqual(topics.count(news_sitemap.NEWS_SITEMAP_URL), 2)
+
+    def test_xml_notice_survives_initial_feed_build_failure_until_rss_is_ready(self):
+        self.news_publication_context()
+        urls = []
+        with patch.object(app, "build_rss", return_value="<invalid"):
+            self.assertEqual(self.ingest(urls), (True, False))
+        app._notify_news_sitemap(urls, False)
+        self.hub.assert_not_called()
+        self.assertIn(self.new["url"], app._news_publication_queue.pending)
+        self.assertIn(self.new["url"].encode(), self.client.get("/rss").data)
+        app._notify_news_sitemap([], False)
+        self.assertEqual(app._news_publication_queue.pending, {})
+        self.assertEqual(self.hub.call_args.kwargs["data"]["hub.url"], news_sitemap.NEWS_SITEMAP_URL)
+
+    def test_modification_only_refreshes_rss_without_new_publication_or_news_republication(self):
+        first = self.client.get("/rss")
+        data = json.loads(self.cache_path.read_text())
+        published = data["items"][self.old["url"]]["published"]
+        data["items"][self.old["url"]]["modified"] = datetime.now(timezone.utc).isoformat()
+        cache_safety.atomic_json(self.cache_path, data)
+        second = self.client.get("/rss")
+        self.assertNotEqual(first.headers["ETag"], second.headers["ETag"])
+        item = ET.fromstring(second.data).find("./channel/item")
+        self.assertEqual(item.findtext("guid"), self.old["url"])
+        self.assertEqual(item.findtext("pubDate"), ET.fromstring(first.data).findtext("./channel/item/pubDate"))
+        self.assertIsNotNone(item.findtext("{http://purl.org/dc/terms/}modified"))
+        self.assertEqual(data["items"][self.old["url"]]["published"], published)
+        self.assertNotIn(b"<news:news>", self.client.get("/news-sitemap.xml").data)
+        app._notify_websub()
+        self.hub.assert_not_called()
 
     def restart(self):
         restarted_websub = fresh_module("websub.py", "_websub_fresh_state")

@@ -12,7 +12,7 @@ La scoperta legge anche i link dei titoli nativi in `/blog`, perche un blocco ar
 
 La sitemap legge prima la cache locale aggiornata e usa GitHub come recupero: un nuovo articolo acquisito compare alla richiesta successiva, senza attendere la persistenza remota. Include al massimo 1000 elementi News, pubblicati nelle ultime 48 ore, con data originale. Se non ci sono articoli recenti conserva un URL ordinario senza metadati News.
 
-Ogni articolo RSS ha una sola categoria generale, `arte`. Anche il campo opzionale `news:keywords` contiene `arte`: e ammesso dallo [schema XML ufficiale](https://www.google.com/schemas/sitemap-news/0.9/sitemap-news.xsd), ma la documentazione Google attuale non ne garantisce l'utilizzo per la classificazione.
+Ogni articolo RSS ha una sola categoria generale, `arte`. Il campo `news:keywords`, non documentato tra i campi News attuali, non viene emesso. RSS conserva `dcterms:modified` quando la cache contiene una data di modifica valida; pubblicazione, GUID e ordinamento restano distinti dalla modifica.
 
 ## WebSub
 
@@ -44,7 +44,7 @@ Per mantenere deploy senza interruzioni, un datastore dedicato con transazioni/c
 
 Il sottodominio esterno e consentito con la [cross-submission ufficiale Google](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap#cross-submit): proprieta Search Console verificate che coprano entrambi gli host e invio della sitemap, oppure un riferimento nel robots.txt del sito che ospita gli articoli. La sola accessibilita dell'XML su rss.artbooms.com non dimostra questa associazione.
 
-La verifica pubblica del 15 ottobre 2026 ha trovato solo la sitemap Squarespace in `www.artbooms.com/robots.txt`. La registrazione Search Console resta da verificare separatamente con autorizzazione; questa modifica non cambia Search Console o Squarespace. Il canale ufficiale per segnalare una sitemap XML e Search Console o la sua [API sitemaps.submit](https://developers.google.com/webmaster-tools/v1/sitemaps/submit), senza garanzia di lettura immediata. WebSub notifica l'RSS/Atom, non la news sitemap. Nessun vecchio ping Google o Indexing API viene utilizzato.
+La proprietà Dominio Search Console è stata verificata il 22 novembre 2026: RSS e news sitemap sono registrati e risultano leggibili. Il canale ufficiale per segnalare una sitemap XML è Search Console o la sua [API sitemaps.submit](https://developers.google.com/webmaster-tools/v1/sitemaps/submit), senza garanzia di lettura immediata. Il servizio mantiene anche un avviso WebSub sperimentale per il topic XML, distinto da quello RSS: la sua accettazione non certifica un recupero o una elaborazione Google News. Il [recupero limitato degli avvisi XML](docs/news-publication-recovery.md) non modifica la persistenza del publisher RSS. Nessun vecchio ping Google o Indexing API viene utilizzato.
 
 `persist_cache.yml` e attivato dal trigger esterno gia esistente: non introduce un cron aggiuntivo. Scarica e fonde la cache con l'ultima main, protegge schede valide e correzioni manuali e salva soltanto il JSON. Se cambia la cache avvia PWA Memory, che nel proprio repository avvia OneSignal. `keepalive.yml` mantiene attivo il repository. I due workflow RSS usano Ubuntu 24.04.
 

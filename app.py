@@ -17,6 +17,7 @@ from cache_safety import with_editorial_authors
 from editorial_taxonomy import categories_for
 from news_sitemap import news_sitemap_view
 from news_sitemap_websub import notify_news_sitemap_topic
+from news_sitemap_retry import PendingNewsNotifications
 from rss_generator import build_rss
 from websub import observe_feed, publish_pending, resolve_state_path
 
@@ -39,6 +40,7 @@ _update_lock = threading.Lock()
 _start_lock = threading.Lock()
 _stop = threading.Event()
 _background_thread = None
+_news_publication_queue = PendingNewsNotifications()
 
 
 def _file_token(path):
@@ -138,7 +140,7 @@ def rebuild_feed():
             items = [i for i in entries.values() if "/blog/" in i["url"]]
             if not items:
                 raise ValueError("Nessun articolo utilizzabile")
-            fields = ("url", "title", "description", "author", "published", "image")
+            fields = ("url", "title", "description", "author", "published", "modified", "image")
             editorial = [
                 ({k: i.get(k) for k in fields}, categories_for(i))
                 for i in sorted(items, key=lambda i: i["url"])
@@ -216,11 +218,22 @@ def _notify_news_sitemap(news_urls, feed_ready):
     # Google documents WebSub discovery for RSS/Atom, not XML sitemaps.
     # Preserve the existing low-cost experiment; allow an explicit opt-out.
     # Never ping unchanged news on deploy.
-    if (os.environ.get("NEWS_SITEMAP_WEBSUB_ENABLED", "1") != "1"
-            or not feed_ready or not news_urls):
+    if os.environ.get("NEWS_SITEMAP_WEBSUB_ENABLED", "1") != "1":
+        _news_publication_queue.clear()
         return
     try:
-        notify_news_sitemap_topic(news_urls)
+        now, monotonic = time.time(), time.monotonic()
+        if news_urls:
+            with open(CACHE_PATH, encoding="utf-8") as handle:
+                items = _cache_entries(json.load(handle))
+            _news_publication_queue.observe(news_urls, items, now=now, monotonic=monotonic)
+        if not _news_publication_queue.pending or (news_urls and not feed_ready):
+            return
+        snapshot = _load_snapshot()
+        if snapshot is None:
+            return
+        ready = {item.findtext("guid") for item in ET.fromstring(snapshot[1]).findall("./channel/item")}
+        _news_publication_queue.dispatch(notify_news_sitemap_topic, ready, now=now, monotonic=monotonic)
     except Exception:
         logger.exception("News sitemap WebSub: errore isolato; RSS conservato")
 
