@@ -9,7 +9,8 @@ graceful_timeout = 30
 preload_app = False
 accesslog = "-"
 errorlog = "-"
-access_log_format = '%(t)s pid=%(p)s method=%(m)s path="%(U)s" status=%(s)s duration=%(L)s user_agent="%(a)s"'
+logger_class = "crawler_logging.CrawlerLogger"
+access_log_format = '%(t)s pid=%(p)s method=%(m)s path="%(U)s" status=%(s)s duration=%(L)s user_agent="%(a)s"%(google_context)s'
 
 
 def post_worker_init(worker):
