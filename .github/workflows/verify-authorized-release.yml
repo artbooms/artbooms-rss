@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - codex/fresh-discovery-2026-11-22
+      - codex/crawler-observability-2026-11-22
 permissions:
   contents: read
 jobs:
