@@ -7,7 +7,10 @@ import time
 from datetime import datetime, timezone
 
 import requests
-from article_parser import extract_article_links_from_archive_html, parse_article, fetch_html
+from article_parser import (
+    extract_article_links_from_archive_html,
+    extract_recent_article_links_from_blog_html, parse_article, fetch_html,
+)
 from cache_safety import (
     HASH_FIELDS, valid_article, preserve_optional, article_hash,
     merge_cache, cache_transaction, normalize, atomic_json, with_editorial_author,
@@ -16,6 +19,7 @@ from cache_safety import (
 logger = logging.getLogger("article_processor")
 ARCHIVE_URL = os.environ.get("ARCHIVE_URL", "https://www.artbooms.com/archivio-completo")
 BASE_URL = os.environ.get("BASE_URL", "https://www.artbooms.com")
+RECENT_URL = os.environ.get("RECENT_URL", BASE_URL.rstrip("/") + "/blog")
 CACHE_PATH = os.environ.get("CACHE_PATH", "cache/articles_cache.json")
 MAX_BATCH = max(1, int(os.environ.get("MAX_BATCH", "3")))
 REQUEST_DELAY = max(0.0, float(os.environ.get("REQUEST_DELAY", "0.8")))
@@ -55,9 +59,37 @@ def _hash_links(links):
 
 
 def _scan_archive(session=None):
-    html = fetch_html(ARCHIVE_URL, session=session)
-    links = extract_article_links_from_archive_html(html, BASE_URL)
+    # Archive blocks can return an older list long after a post is public.
+    # Keep the full archive, but also discover native collection headings.
+    archive_error = None
+    try:
+        html = fetch_html(ARCHIVE_URL, session=session)
+        links = extract_article_links_from_archive_html(html, BASE_URL)
+    except Exception as exc:
+        archive_error = exc
+        links = []
+        logger.warning("Archivio non disponibile; controllo le notizie recenti: %s",
+                       type(exc).__name__)
     logger.info("Archivio scansionato: %d articoli", len(links))
+
+    recent = []
+    if RECENT_URL:
+        try:
+            html = fetch_html(RECENT_URL, session=session, timeout=10)
+            recent = extract_recent_article_links_from_blog_html(html, BASE_URL)
+        except Exception as exc:
+            logger.warning("Scoperta recente non disponibile; archivio conservato: %s",
+                           type(exc).__name__)
+    # Both parsers keep their native order. Only missing recent URLs are
+    # appended, oldest first, matching the scheduler's newest-at-the-end rule.
+    known = set(links)
+    additions = [url for url in reversed(recent) if url not in known]
+    if additions:
+        logger.warning("Scoperta recente: %d URL assenti nell'archivio; priorità a %s",
+                       len(additions), additions[-1])
+        links.extend(additions)
+    if not links and archive_error is not None:
+        raise archive_error
     return links
 
 

@@ -190,7 +190,10 @@ class WebSubArchiveSimulationTests(unittest.TestCase):
             article_html = "<html><head>" + "".join(
                 '<meta itemprop="%s" content="%s">' % (prop, escape(self.fixture[field], quote=True))
                 for prop, field in fields.items()) + "</head><body></body></html>"
-            responses = {processor.ARCHIVE_URL: archive_html, self.guid: article_html}
+            recent_html = ('<article><h1 class="entry-title"><a href="%s">New</a>'
+                           '</h1></article>') % escape(self.guid, quote=True)
+            responses = {processor.ARCHIVE_URL: archive_html,
+                         processor.RECENT_URL: recent_html, self.guid: article_html}
             visited = []
             def offline_http(method, url, **kwargs):
                 self.assertEqual(method.upper(), "GET")
@@ -204,7 +207,7 @@ class WebSubArchiveSimulationTests(unittest.TestCase):
             # only their transport returns locally constructed HTML documents.
             with patch.object(self.network_guard, "side_effect", offline_http):
                 self.assertEqual(self.application._update_once(), (True, True))
-            self.assertEqual(visited, [processor.ARCHIVE_URL, self.guid])
+            self.assertEqual(visited, [processor.ARCHIVE_URL, processor.RECENT_URL, self.guid])
         else:
             with patch.object(processor, "_scan_archive", return_value=links) as scan, \
                  patch.object(processor, "parse_article", return_value=copy.deepcopy(self.fixture)) as parse:
@@ -325,7 +328,7 @@ class WebSubArchiveSimulationTests(unittest.TestCase):
         self.assertEqual(self.cache_path.read_bytes(), cache_bytes)
         self.assertEqual(set(self.state()["observed_guids"]), set(self.archive["items"]) | {self.guid})
         self.assert_editorial_outputs()
-        self.assertEqual(self.network_guard.call_count, 2)
+        self.assertEqual(self.network_guard.call_count, 3)
         self.socket_guard.assert_not_called()
 
     def test_stale_feed_then_timeout_503_429_recovers_after_deploy_beyond_one_day(self):
