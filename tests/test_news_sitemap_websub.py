@@ -75,6 +75,13 @@ class NewsSitemapWebSubTests(unittest.TestCase):
             get.assert_called_once()
             post.assert_not_called()
 
+    def test_partial_public_batch_does_not_acknowledge_missing_article(self):
+        with patch.object(notifier.requests, "get", return_value=Mock(
+                status_code=200, content=document())), \
+                patch.object(notifier.requests, "post") as post:
+            self.assertFalse(notifier.notify_news_sitemap_topic([URL, URL + "-seconda"]))
+            post.assert_not_called()
+
     def test_missing_news_metadata_never_notifies(self):
         with patch.object(notifier.requests, "get", return_value=Mock(
                 status_code=200, content=document(with_news=False))), \

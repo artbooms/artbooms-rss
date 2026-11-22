@@ -4,6 +4,7 @@ on:
     branches:
       - codex/fresh-discovery-2026-11-22
       - codex/crawler-observability-2026-11-22
+      - codex/news-publication-2026-11-23
 permissions:
   contents: read
 jobs:

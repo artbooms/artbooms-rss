@@ -91,6 +91,10 @@ def build_rss(items: list, meta: dict):
             f"<pubDate>{pub_rfc}</pubDate>",
         ]
 
+        modified = parsed_time(it.get("modified"))
+        if modified is not None:
+            item_xml.append(f"<dcterms:modified>{modified.isoformat()}</dcterms:modified>")
+
         if image:
             safe_img = escape(image, {chr(34): "&quot;"})
             item_xml.append(f'<enclosure url="{safe_img}" type="image/jpeg" length="0" />')
@@ -105,6 +109,7 @@ def build_rss(items: list, meta: dict):
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<rss version="2.0" '
         'xmlns:dc="http://purl.org/dc/elements/1.1/" '
+        'xmlns:dcterms="http://purl.org/dc/terms/" '
         'xmlns:media="http://search.yahoo.com/mrss/" '
         'xmlns:atom="http://www.w3.org/2005/Atom">\n'
         "<channel>\n"
